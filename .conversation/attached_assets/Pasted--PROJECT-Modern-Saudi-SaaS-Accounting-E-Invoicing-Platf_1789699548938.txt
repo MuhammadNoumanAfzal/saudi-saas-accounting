@@ -1,0 +1,1066 @@
+# PROJECT: Modern Saudi SaaS Accounting & E-Invoicing Platform
+
+We are building a production-grade, multi-tenant SaaS accounting and e-invoicing platform for businesses in Saudi Arabia.
+
+The platform will eventually include:
+
+* Dashboard
+* Customers
+* Suppliers
+* Products & Services
+* Quotations
+* Sales Invoices
+* Credit Notes
+* Debit Notes
+* Purchases
+* Expenses
+* Payments
+* Chart of Accounts
+* Journal Entries
+* General Ledger
+* Accounts Receivable
+* Accounts Payable
+* VAT Management
+* Financial Reports
+* Basic Inventory
+* ZATCA E-Invoicing
+* Company Management
+* User Management
+* Audit Logs
+* Arabic and English
+
+However, DO NOT build all these modules now.
+
+This first phase is ONLY for establishing the correct production-grade architecture, authentication, multi-tenant structure, application shell, design system, localization framework and initial dashboard shell.
+
+The application must be designed so later modules can be added without rebuilding the foundation.
+
+---
+
+# 1. PRODUCT PRINCIPLES
+
+This must NOT look like a generic admin template.
+
+Create a premium, modern SaaS application comparable in UX quality to leading modern fintech/accounting platforms.
+
+The experience should feel:
+
+* Modern
+* Professional
+* Minimal
+* Fast
+* Interactive
+* Trustworthy
+* Financially focused
+* Easy for non-accountants
+* Suitable for Saudi SMEs
+* Arabic-native
+* Enterprise-ready
+
+Avoid:
+
+* Excessive gradients
+* Glassmorphism everywhere
+* Giant cards
+* Cartoon illustrations
+* Excessive icons
+* Decorative animations
+* AI-looking designs
+* Crowded dashboards
+* Generic Bootstrap admin appearance
+
+Use whitespace, typography, hierarchy and subtle interactions instead.
+
+---
+
+# 2. TECHNOLOGY ARCHITECTURE
+
+Build using:
+
+Frontend:
+
+* Next.js
+* React
+* TypeScript
+* Tailwind CSS
+* shadcn/ui
+
+Backend:
+
+* Node.js
+* TypeScript
+
+Database:
+
+* PostgreSQL
+
+ORM:
+
+* Prisma
+
+Validation:
+
+* Zod
+
+Authentication:
+Use a secure production-ready authentication architecture.
+
+Password storage must use modern secure password hashing.
+
+Prepare architecture for:
+
+* Email/password login
+* Password reset
+* Email verification
+* Session management
+* Future MFA
+* Future SSO
+
+Do not implement fake authentication.
+
+---
+
+# 3. DEPLOYMENT PORTABILITY
+
+The application is currently being developed on Replit.
+
+However, Replit MUST NOT become an architectural dependency.
+
+The application will later be deployed to infrastructure physically hosted in Saudi Arabia.
+
+Therefore:
+
+* Containerize application with Docker.
+* Use environment variables.
+* Never hardcode Replit-specific URLs.
+* Never use Replit proprietary database functionality where it prevents portability.
+* PostgreSQL must be independently deployable.
+* File storage must use an abstraction layer.
+* External integrations must use service adapters.
+* Provide Dockerfile.
+* Provide docker-compose configuration for local development.
+
+The application should eventually be deployable to Saudi cloud infrastructure without rewriting application code.
+
+---
+
+# 4. MULTI-TENANT SAAS ARCHITECTURE
+
+This is critical.
+
+Build the platform as multi-tenant from DAY ONE.
+
+Hierarchy:
+
+Platform
+→ Organizations
+→ Branches
+→ Users
+→ Roles
+→ Business Data
+
+Each company using the SaaS is an Organization.
+
+Every organization-owned business record created later must contain:
+
+organizationId
+
+Never rely only on frontend filtering for tenant isolation.
+
+Tenant isolation must be enforced server-side.
+
+A user may eventually belong to multiple organizations.
+
+Create appropriate models such as:
+
+User
+
+Organization
+
+OrganizationMembership
+
+Role
+
+Permission
+
+Branch
+
+Session
+
+AuditLog
+
+OrganizationSetting
+
+UserPreference
+
+Do not create accounting models yet.
+
+---
+
+# 5. ORGANIZATION MODEL
+
+Organization should support foundational information including:
+
+* Legal company name English
+* Legal company name Arabic
+* Trading name English
+* Trading name Arabic
+* VAT registration number
+* Commercial Registration number
+* Country
+* City
+* Address
+* Postal code
+* Additional number
+* Building number
+* District
+* Phone
+* Email
+* Website
+* Logo
+* Default currency
+* Fiscal year start
+* Default language
+* Time zone
+* VAT registered status
+
+Default country:
+
+Saudi Arabia
+
+Default currency:
+
+SAR
+
+Default timezone:
+
+Asia/Riyadh
+
+Keep architecture ready for other countries/currencies later, but Saudi Arabia is the primary market.
+
+---
+
+# 6. USER ROLES & PERMISSIONS
+
+Implement the foundation for Role-Based Access Control.
+
+Initial roles:
+
+Owner
+Admin
+Accountant
+Sales
+Purchasing
+Viewer
+
+Do not hardcode permissions throughout components.
+
+Use centralized permissions.
+
+Example future permissions:
+
+customers.view
+customers.create
+customers.edit
+customers.delete
+
+invoices.view
+invoices.create
+invoices.issue
+invoices.cancel
+
+accounting.view
+accounting.post
+
+reports.view
+
+settings.manage
+
+users.manage
+
+Build the permission engine so future modules simply register permissions.
+
+---
+
+# 7. AUDIT ARCHITECTURE
+
+Accounting software requires traceability.
+
+Create AuditLog architecture capable of storing:
+
+* organization
+* user
+* action
+* entity type
+* entity ID
+* previous values where appropriate
+* new values where appropriate
+* timestamp
+* IP information where available
+* user agent
+
+Future financial records must be auditable.
+
+Never implement destructive financial-record deletion patterns.
+
+The system will later use controlled statuses/reversals.
+
+---
+
+# 8. INTERNATIONALIZATION
+
+The application must support:
+
+English
+Arabic
+
+Arabic must NOT be treated as an afterthought.
+
+Implement proper internationalization architecture.
+
+When Arabic is selected:
+
+* Entire interface becomes RTL.
+* Sidebar direction changes.
+* Breadcrumb direction changes.
+* Tables behave correctly.
+* Forms align naturally.
+* Dropdowns work correctly.
+* Modal layouts work correctly.
+* Numbers remain readable.
+* Financial values remain correctly formatted.
+
+Use professional Saudi Arabic terminology.
+
+Language switcher should be easily accessible.
+
+Remember user's selected language.
+
+---
+
+# 9. APPLICATION SHELL
+
+Create the authenticated application layout.
+
+Desktop:
+
+LEFT SIDEBAR in English.
+
+RIGHT SIDEBAR in Arabic RTL.
+
+Sidebar should be collapsible.
+
+Top navigation should contain:
+
+Search
+Quick Create
+Notifications
+Help
+Language
+Organization Switcher
+User Profile
+
+The organization switcher should support future users belonging to multiple companies.
+
+---
+
+# 10. SIDEBAR INFORMATION ARCHITECTURE
+
+Create navigation placeholders for:
+
+Dashboard
+
+SALES
+
+* Customers
+* Quotations
+* Invoices
+* Credit Notes
+
+PURCHASES
+
+* Suppliers
+* Purchase Bills
+* Expenses
+
+PRODUCTS
+
+* Products & Services
+* Inventory
+
+ACCOUNTING
+
+* Chart of Accounts
+* Journal Entries
+* General Ledger
+* Payments
+
+REPORTS
+
+* Financial Reports
+* VAT Reports
+
+SETTINGS
+
+* Organization
+* Users & Roles
+* Branches
+* Taxes
+* Invoice Settings
+* ZATCA Integration
+* Audit Log
+
+Do NOT implement these modules yet.
+
+Navigation items may display "Coming soon" when accessed.
+
+Dashboard and foundational settings are the only functional areas required in this phase.
+
+---
+
+# 11. VISUAL DESIGN SYSTEM
+
+Create a consistent design system.
+
+Use a clean light interface as the default.
+
+Support dark mode structurally, but prioritize light mode.
+
+Visual direction:
+
+Background:
+very light neutral grey.
+
+Primary surfaces:
+white.
+
+Primary brand accent:
+deep sophisticated navy/blue.
+
+Success:
+professional green.
+
+Warning:
+amber.
+
+Danger:
+muted red.
+
+Borders:
+light neutral grey.
+
+Do not oversaturate the interface.
+
+Typography should be optimized separately for English and Arabic.
+
+Arabic typography must look professional.
+
+Use appropriate high-quality Arabic-compatible web fonts.
+
+---
+
+# 12. SIDEBAR DESIGN
+
+Sidebar should feel sophisticated and compact.
+
+Include:
+
+Product logo
+Organization selector
+Navigation
+Collapsed mode
+Settings
+User profile
+
+Active navigation should use subtle highlighting rather than oversized colored backgrounds.
+
+Support tooltips when collapsed.
+
+Add smooth but subtle transitions.
+
+---
+
+# 13. GLOBAL SEARCH / COMMAND PALETTE
+
+Create a command palette accessible through:
+
+Search button
+
+and keyboard shortcut:
+
+CTRL/CMD + K
+
+For now it can search:
+
+Navigation
+Settings
+Organizations
+
+Architecture should later support:
+
+Customers
+Suppliers
+Invoices
+Quotations
+Products
+Transactions
+
+The experience should feel extremely fast.
+
+---
+
+# 14. QUICK CREATE
+
+Add a prominent but elegant:
+
+* Create
+
+button.
+
+Opening it should show future actions:
+
+New Invoice
+New Quotation
+New Customer
+New Supplier
+New Expense
+New Product
+
+These actions can currently display "Coming soon".
+
+Design the interaction now so it becomes the primary shortcut later.
+
+---
+
+# 15. DASHBOARD
+
+Create the initial dashboard UI.
+
+Header:
+
+Good morning/afternoon/evening
+Organization name
+Current date
+
+Primary financial KPI cards:
+
+Total Revenue
+Outstanding Receivables
+Total Expenses
+Net Profit
+
+Since accounting modules do not exist yet, display:
+
+SAR 0.00
+
+Do NOT use fake business data.
+
+Include percentage/change indicators only when real comparative data exists.
+
+---
+
+# 16. DASHBOARD SECONDARY SECTION
+
+Create placeholders for:
+
+Cash Flow
+
+Revenue vs Expenses
+
+Receivables Overview
+
+Recent Transactions
+
+Invoices Status
+
+Expenses by Category
+
+Top Customers
+
+VAT Summary
+
+Use proper empty states.
+
+Example:
+
+"No transactions yet"
+
+with useful CTA:
+
+"Create your first invoice"
+
+Do not populate charts with fake numbers.
+
+Charts should gracefully handle empty datasets.
+
+---
+
+# 17. INTERACTIVE UX
+
+Use subtle micro-interactions:
+
+* Card hover states
+* Skeleton loading
+* Button feedback
+* Toast notifications
+* Smooth sidebar collapse
+* Dropdown transitions
+* Modal transitions
+* Table loading states
+* Empty states
+* Error states
+
+Animations must be subtle and fast.
+
+No decorative animation.
+
+---
+
+# 18. RESPONSIVE DESIGN
+
+Application must work on:
+
+Desktop
+Laptop
+Tablet
+Mobile
+
+Do not simply shrink desktop layout.
+
+For mobile:
+
+Sidebar becomes drawer.
+
+KPI cards stack intelligently.
+
+Tables become horizontally scrollable or responsive views.
+
+Primary actions remain accessible.
+
+Forms become mobile-friendly.
+
+---
+
+# 19. ACCESSIBILITY
+
+Follow WCAG-friendly practices.
+
+Include:
+
+Keyboard navigation
+Visible focus states
+Semantic HTML
+Accessible labels
+Appropriate contrast
+ARIA attributes where necessary
+
+---
+
+# 20. ONBOARDING FLOW
+
+After a new user registers, create an onboarding wizard.
+
+Step 1:
+Welcome
+
+Step 2:
+Business Information
+
+Ask:
+
+Business Name English
+Business Name Arabic
+Country
+Currency
+
+Step 3:
+Tax Information
+
+Ask:
+
+VAT Registered?
+VAT Number
+Commercial Registration Number
+
+Step 4:
+Business Address
+
+Ask Saudi National Address-compatible fields.
+
+Step 5:
+Fiscal Settings
+
+Ask:
+
+Fiscal year start
+Default language
+
+Step 6:
+Finish
+
+Show:
+
+"Your workspace is ready."
+
+Then redirect to dashboard.
+
+Allow optional fields to be completed later.
+
+Do NOT require ZATCA onboarding yet.
+
+---
+
+# 21. SETTINGS
+
+Implement foundational settings screens.
+
+Organization Profile
+
+Users & Roles
+
+Branches
+
+Language & Region
+
+Security
+
+Appearance
+
+Audit Log
+
+ZATCA Integration should appear in navigation but display:
+
+"ZATCA integration setup will be available in an upcoming implementation phase."
+
+Do NOT create fake ZATCA functionality.
+
+---
+
+# 22. ZATCA ARCHITECTURE PREPARATION
+
+Do not integrate ZATCA APIs in this phase.
+
+However, prepare an isolated service architecture:
+
+services/zatca/
+
+Future functionality will include:
+
+* XML generation
+* invoice hashing
+* cryptographic signing
+* QR generation
+* CSID management
+* compliance checks
+* clearance
+* reporting
+* production/sandbox environments
+
+Never place ZATCA cryptographic secrets in frontend code.
+
+Never store secrets in source code.
+
+Use secure environment/secrets architecture.
+
+---
+
+# 23. DATA SECURITY
+
+Implement:
+
+Tenant isolation
+Secure authentication
+Input validation
+Authorization middleware
+CSRF protection where applicable
+Rate limiting architecture
+Secure HTTP headers
+Parameterized database operations
+Server-side validation
+Environment-based secrets
+
+Never expose:
+
+password hashes
+authentication secrets
+database credentials
+future ZATCA credentials
+
+to client code.
+
+---
+
+# 24. DATABASE QUALITY
+
+Use proper:
+
+UUIDs
+timestamps
+foreign keys
+indexes
+unique constraints
+soft-deletion only where appropriate
+createdBy / updatedBy patterns where appropriate
+
+All monetary architecture added later must use DECIMAL/NUMERIC.
+
+Never use floating point numbers for accounting values.
+
+---
+
+# 25. ERROR HANDLING
+
+Create standardized application errors.
+
+Provide user-friendly messages.
+
+Never expose database errors, stack traces or secrets to users.
+
+Implement:
+
+404
+403
+500
+
+pages consistent with application design.
+
+---
+
+# 26. EMPTY STATES
+
+Empty states are important.
+
+Every future list should have a polished empty state.
+
+For example:
+
+Customers
+
+"No customers yet."
+
+"Add your first customer to start creating quotations and invoices."
+
+[Add Customer]
+
+Use this philosophy throughout the application.
+
+---
+
+# 27. TABLE DESIGN SYSTEM
+
+Create reusable DataTable architecture now.
+
+Support future:
+
+Search
+Filtering
+Sorting
+Pagination
+Column visibility
+Bulk selection
+Export
+Responsive behavior
+
+Create a sample empty table component but do not populate fake accounting records.
+
+---
+
+# 28. FORM DESIGN SYSTEM
+
+Create reusable:
+
+Text fields
+Arabic/English paired fields
+Currency input
+Percentage input
+Date picker
+Searchable select
+Phone input
+VAT number input
+Address fields
+Textarea
+File upload
+Toggle
+Checkbox
+Radio
+Validation messages
+
+Forms must be clean and fast.
+
+---
+
+# 29. SAUDI BUSINESS FORMATTING
+
+Create shared formatting utilities for:
+
+SAR currency
+
+Example:
+
+SAR 12,450.00
+
+Arabic:
+
+12,450.00 ر.س
+
+Dates
+
+English:
+18 Sep 2026
+
+Arabic:
+18 سبتمبر 2026
+
+Prepare Hijri date support for future use, but do not make it default.
+
+---
+
+# 30. CODE QUALITY
+
+Use modular architecture.
+
+Avoid huge components.
+
+Separate:
+
+UI
+business logic
+database
+validation
+authorization
+services
+localization
+configuration
+
+Use strict TypeScript.
+
+No `any` unless absolutely necessary.
+
+Create sensible comments only where logic requires explanation.
+
+---
+
+# 31. TESTING FOUNDATION
+
+Configure testing infrastructure.
+
+Include initial tests for:
+
+Authentication
+Tenant isolation
+RBAC
+Organization access
+Language switching
+
+Tenant isolation tests are especially important.
+
+User from Organization A must NEVER be able to access Organization B's data by manipulating URLs/API requests.
+
+---
+
+# 32. DEMO DEVELOPMENT ACCOUNT
+
+Create development seed functionality.
+
+Create:
+
+Organization:
+Demo Company
+
+Country:
+Saudi Arabia
+
+Currency:
+SAR
+
+Do not create fake invoices, revenue or transactions.
+
+Clearly separate seed data from production.
+
+---
+
+# 33. README
+
+Create comprehensive README containing:
+
+Architecture
+Technology stack
+Local setup
+Environment variables
+Database setup
+Migration commands
+Seed commands
+Testing
+Docker setup
+Production considerations
+
+Also document:
+
+MULTI-TENANCY RULES
+
+Every future developer must understand that organization-owned data must be isolated by organizationId.
+
+---
+
+# 34. FUTURE MODULE ARCHITECTURE
+
+Prepare clean feature/module directories for future:
+
+customers
+suppliers
+products
+quotations
+invoices
+purchases
+expenses
+accounting
+inventory
+reports
+vat
+zatca
+
+Do not implement them now.
+
+---
+
+# 35. IMPORTANT IMPLEMENTATION RULE
+
+Do not prioritize visual speed over architecture.
+
+Do not generate mock APIs pretending functionality exists.
+
+Do not implement fake accounting calculations.
+
+Do not implement fake ZATCA integration.
+
+Build a clean, working foundation that future prompts can extend safely.
+
+Before completing this phase:
+
+1. Run application.
+2. Run database migrations.
+3. Run tests.
+4. Fix TypeScript errors.
+5. Fix console errors.
+6. Check responsive layouts.
+7. Test English.
+8. Test Arabic RTL.
+9. Test tenant isolation.
+10. Verify authentication.
+11. Verify onboarding.
+12. Verify organization settings.
+13. Verify sidebar and dashboard.
+14. Verify Docker build.
+
+Provide a summary of:
+
+* What was implemented
+* Database models created
+* Routes created
+* Security measures implemented
+* Tests created
+* Any known limitations
+
+Do not begin Phase 2 automatically.
+
+Stop after completing this foundation and wait for the next instruction.

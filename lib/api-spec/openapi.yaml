@@ -10,6 +10,12 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: session
+    description: Authenticated session operations
+  - name: organizations
+    description: Organization and workspace operations
+  - name: dashboard
+    description: Dashboard summaries
 paths:
   /healthz:
     get:
@@ -24,7 +30,130 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /me:
+    get:
+      operationId: getCurrentSession
+      tags: [session]
+      summary: Get the current authenticated session
+      responses:
+        "200":
+          description: Current session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentSession"
+        "401":
+          description: Unauthorized
+  /organizations:
+    post:
+      operationId: createOrganization
+      tags: [organizations]
+      summary: Create an organization for the current user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrganizationInput"
+      responses:
+        "201":
+          description: Created organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "400":
+          description: Invalid organization data
+        "401":
+          description: Unauthorized
+  /organizations/{organizationId}:
+    get:
+      operationId: getOrganization
+      tags: [organizations]
+      summary: Get an organization the current user belongs to
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      responses:
+        "200":
+          description: Organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "403":
+          description: Organization access denied
+        "404":
+          description: Organization not found
+    patch:
+      operationId: updateOrganization
+      tags: [organizations]
+      summary: Update an organization
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrganizationUpdate"
+      responses:
+        "200":
+          description: Updated organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "400":
+          description: Invalid organization data
+        "403":
+          description: Organization access denied
+        "404":
+          description: Organization not found
+  /organizations/{organizationId}/dashboard:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get an empty-safe dashboard summary
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+        "403":
+          description: Organization access denied
+        "404":
+          description: Organization not found
+  /organizations/{organizationId}/audit-logs:
+    get:
+      operationId: listAuditLogs
+      tags: [organizations]
+      summary: List recent organization audit logs
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      responses:
+        "200":
+          description: Audit logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLog"
+        "403":
+          description: Organization access denied
 components:
+  parameters:
+    OrganizationId:
+      name: organizationId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +162,197 @@ components:
           type: string
       required:
         - status
+    User:
+      type: object
+      required: [id, email, displayName]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+    Organization:
+      type: object
+      required:
+        - id
+        - legalNameEnglish
+        - country
+        - currency
+        - timezone
+        - defaultLanguage
+        - vatRegistered
+      properties:
+        id:
+          type: string
+          format: uuid
+        legalNameEnglish:
+          type: string
+        legalNameArabic:
+          type: ["string", "null"]
+        tradingNameEnglish:
+          type: ["string", "null"]
+        tradingNameArabic:
+          type: ["string", "null"]
+        vatNumber:
+          type: ["string", "null"]
+        commercialRegistrationNumber:
+          type: ["string", "null"]
+        country:
+          type: string
+        city:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        postalCode:
+          type: ["string", "null"]
+        additionalNumber:
+          type: ["string", "null"]
+        buildingNumber:
+          type: ["string", "null"]
+        district:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        currency:
+          type: string
+        fiscalYearStart:
+          type: string
+        defaultLanguage:
+          type: string
+          enum: [en, ar]
+        timezone:
+          type: string
+        vatRegistered:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    OrganizationInput:
+      type: object
+      required: [legalNameEnglish]
+      properties:
+        legalNameEnglish:
+          type: string
+          minLength: 1
+        legalNameArabic:
+          type: ["string", "null"]
+        tradingNameEnglish:
+          type: ["string", "null"]
+        tradingNameArabic:
+          type: ["string", "null"]
+        vatNumber:
+          type: ["string", "null"]
+        commercialRegistrationNumber:
+          type: ["string", "null"]
+        country:
+          type: string
+          default: Saudi Arabia
+        city:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        postalCode:
+          type: ["string", "null"]
+        additionalNumber:
+          type: ["string", "null"]
+        buildingNumber:
+          type: ["string", "null"]
+        district:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        currency:
+          type: string
+          default: SAR
+        fiscalYearStart:
+          type: string
+          default: "01-01"
+        defaultLanguage:
+          type: string
+          enum: [en, ar]
+          default: en
+        timezone:
+          type: string
+          default: Asia/Riyadh
+        vatRegistered:
+          type: boolean
+          default: false
+    OrganizationUpdate:
+      allOf:
+        - $ref: "#/components/schemas/OrganizationInput"
+    OrganizationMembership:
+      type: object
+      required: [organization, role]
+      properties:
+        organization:
+          $ref: "#/components/schemas/Organization"
+        role:
+          type: string
+          enum: [owner, admin, accountant, sales, purchasing, viewer]
+    CurrentSession:
+      type: object
+      required: [user, organizations]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        organizations:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrganizationMembership"
+    DashboardSummary:
+      type: object
+      required: [currency, revenue, receivables, expenses, netProfit, hasComparativeData, recentTransactions]
+      properties:
+        currency:
+          type: string
+        revenue:
+          type: string
+        receivables:
+          type: string
+        expenses:
+          type: string
+        netProfit:
+          type: string
+        hasComparativeData:
+          type: boolean
+        recentTransactions:
+          type: array
+          items:
+            type: object
+            required: [id, label, amount]
+            properties:
+              id:
+                type: string
+              label:
+                type: string
+              amount:
+                type: string
+    AuditLog:
+      type: object
+      required: [id, action, entityType, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        action:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
 

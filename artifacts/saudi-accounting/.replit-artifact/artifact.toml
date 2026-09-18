@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Saudi Accounting Foundation"
+description = "A production-ready Saudi SaaS accounting foundation for SMEs, with a bilingual application shell, multi-tenant organization setup, onboarding, settings, and an empty-state financial dashboard ready for future accounting modules."
+version = "1.0.0"
+id = "artifacts/saudi-accounting"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18659
+
+[services.development]
+run = "pnpm --filter @workspace/saudi-accounting run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/saudi-accounting", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/saudi-accounting/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18659"
+BASE_PATH = "/"
