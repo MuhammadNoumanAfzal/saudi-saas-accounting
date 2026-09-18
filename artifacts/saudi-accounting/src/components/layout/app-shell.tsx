@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useLocation, Link } from 'wouter';
 import { useClerk, useUser } from '@clerk/react';
-import { getGetCurrentSessionQueryKey, getListOrganizationModulesQueryKey, useGetCurrentSession, useUpdateUserPreferences, useListOrganizationModules } from '@workspace/api-client-react';
+import { getGetCurrentSessionQueryKey, getListOrganizationModulesQueryKey, getFindPartiesQueryKey, useGetCurrentSession, useUpdateUserPreferences, useListOrganizationModules, useFindParties } from '@workspace/api-client-react';
 import { MODULE_REGISTRY } from '@workspace/platform-core';
+import { useDebounce } from '@/hooks/use-debounce';
 import {
   Menu, X, Home, Receipt, ShoppingBag, Package, Landmark, BarChart3,
   Building2, Users, Store, Languages, ShieldCheck, SlidersHorizontal, FileClock, Zap,
@@ -71,8 +72,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const navPrimary = [
     { href: '/finance', label: t('Overview', 'نظرة عامة'), icon: Home },
-    { href: '/sales', label: t('Sales', 'المبيعات'), icon: Receipt, soon: true },
-    { href: '/purchases', label: t('Purchases', 'المشتريات'), icon: ShoppingBag, soon: true },
+    {
+      label: t('Sales', 'المبيعات'),
+      icon: Receipt,
+      children: [
+        { href: '/finance/customers', label: t('Customers', 'العملاء') },
+        { href: '/finance/quotations', label: t('Quotations', 'عروض الأسعار'), soon: true },
+        { href: '/finance/invoices', label: t('Invoices', 'الفواتير'), soon: true },
+      ]
+    },
+    {
+      label: t('Purchases', 'المشتريات'),
+      icon: ShoppingBag,
+      children: [
+        { href: '/finance/suppliers', label: t('Suppliers', 'الموردون') },
+        { href: '/finance/bills', label: t('Purchase Bills', 'فواتير المشتريات'), soon: true },
+        { href: '/finance/expenses', label: t('Expenses', 'المصروفات'), soon: true },
+      ]
+    },
     { href: '/products', label: t('Catalog', 'الكتالوج'), icon: Package, soon: true },
     { href: '/accounting', label: t('Accounting', 'المحاسبة'), icon: Landmark, soon: true },
     { href: '/reports', label: t('Reports', 'التقارير'), icon: BarChart3, soon: true },
@@ -93,6 +110,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { signOut } = useClerk();
   const { user } = useUser();
   const org = session?.organizations?.find(o => o.organization.id === session.preferences.currentOrganizationId)?.organization || session?.organizations?.[0]?.organization;
+  const debouncedSearch = useDebounce(search, 300);
+
+  const { data: searchResults } = useFindParties(orgId, {
+    q: debouncedSearch
+  }, {
+    query: {
+      enabled: !!orgId && overlay === 'search' && debouncedSearch.length >= 2,
+      queryKey: getFindPartiesQueryKey(orgId, { q: debouncedSearch })
+    }
+  });
+
   const searchableRoutes = [
     ['/finance', t('Finance Overview', 'نظرة عامة على المالية')],
     ['/settings/organization', t('Organization profile', 'ملف المنشأة')],
@@ -170,11 +198,35 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             )}
             <nav className="space-y-0.5">
-              {navPrimary.map(item => {
-                const active = location === item.href;
+              {navPrimary.map((item, idx) => {
                 const Icon = item.icon;
+                if ('children' in item && item.children) {
+                  return (
+                    <div key={idx} className="mb-2">
+                      <div className={`flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium text-primary-foreground/90`} title={collapsed ? item.label : undefined}>
+                        <Icon size={18} className="shrink-0" />
+                        {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+                      </div>
+                      {!collapsed && (
+                        <div className="mt-1 space-y-0.5 border-l border-white/10 ml-4 pl-2 rtl:border-l-0 rtl:border-r rtl:ml-0 rtl:mr-4 rtl:pr-2">
+                          {item.children.map(child => {
+                            const active = location.startsWith(child.href);
+                            return (
+                              <Link key={child.href} href={child.href} onClick={() => setMobileOpen(false)} className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${active ? 'bg-accent/10 text-accent' : 'text-primary-foreground/60 hover:text-primary-foreground hover:bg-white/5'}`}>
+                                <span className="flex-1 truncate">{child.label}</span>
+                                {child.soon && <span className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-primary-foreground/60">{t('Soon', 'قريباً')}</span>}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                const active = location === item.href;
                 return (
-                  <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors ${active ? 'bg-accent/10 text-accent' : 'text-primary-foreground/70 hover:bg-white/5 hover:text-primary-foreground'}`} title={collapsed ? item.label : undefined}>
+                  <Link key={item.href || idx} href={item.href!} onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors ${active ? 'bg-accent/10 text-accent' : 'text-primary-foreground/70 hover:bg-white/5 hover:text-primary-foreground'}`} title={collapsed ? item.label : undefined}>
                     <Icon size={18} className="shrink-0" />
                     {!collapsed && (
                       <>
@@ -371,20 +423,47 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <input autoFocus value={search} onChange={event => setSearch(event.target.value)} className="h-11 flex-1 bg-transparent text-sm outline-none" placeholder={t('Search pages and settings', 'ابحث في الصفحات والإعدادات')} />
                 </div>
                 <div className="mt-3 max-h-72 overflow-auto">
+                  {searchResults?.map(party => {
+                    const role = party.roles[0]?.role === 'customer' ? 'customers' : 'suppliers';
+                    return (
+                      <button key={party.id} onClick={() => { setLocation(`/finance/${role}/${party.id}`); setOverlay(null); }} className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-medium hover:bg-muted text-left">
+                        <div>
+                          <div className="text-foreground">{party.displayName}</div>
+                          <div className="text-[10px] text-muted-foreground">{party.partyNumber} · {party.partyType}</div>
+                        </div>
+                        <ChevronRight size={16} className="text-muted-foreground shrink-0" />
+                      </button>
+                    );
+                  })}
                   {searchableRoutes.map(([href, label]) => (
                     <button key={href} onClick={() => { setLocation(href); setOverlay(null); }} className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-medium hover:bg-muted">
                       {label}<ChevronRight size={16} className="text-muted-foreground" />
                     </button>
                   ))}
-                  {!searchableRoutes.length && <p className="px-3 py-8 text-center text-sm text-muted-foreground">{t('No matching pages.', 'لا توجد صفحات مطابقة.')}</p>}
+                  {!searchableRoutes.length && (!searchResults || searchResults.length === 0) && <p className="px-3 py-8 text-center text-sm text-muted-foreground">{t('No matching results.', 'لا توجد نتائج مطابقة.')}</p>}
                 </div>
               </div>
             )}
             {overlay === 'create' && (
               <div className="grid grid-cols-2 gap-3 p-5">
-                {[t('Customer', 'عميل'), t('Quotation', 'عرض سعر'), t('Invoice', 'فاتورة'), t('Supplier', 'مورد'), t('Expense', 'مصروف'), t('Product', 'منتج')].map(label => (
-                  <button key={label} className="rounded-xl border border-border p-4 text-start text-sm font-semibold hover:border-primary/40 hover:bg-primary/5" onClick={() => setOverlay(null)}>
-                    {label}<span className="mt-1 block text-[11px] font-normal text-muted-foreground">{t('Coming in the next setup stage', 'قريباً في مرحلة الإعداد التالية')}</span>
+                {[
+                  { label: t('Customer', 'عميل'), route: '/finance/customers?new=1' },
+                  { label: t('Supplier', 'مورد'), route: '/finance/suppliers?new=1' },
+                  { label: t('Quotation', 'عرض سعر'), soon: true },
+                  { label: t('Invoice', 'فاتورة'), soon: true },
+                  { label: t('Expense', 'مصروف'), soon: true },
+                  { label: t('Product', 'منتج'), soon: true }
+                ].map(item => (
+                  <button key={item.label} className="rounded-xl border border-border p-4 text-start text-sm font-semibold hover:border-primary/40 hover:bg-primary/5" onClick={() => {
+                    if (item.route) {
+                      setLocation(item.route);
+                      setOverlay(null);
+                    } else {
+                      setOverlay(null);
+                    }
+                  }}>
+                    {item.label}
+                    {item.soon && <span className="mt-1 block text-[11px] font-normal text-muted-foreground">{t('Coming in the next setup stage', 'قريباً في مرحلة الإعداد التالية')}</span>}
                   </button>
                 ))}
               </div>

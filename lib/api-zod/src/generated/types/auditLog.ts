@@ -5,6 +5,8 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { AuditLogNewValues } from './auditLogNewValues';
+import type { AuditLogPreviousValues } from './auditLogPreviousValues';
 
 export interface AuditLog {
   id: string;
@@ -12,5 +14,11 @@ export interface AuditLog {
   entityType: string;
   /** @nullable */
   entityId?: string | null;
+  /** @nullable */
+  actorName?: string | null;
+  /** @nullable */
+  previousValues?: AuditLogPreviousValues;
+  /** @nullable */
+  newValues?: AuditLogNewValues;
   createdAt: Date;
 }

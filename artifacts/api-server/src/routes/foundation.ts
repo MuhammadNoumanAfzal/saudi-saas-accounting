@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import {
   AuditLog,
   CreateOrganizationBody,
@@ -23,6 +23,8 @@ import {
 } from "@workspace/api-zod";
 import {
   auditLogsTable,
+  businessPartiesTable,
+  partyRolesTable,
   db,
   organizationMembershipsTable,
   organizationModulesTable,
@@ -314,6 +316,12 @@ router.get(
         netProfit: "0.00",
         hasComparativeData: false,
         recentTransactions: [],
+        customerCount: Number((await db.select({ count: sql<number>`count(*)` }).from(partyRolesTable).where(and(eq(partyRolesTable.organizationId, params.data.organizationId), eq(partyRolesTable.role, "customer"))))[0]?.count ?? 0),
+        supplierCount: Number((await db.select({ count: sql<number>`count(*)` }).from(partyRolesTable).where(and(eq(partyRolesTable.organizationId, params.data.organizationId), eq(partyRolesTable.role, "supplier"))))[0]?.count ?? 0),
+        customerChecklist: {
+          hasCustomers: Number((await db.select({ count: sql<number>`count(*)` }).from(partyRolesTable).where(and(eq(partyRolesTable.organizationId, params.data.organizationId), eq(partyRolesTable.role, "customer"))))[0]?.count ?? 0) > 0,
+          complete: Number((await db.select({ count: sql<number>`count(*)` }).from(partyRolesTable).where(and(eq(partyRolesTable.organizationId, params.data.organizationId), eq(partyRolesTable.role, "customer"))))[0]?.count ?? 0) > 0,
+        },
       }),
     );
   },
@@ -401,9 +409,13 @@ router.get(
         action: auditLogsTable.action,
         entityType: auditLogsTable.entityType,
         entityId: auditLogsTable.entityId,
+        actorName: usersTable.displayName,
+        previousValues: auditLogsTable.previousValues,
+        newValues: auditLogsTable.newValues,
         createdAt: auditLogsTable.createdAt,
       })
       .from(auditLogsTable)
+      .leftJoin(usersTable, eq(auditLogsTable.userId, usersTable.id))
       .where(eq(auditLogsTable.organizationId, params.data.organizationId))
       .orderBy(desc(auditLogsTable.createdAt))
       .limit(50);

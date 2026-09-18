@@ -201,6 +201,598 @@ paths:
                   $ref: "#/components/schemas/OrganizationModule"
         "403":
           description: Organization access denied
+  /organizations/{organizationId}/customers:
+    get:
+      operationId: getCustomers
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartySearch"
+        - $ref: "#/components/parameters/PartyPage"
+        - $ref: "#/components/parameters/PartyPageSize"
+        - $ref: "#/components/parameters/PartySort"
+        - $ref: "#/components/parameters/PartyStatus"
+        - $ref: "#/components/parameters/PartyType"
+        - $ref: "#/components/parameters/PartyVatRegistered"
+        - $ref: "#/components/parameters/PartyCity"
+        - $ref: "#/components/parameters/PartyTag"
+      responses:
+        "200":
+          description: Customer list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartyListResponse"
+    post:
+      operationId: createCustomer
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartyCreateInput"
+      responses:
+        "201":
+          description: Created customer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartyDetail"
+  /organizations/{organizationId}/suppliers:
+    get:
+      operationId: getSuppliers
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartySearch"
+        - $ref: "#/components/parameters/PartyPage"
+        - $ref: "#/components/parameters/PartyPageSize"
+        - $ref: "#/components/parameters/PartySort"
+        - $ref: "#/components/parameters/PartyStatus"
+        - $ref: "#/components/parameters/PartyType"
+        - $ref: "#/components/parameters/PartyVatRegistered"
+        - $ref: "#/components/parameters/PartyCity"
+        - $ref: "#/components/parameters/PartyTag"
+      responses:
+        "200":
+          description: Supplier list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartyListResponse"
+    post:
+      operationId: createSupplier
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartyCreateInput"
+      responses:
+        "201":
+          description: Created supplier
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartyDetail"
+  /organizations/{organizationId}/customers/{partyId}:
+    get:
+      operationId: getCustomer
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+      responses:
+        "200":
+          description: Customer detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartyDetail"
+    patch:
+      operationId: updateCustomer
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartyUpdateInput"
+      responses:
+        "200":
+          description: Updated customer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartyDetail"
+  /organizations/{organizationId}/suppliers/{partyId}:
+    get:
+      operationId: getSupplier
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+      responses:
+        "200":
+          description: Supplier detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartyDetail"
+    patch:
+      operationId: updateSupplier
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartyUpdateInput"
+      responses:
+        "200":
+          description: Updated supplier
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartyDetail"
+  /organizations/{organizationId}/parties/{partyId}/status:
+    patch:
+      operationId: updatePartyStatus
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartyStatusInput"
+      responses:
+        "200":
+          description: Updated party status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartyDetail"
+  /organizations/{organizationId}/parties/{partyId}/roles/{role}:
+    post:
+      operationId: addPartyRole
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+        - name: role
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [customer, supplier]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartyRoleInput"
+      responses:
+        "201":
+          description: Added party role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartyRole"
+  /organizations/{organizationId}/parties/{partyId}/duplicates:
+    post:
+      operationId: checkPartyDuplicates
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartyDuplicateInput"
+      responses:
+        "200":
+          description: Duplicate warnings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DuplicateWarning"
+  /organizations/{organizationId}/parties/{partyId}/contacts:
+    get:
+      operationId: listPartyContacts
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+      responses:
+        "200":
+          description: Contacts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PartyContact"
+    post:
+      operationId: createPartyContact
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartyContactInput"
+      responses:
+        "201":
+          description: Contact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartyContact"
+  /organizations/{organizationId}/parties/{partyId}/contacts/{contactId}:
+    patch:
+      operationId: updatePartyContact
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+        - $ref: "#/components/parameters/ContactId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartyContactInput"
+      responses:
+        "200":
+          description: Contact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartyContact"
+    delete:
+      operationId: deletePartyContact
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+        - $ref: "#/components/parameters/ContactId"
+      responses:
+        "204":
+          description: Deleted
+  /organizations/{organizationId}/parties/{partyId}/addresses:
+    get:
+      operationId: listPartyAddresses
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+      responses:
+        "200":
+          description: Addresses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PartyAddress"
+    post:
+      operationId: createPartyAddress
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartyAddressInput"
+      responses:
+        "201":
+          description: Address
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartyAddress"
+  /organizations/{organizationId}/parties/{partyId}/addresses/{addressId}:
+    patch:
+      operationId: updatePartyAddress
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+        - $ref: "#/components/parameters/AddressId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartyAddressInput"
+      responses:
+        "200":
+          description: Address
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartyAddress"
+    delete:
+      operationId: deletePartyAddress
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+        - $ref: "#/components/parameters/AddressId"
+      responses:
+        "204":
+          description: Deleted
+  /organizations/{organizationId}/tags:
+    get:
+      operationId: listPartyTags
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      responses:
+        "200":
+          description: Tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PartyTag"
+    post:
+      operationId: createPartyTag
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartyTagInput"
+      responses:
+        "201":
+          description: Tag
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartyTag"
+  /organizations/{organizationId}/parties/{partyId}/tags/{tagId}:
+    put:
+      operationId: assignPartyTag
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+        - name: tagId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Assigned
+    delete:
+      operationId: removePartyTag
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+        - name: tagId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Removed
+  /organizations/{organizationId}/party-search:
+    get:
+      operationId: findParties
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 1 }
+      responses:
+        "200":
+          description: Party search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PartyListItem"
+  /organizations/{organizationId}/{role}/import/template:
+    get:
+      operationId: downloadPartyImportTemplate
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyRolePath"
+      responses:
+        "200":
+          description: CSV template
+          content:
+            text/csv: { schema: { type: string } }
+  /organizations/{organizationId}/{role}/import/preview:
+    post:
+      operationId: previewPartyImport
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyRolePath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartyImportInput" }
+      responses:
+        "200":
+          description: Import validation preview
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartyImportPreview" }
+  /organizations/{organizationId}/{role}/import/confirm:
+    post:
+      operationId: confirmPartyImport
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyRolePath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartyImportInput" }
+      responses:
+        "201":
+          description: Import result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartyImportResult" }
+  /organizations/{organizationId}/{role}/export:
+    get:
+      operationId: exportParties
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyRolePath"
+        - $ref: "#/components/parameters/PartySearch"
+        - $ref: "#/components/parameters/PartyStatus"
+      responses:
+        "200":
+          description: CSV export
+          content:
+            text/csv: { schema: { type: string } }
+  /storage/uploads/request-url:
+    post:
+      operationId: requestStorageUploadUrl
+      tags: [storage]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RequestUploadUrlInput" }
+      responses:
+        "200":
+          description: Presigned upload URL
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RequestUploadUrlResponse" }
+  /storage/objects/{objectPath}:
+    get:
+      operationId: downloadStorageObject
+      tags: [storage]
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Object bytes }
+  /organizations/{organizationId}/parties/{partyId}/documents/{documentId}/download:
+    get:
+      operationId: downloadPartyDocument
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200": { description: Document bytes }
+  /organizations/{organizationId}/parties/{partyId}/documents:
+    get:
+      operationId: listPartyDocuments
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+      responses:
+        "200":
+          description: Party documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PartyDocument" }
+    post:
+      operationId: createPartyDocument
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartyDocumentInput" }
+      responses:
+        "201":
+          description: Registered document
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartyDocument" }
+  /organizations/{organizationId}/parties/{partyId}/documents/{documentId}:
+    patch:
+      operationId: updatePartyDocument
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartyDocumentUpdateInput" }
+      responses:
+        "200":
+          description: Updated document
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartyDocument" }
+    delete:
+      operationId: deletePartyDocument
+      tags: [parties]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/PartyId"
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: Document removed }
 components:
   parameters:
     OrganizationId:
@@ -210,6 +802,62 @@ components:
       schema:
         type: string
         format: uuid
+    PartyId:
+      name: partyId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ContactId:
+      name: contactId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    AddressId:
+      name: addressId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    PartySearch:
+      name: search
+      in: query
+      schema: { type: string }
+    PartyPage:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    PartyPageSize:
+      name: pageSize
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+    PartySort:
+      name: sort
+      in: query
+      schema: { type: string, enum: [name, number, created, updated], default: name }
+    PartyStatus:
+      name: status
+      in: query
+      schema: { type: string, enum: [active, inactive] }
+    PartyType:
+      name: partyType
+      in: query
+      schema: { type: string, enum: [organization, individual] }
+    PartyVatRegistered:
+      name: vatRegistered
+      in: query
+      schema: { type: boolean }
+    PartyCity:
+      name: city
+      in: query
+      schema: { type: string }
+    PartyTag:
+      name: tagId
+      in: query
+      schema: { type: string, format: uuid }
+    PartyRolePath:
+      name: role
+      in: path
+      required: true
+      schema: { type: string, enum: [customers, suppliers] }
   schemas:
     HealthStatus:
       type: object
@@ -449,7 +1097,7 @@ components:
           format: uuid
     DashboardSummary:
       type: object
-      required: [currency, revenue, receivables, expenses, netProfit, hasComparativeData, recentTransactions]
+      required: [currency, revenue, receivables, expenses, netProfit, hasComparativeData, recentTransactions, customerCount, supplierCount, customerChecklist]
       properties:
         currency:
           type: string
@@ -475,6 +1123,14 @@ components:
                 type: string
               amount:
                 type: string
+        customerCount: { type: integer }
+        supplierCount: { type: integer }
+        customerChecklist:
+          type: object
+          required: [hasCustomers, complete]
+          properties:
+            hasCustomers: { type: boolean }
+            complete: { type: boolean }
     AuditLog:
       type: object
       required: [id, action, entityType, createdAt]
@@ -488,6 +1144,14 @@ components:
           type: string
         entityId:
           type: ["string", "null"]
+        actorName:
+          type: ["string", "null"]
+        previousValues:
+          type: ["object", "null"]
+          additionalProperties: true
+        newValues:
+          type: ["object", "null"]
+          additionalProperties: true
         createdAt:
           type: string
           format: date-time
@@ -552,4 +1216,257 @@ components:
         activatedAt:
           type: ["string", "null"]
           format: date-time
+    PartyCreateInput:
+      type: object
+      required: [partyType]
+      properties:
+        partyType: { type: string, enum: [organization, individual] }
+        businessNameEnglish: { type: [string, "null"] }
+        businessNameArabic: { type: [string, "null"] }
+        legalNameEnglish: { type: [string, "null"] }
+        legalNameArabic: { type: [string, "null"] }
+        firstName: { type: [string, "null"] }
+        lastName: { type: [string, "null"] }
+        arabicName: { type: [string, "null"] }
+        commercialRegistrationNumber: { type: [string, "null"] }
+        vatRegistered: { type: boolean, default: false }
+        vatNumber: { type: [string, "null"] }
+        primaryEmail: { type: [string, "null"], format: email }
+        primaryPhone: { type: [string, "null"] }
+        website: { type: [string, "null"], format: uri }
+        defaultCurrency: { type: string, default: SAR }
+        defaultLanguage: { type: string, enum: [en, ar], default: en }
+        notes: { type: [string, "null"] }
+        paymentTerms: { type: [string, "null"] }
+        creditLimit: { type: [string, "null"] }
+        taxTreatment: { type: [string, "null"] }
+    PartyUpdateInput:
+      allOf:
+        - $ref: "#/components/schemas/PartyCreateInput"
+    PartyStatusInput:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [active, inactive] }
+    PartyRoleInput:
+      type: object
+      properties:
+        paymentTerms: { type: [string, "null"] }
+        creditLimit: { type: [string, "null"] }
+        taxTreatment: { type: [string, "null"] }
+    PartyRole:
+      type: object
+      required: [id, role, partyNumber]
+      properties:
+        id: { type: string, format: uuid }
+        role: { type: string, enum: [customer, supplier] }
+        partyNumber: { type: string }
+        paymentTerms: { type: [string, "null"] }
+        creditLimit: { type: [string, "null"] }
+        taxTreatment: { type: [string, "null"] }
+    PartyListItem:
+      type: object
+      required: [id, displayName, partyType, status, roles, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        displayName: { type: string }
+        businessNameArabic: { type: [string, "null"] }
+        partyType: { type: string }
+        status: { type: string }
+        partyNumber: { type: [string, "null"] }
+        vatNumber: { type: [string, "null"] }
+        primaryEmail: { type: [string, "null"] }
+        primaryPhone: { type: [string, "null"] }
+        city: { type: [string, "null"] }
+        primaryContact: { type: [string, "null"] }
+        roles:
+          type: array
+          items: { $ref: "#/components/schemas/PartyRole" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    PartyListResponse:
+      type: object
+      required: [items, page, pageSize, total, summary]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/PartyListItem" }
+        page: { type: integer }
+        pageSize: { type: integer }
+        total: { type: integer }
+        summary:
+          type: object
+          required: [total, active, withBalance]
+          properties:
+            total: { type: integer }
+            active: { type: integer }
+            withBalance: { type: integer }
+    PartyDetail:
+      allOf:
+        - $ref: "#/components/schemas/PartyListItem"
+        - type: object
+          required: [roles, contacts, addresses, tags, documents]
+          properties:
+            roles:
+              type: array
+              items: { $ref: "#/components/schemas/PartyRole" }
+            contacts:
+              type: array
+              items: { $ref: "#/components/schemas/PartyContact" }
+            addresses:
+              type: array
+              items: { $ref: "#/components/schemas/PartyAddress" }
+            tags:
+              type: array
+              items: { $ref: "#/components/schemas/PartyTag" }
+            documents:
+              type: array
+              items: { $ref: "#/components/schemas/PartyDocument" }
+    PartyDuplicateInput:
+      type: object
+      properties:
+        businessNameEnglish: { type: [string, "null"] }
+        vatNumber: { type: [string, "null"] }
+        commercialRegistrationNumber: { type: [string, "null"] }
+        primaryEmail: { type: [string, "null"] }
+        primaryPhone: { type: [string, "null"] }
+    DuplicateWarning:
+      type: object
+      required: [partyId, displayName, strength, reason]
+      properties:
+        partyId: { type: string, format: uuid }
+        displayName: { type: string }
+        strength: { type: string, enum: [exact, possible] }
+        reason: { type: string }
+    PartyContactInput:
+      type: object
+      required: [firstName]
+      properties:
+        firstName: { type: string, minLength: 1 }
+        lastName: { type: [string, "null"] }
+        jobTitle: { type: [string, "null"] }
+        department: { type: [string, "null"] }
+        email: { type: [string, "null"], format: email }
+        phone: { type: [string, "null"] }
+        mobile: { type: [string, "null"] }
+        preferredLanguage: { type: string, enum: [en, ar] }
+        notes: { type: [string, "null"] }
+        isPrimary: { type: boolean, default: false }
+    PartyContact:
+      allOf:
+        - $ref: "#/components/schemas/PartyContactInput"
+        - type: object
+          required: [id, createdAt, updatedAt]
+          properties:
+            id: { type: string, format: uuid }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
+    PartyAddressInput:
+      type: object
+      properties:
+        label: { type: [string, "null"] }
+        addressType: { type: string, enum: [billing, shipping, registered, other] }
+        buildingNumber: { type: [string, "null"] }
+        street: { type: [string, "null"] }
+        district: { type: [string, "null"] }
+        city: { type: [string, "null"] }
+        province: { type: [string, "null"] }
+        postalCode: { type: [string, "null"] }
+        additionalNumber: { type: [string, "null"] }
+        country: { type: string, default: Saudi Arabia }
+        isDefaultBilling: { type: boolean, default: false }
+        isDefaultShipping: { type: boolean, default: false }
+    PartyAddress:
+      allOf:
+        - $ref: "#/components/schemas/PartyAddressInput"
+        - type: object
+          required: [id, createdAt, updatedAt]
+          properties:
+            id: { type: string, format: uuid }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
+    PartyTagInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1 }
+        color: { type: [string, "null"] }
+    PartyTag:
+      allOf:
+        - $ref: "#/components/schemas/PartyTagInput"
+        - type: object
+          required: [id, createdAt]
+          properties:
+            id: { type: string, format: uuid }
+            createdAt: { type: string, format: date-time }
+    PartyDocument:
+      type: object
+      required: [id, fileName, documentType, objectPath, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        fileName: { type: string }
+        documentType: { type: string }
+        objectPath: { type: string }
+        contentType: { type: [string, "null"] }
+        size: { type: [integer, "null"] }
+        createdAt: { type: string, format: date-time }
+    PartyDocumentInput:
+      type: object
+      required: [fileName, documentType, objectPath]
+      properties:
+        fileName: { type: string, minLength: 1, maxLength: 255 }
+        documentType: { type: string, minLength: 1, maxLength: 80 }
+        objectPath: { type: string, pattern: "^/objects/" }
+        contentType: { type: [string, "null"], maxLength: 160 }
+        size: { type: [integer, "null"], minimum: 0 }
+    PartyDocumentUpdateInput:
+      type: object
+      required: [fileName]
+      properties:
+        fileName: { type: string, minLength: 1, maxLength: 255 }
+    PartyImportInput:
+      type: object
+      properties:
+        csv: { type: [string, "null"] }
+        rows:
+          type: array
+          items: { type: object, additionalProperties: true }
+    PartyImportPreview:
+      type: object
+      required: [role, totalRows, validRows, errors, rows]
+      properties:
+        role: { type: string, enum: [customer, supplier] }
+        totalRows: { type: integer }
+        validRows: { type: integer }
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              row: { type: integer }
+              field: { type: string }
+              error: { type: string }
+        rows:
+          type: array
+          items: { type: object, additionalProperties: true }
+    PartyImportResult:
+      type: object
+      required: [imported, skipped]
+      properties:
+        imported: { type: integer }
+        skipped: { type: integer }
+    RequestUploadUrlInput:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name: { type: string }
+        size: { type: integer, minimum: 0 }
+        contentType: { type: string }
+    RequestUploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL: { type: string, format: uri }
+        objectPath: { type: string }
+        metadata: { type: object, additionalProperties: true }
 

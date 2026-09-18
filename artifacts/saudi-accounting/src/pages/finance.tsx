@@ -63,6 +63,11 @@ export function FinanceOverview() {
 
   const isEmtpy = !summary || !summary.recentTransactions?.length;
 
+  const hasCustomers = summary?.customerChecklist?.hasCustomers;
+  const completedSteps = 1 + (hasCustomers ? 1 : 0);
+  const totalSteps = 6;
+  const percent = Math.round((completedSteps / totalSteps) * 100);
+
   return (
     <div className="space-y-8 fade-up pb-12">
       <header className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -96,7 +101,7 @@ export function FinanceOverview() {
             </div>
             <div>
               <div className="font-bold text-sm">{t('Getting Started', 'البدء')}</div>
-               <div className="text-xs text-muted-foreground mt-0.5">{t('1 of 6 complete · 17%', 'اكتمل 1 من 6 · 17٪')}</div>
+               <div className="text-xs text-muted-foreground mt-0.5">{t(`${completedSteps} of ${totalSteps} complete · ${percent}%`, `اكتمل ${completedSteps} من ${totalSteps} · ${percent}٪`)}</div>
             </div>
           </div>
           <div className="text-muted-foreground transition-transform" style={{ transform: checklistOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>
@@ -113,13 +118,23 @@ export function FinanceOverview() {
                   <div className="text-sm font-semibold line-through text-muted-foreground">{t('Complete company profile', 'إكمال ملف المنشأة')}</div>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-3 rounded-xl border border-border bg-card">
-                <Circle size={16} className="text-muted-foreground shrink-0 mt-0.5" />
-                <div>
-                   <div className="text-sm font-semibold">{t('Add your first customer', 'إضافة أول عميل')}</div>
-                   <Link href="/sales" className="text-xs text-primary font-medium mt-1 inline-block">{t('Coming soon', 'قريباً')}</Link>
+
+              {summary?.customerChecklist?.hasCustomers ? (
+                <div className="flex items-start gap-3 p-3 rounded-xl border border-primary/20 bg-primary/5">
+                  <CheckCircle2 size={16} className="text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <div className="text-sm font-semibold line-through text-muted-foreground">{t('Add your first customer', 'إضافة أول عميل')}</div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-start gap-3 p-3 rounded-xl border border-border bg-card">
+                  <Circle size={16} className="text-muted-foreground shrink-0 mt-0.5" />
+                  <div>
+                     <div className="text-sm font-semibold">{t('Add your first customer', 'إضافة أول عميل')}</div>
+                     <Link href="/finance/customers?new=1" className="text-xs text-primary font-medium mt-1 inline-block">{t('Add Customer', 'إضافة عميل')}</Link>
+                  </div>
+                </div>
+              )}
               <div className="flex items-start gap-3 p-3 rounded-xl border border-border bg-card">
                 <Circle size={16} className="text-muted-foreground shrink-0 mt-0.5" />
                 <div>
@@ -225,7 +240,7 @@ export function FinanceOverview() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="soft-card p-5"><h2 className="font-bold">{t('Invoices', 'الفواتير')}</h2><div className="mt-4 grid grid-cols-2 gap-2 text-xs">{[t('Draft', 'مسودة'), t('Unpaid', 'غير مدفوعة'), t('Partially paid', 'مدفوعة جزئياً'), t('Paid', 'مدفوعة'), t('Overdue', 'متأخرة')].map(label => <div key={label} className="flex justify-between rounded-lg bg-muted/40 p-2"><span>{label}</span><b>0</b></div>)}</div><Button className="mt-4 w-full" onClick={() => alert(t('This feature is coming in the next setup stage.', 'هذه الميزة قادمة في مرحلة الإعداد التالية.'))}>{t('Create invoice', 'إنشاء فاتورة')}</Button></div>
-        <div className="soft-card p-5"><h2 className="font-bold">{t('Outstanding receivables', 'المستحقات القائمة')}</h2><div className="mt-5 text-2xl font-bold">SAR 0.00</div><div className="mt-4 space-y-2 text-sm text-muted-foreground"><div className="flex justify-between"><span>{t('Overdue', 'متأخرة')}</span><b className="text-foreground">SAR 0.00</b></div><div className="flex justify-between"><span>{t('Customers with balances', 'عملاء لديهم أرصدة')}</span><b className="text-foreground">0</b></div></div></div>
+        <div className="soft-card p-5"><h2 className="font-bold">{t('Outstanding receivables', 'المستحقات القائمة')}</h2><div className="mt-5 text-2xl font-bold">SAR 0.00</div><div className="mt-4 space-y-2 text-sm text-muted-foreground"><div className="flex justify-between"><span>{t('Overdue', 'متأخرة')}</span><b className="text-foreground">SAR 0.00</b></div><div className="flex justify-between"><span>{t('Total customers', 'إجمالي العملاء')}</span><b className="text-foreground">{summary?.customerCount || 0}</b></div></div></div>
         <div className="soft-card p-5"><h2 className="font-bold">{t('Expenses', 'المصروفات')}</h2><p className="mt-2 text-xs text-muted-foreground">{t('This month', 'هذا الشهر')}</p><div className="mt-3 text-2xl font-bold">SAR 0.00</div><p className="mt-4 text-sm text-muted-foreground">{t('No expenses recorded yet.', 'لم تُسجل مصروفات بعد.')}</p></div>
         <div className="soft-card p-5"><h2 className="font-bold">{t('VAT summary', 'ملخص ضريبة القيمة المضافة')}</h2><div className="mt-4 space-y-2 text-sm">{[[t('Output VAT', 'ضريبة المخرجات'), 'SAR 0.00'], [t('Input VAT', 'ضريبة المدخلات'), 'SAR 0.00'], [t('Net VAT', 'صافي الضريبة'), 'SAR 0.00']].map(([label, value]) => <div key={label} className="flex justify-between"><span className="text-muted-foreground">{label}</span><b>{value}</b></div>)}</div><p className="mt-4 text-xs text-muted-foreground">{t('No VAT transactions recorded. Nothing has been submitted to ZATCA.', 'لم تُسجل معاملات ضريبية ولم يتم تقديم أي بيانات إلى الهيئة.')}</p></div>
       </div>

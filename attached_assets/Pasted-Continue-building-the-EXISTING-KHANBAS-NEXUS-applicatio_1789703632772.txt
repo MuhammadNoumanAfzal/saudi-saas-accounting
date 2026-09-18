@@ -1,0 +1,1317 @@
+Continue building the EXISTING KHANBAS NEXUS application.
+
+Do NOT create a new project.
+Do NOT redesign the existing interface.
+Do NOT change the approved visual identity.
+Do NOT rebuild authentication, tenancy, RBAC or module architecture.
+
+==========================================================
+PHASE 4
+NEXUS FINANCE — CUSTOMERS & SUPPLIERS
+==========================================================
+
+We are now implementing the first real business-data functionality inside:
+
+KHANBAS NEXUS
+→ Nexus Finance
+
+Build:
+
+1. Shared Business Party architecture
+2. Customers
+3. Suppliers
+4. Contacts
+5. Addresses
+6. Tax/registration information
+7. Search/filtering
+8. Activity/history foundation
+9. Import/export foundation
+10. Proper permissions/audit logs
+
+This must be production-oriented.
+
+Do NOT implement invoices, quotations, purchase bills, payments or accounting postings yet.
+
+==========================================================
+1. IMPORTANT DATA MODEL DECISION
+==========================================================
+
+Do NOT create completely separate duplicated company records for customers and suppliers.
+
+Create a shared business entity concept.
+
+Use a model conceptually similar to:
+
+BusinessParty
+
+A BusinessParty represents a person or organization we do business with.
+
+A party can have one or multiple roles:
+
+CUSTOMER
+SUPPLIER
+
+Future roles may include:
+
+SUBCONTRACTOR
+PARTNER
+SERVICE_PROVIDER
+LANDLORD
+OTHER
+
+Do not implement future workflows now.
+
+Example:
+
+ABC Logistics may simultaneously be:
+
+Customer = YES
+Supplier = YES
+
+There should still be ONE master BusinessParty record.
+
+This is important for the future interconnected KHANBAS NEXUS platform.
+
+==========================================================
+2. TENANT OWNERSHIP
+==========================================================
+
+Every BusinessParty must belong to:
+
+organizationId
+
+Tenant isolation must be enforced SERVER-SIDE.
+
+Organization A must never access Organization B's:
+
+customers
+suppliers
+contacts
+addresses
+attachments
+activity
+
+even by manipulating IDs/API requests.
+
+==========================================================
+3. BUSINESS PARTY TYPES
+==========================================================
+
+Support:
+
+ORGANIZATION
+INDIVIDUAL
+
+Default:
+ORGANIZATION
+
+For Organization:
+
+Business Name
+Arabic Business Name
+Legal Name
+Arabic Legal Name
+
+For Individual:
+
+First Name
+Last Name
+Arabic Name where applicable
+
+The UI should adapt appropriately.
+
+==========================================================
+4. CUSTOMER DATA
+==========================================================
+
+Customer profile should support:
+
+Customer Number
+
+Business Type
+
+Business Name English
+Business Name Arabic
+
+Legal Name English
+Legal Name Arabic
+
+Display Name
+
+Commercial Registration Number
+
+VAT Registered
+Yes / No
+
+VAT Number
+
+Primary Email
+
+Primary Phone
+
+Website
+
+Default Currency
+
+Default Language
+
+Payment Terms
+
+Credit Limit
+
+Tax Treatment
+
+Notes
+
+Status
+
+Active
+Inactive
+
+Do not require unnecessary fields.
+
+Keep customer creation fast.
+
+==========================================================
+5. CUSTOMER NUMBER
+==========================================================
+
+Automatically generate customer numbers.
+
+Example:
+
+CUS-00001
+CUS-00002
+
+Sequence must be organization-specific.
+
+Do NOT use:
+
+record count + 1
+
+because concurrent requests can create duplicates.
+
+Use a safe sequence/counter architecture.
+
+Allow future customization of prefixes through settings.
+
+Do not implement customization UI unless simple.
+
+==========================================================
+6. SUPPLIER DATA
+==========================================================
+
+Supplier profile should support:
+
+Supplier Number
+
+Business Name English
+Business Name Arabic
+
+Legal Name English
+Legal Name Arabic
+
+Display Name
+
+Commercial Registration Number
+
+VAT Registered
+Yes / No
+
+VAT Number
+
+Primary Email
+
+Primary Phone
+
+Website
+
+Default Currency
+
+Payment Terms
+
+Tax Treatment
+
+Notes
+
+Status
+
+Active
+Inactive
+
+Supplier Number example:
+
+SUP-00001
+
+Use safe organization-specific sequencing.
+
+==========================================================
+7. SAUDI VAT VALIDATION
+==========================================================
+
+For Saudi VAT registered parties:
+
+Validate structural format.
+
+Saudi VAT Registration Number is expected to contain 15 digits.
+
+Do not claim that the number is verified with ZATCA.
+
+Label validation appropriately:
+
+Format valid
+
+NOT:
+
+ZATCA verified
+
+Prepare architecture for possible future verification integrations.
+
+==========================================================
+8. COMMERCIAL REGISTRATION
+==========================================================
+
+Allow Commercial Registration Number.
+
+Do not over-restrict format because registration identifiers and business scenarios may evolve.
+
+Store as string.
+
+Do not remove leading zeros.
+
+==========================================================
+9. ADDRESSES
+==========================================================
+
+A BusinessParty may have multiple addresses.
+
+Create:
+
+BusinessPartyAddress
+
+Address types:
+
+Billing
+Shipping
+Registered
+Other
+
+Fields:
+
+Address Label
+
+Building Number
+Street
+District
+City
+Province / Region
+Postal Code
+Additional Number
+Country
+
+Default country:
+
+Saudi Arabia
+
+Support:
+
+Set as default billing
+Set as default shipping
+
+One address may be both.
+
+Prepare this architecture for future invoice requirements.
+
+==========================================================
+10. CONTACT PERSONS
+==========================================================
+
+A BusinessParty may have multiple contacts.
+
+Create:
+
+BusinessPartyContact
+
+Fields:
+
+First Name
+Last Name
+Job Title
+Department
+Email
+Phone
+Mobile
+Preferred Language
+Notes
+
+Allow:
+
+Primary Contact
+
+Only one primary contact per party where appropriate.
+
+==========================================================
+11. TAGS
+==========================================================
+
+Prepare reusable organization-level tags.
+
+Examples:
+
+VIP
+Government
+Contractor
+Logistics
+Healthcare
+
+Do NOT seed these as actual customer data.
+
+Users can create tags.
+
+Tags should eventually be reusable across NEXUS.
+
+Use a shared tagging architecture rather than customer-specific hardcoding.
+
+==========================================================
+12. CUSTOMER LIST
+==========================================================
+
+Implement:
+
+Nexus Finance
+→ Sales
+→ Customers
+
+Page header:
+
+Customers
+
+Supporting text:
+
+Manage the businesses and people you sell to.
+
+Primary button:
+
++ New Customer
+
+Display useful summary indicators:
+
+Total Customers
+Active Customers
+Customers with Balance
+
+Since balances do not exist yet:
+
+Customers with Balance = 0
+
+Do not fabricate balances.
+
+==========================================================
+13. CUSTOMER TABLE
+==========================================================
+
+Columns:
+
+Customer
+Customer No.
+VAT Number
+Primary Contact
+Phone
+City
+Balance
+Status
+
+Balance:
+
+SAR 0.00
+
+until financial transactions exist.
+
+Do NOT store fake balance fields.
+
+Balance should eventually be calculated from accounting/receivable data.
+
+Actions:
+
+View
+Edit
+Deactivate
+
+Do NOT provide destructive Delete for parties already referenced by future transactions.
+
+For currently unused records, deletion may be supported only if safe, but prefer:
+
+Deactivate
+
+==========================================================
+14. CUSTOMER SEARCH
+==========================================================
+
+Search should support:
+
+Business name
+Arabic name
+Customer number
+VAT number
+CR number
+Email
+Phone
+
+Use debounced search.
+
+Search must be tenant-scoped.
+
+==========================================================
+15. CUSTOMER FILTERS
+==========================================================
+
+Filters:
+
+Status
+Customer Type
+VAT Registered
+City
+Tag
+
+Provide:
+
+Clear Filters
+
+Show active filter count.
+
+==========================================================
+16. CUSTOMER SORTING
+==========================================================
+
+Support:
+
+Name
+Customer Number
+Created Date
+Recently Updated
+
+Use server-side sorting/pagination where appropriate.
+
+Do not load unlimited customer records into browser memory.
+
+==========================================================
+17. NEW CUSTOMER EXPERIENCE
+==========================================================
+
+Click:
+
++ New Customer
+
+Open a polished customer creation experience.
+
+Use either:
+
+large side sheet
+
+OR
+
+dedicated page
+
+Choose whichever fits the current NEXUS UX better.
+
+Do not use a tiny modal for a complex customer record.
+
+==========================================================
+18. FAST CUSTOMER CREATION
+==========================================================
+
+The initial customer form must NOT overwhelm users.
+
+Start with:
+
+Customer Type
+Business Name
+Arabic Name
+VAT Registered
+VAT Number
+CR Number
+Email
+Phone
+City
+
+Then:
+
+More details
+
+expandable section for:
+
+Legal Names
+Website
+Payment Terms
+Credit Limit
+Addresses
+Contacts
+Notes
+Tags
+
+Goal:
+
+A user should be able to create a simple customer quickly.
+
+==========================================================
+19. DUPLICATE DETECTION
+==========================================================
+
+Before creating a BusinessParty, detect likely duplicates within SAME organization using:
+
+VAT Number
+CR Number
+Email
+Phone
+Similar Business Name
+
+Do not automatically block based only on similar name.
+
+Show:
+
+"Possible duplicate found"
+
+and allow user to inspect.
+
+VAT/CR exact duplicates should receive stronger warnings.
+
+Do NOT compare across organizations.
+
+==========================================================
+20. CUSTOMER PROFILE
+==========================================================
+
+Create a proper customer profile page.
+
+Header:
+
+Customer Name
+
+Customer Number
+
+Status
+
+Actions:
+
+Edit
+More
+
+Summary area:
+
+Outstanding Balance
+SAR 0.00
+
+Overdue
+SAR 0.00
+
+Total Sales
+SAR 0.00
+
+These must be derived placeholders until transaction modules exist.
+
+Do not store fake financial values.
+
+==========================================================
+21. CUSTOMER PROFILE TABS
+==========================================================
+
+Tabs:
+
+Overview
+Transactions
+Contacts
+Addresses
+Documents
+Activity
+
+OVERVIEW:
+
+Business information
+Tax information
+Contact information
+Payment preferences
+Notes
+
+TRANSACTIONS:
+
+Empty state:
+
+"No transactions yet."
+
+Future:
+
+Quotations
+Invoices
+Credit Notes
+Payments
+
+CONTACTS:
+
+Functional contact CRUD.
+
+ADDRESSES:
+
+Functional address CRUD.
+
+DOCUMENTS:
+
+Foundation only.
+
+ACTIVITY:
+
+Real customer-related audit/activity events.
+
+==========================================================
+22. CUSTOMER ACTIVITY
+==========================================================
+
+Activity should record actual events such as:
+
+Customer created
+Customer updated
+Contact added
+Address added
+Customer deactivated
+Customer reactivated
+
+Show:
+
+Actor
+Action
+Date/time
+
+Do not generate fake timeline events.
+
+==========================================================
+23. SUPPLIERS
+==========================================================
+
+Implement:
+
+Nexus Finance
+→ Purchases
+→ Suppliers
+
+Use the SAME BusinessParty foundation.
+
+Do NOT duplicate customer architecture unnecessarily.
+
+Supplier list should show:
+
+Supplier
+Supplier No.
+VAT Number
+Primary Contact
+Phone
+City
+Payable Balance
+Status
+
+Payable Balance:
+
+SAR 0.00
+
+until purchase/accounting functionality exists.
+
+==========================================================
+24. SUPPLIER PROFILE
+==========================================================
+
+Supplier profile tabs:
+
+Overview
+Transactions
+Contacts
+Addresses
+Documents
+Activity
+
+Future Transactions:
+
+Purchase Bills
+Expenses
+Payments
+Purchase Orders
+
+Do not implement those transactions now.
+
+==========================================================
+25. CUSTOMER + SUPPLIER ROLE
+==========================================================
+
+Allow an existing Customer to become a Supplier.
+
+Example action:
+
+More
+→ Add Supplier Role
+
+Do NOT duplicate the BusinessParty.
+
+Assign SUPPLIER role and generate appropriate supplier number.
+
+Similarly:
+
+Supplier
+→ Add Customer Role
+
+The same master record should now appear appropriately in both modules.
+
+==========================================================
+26. CONTACT REUSE
+==========================================================
+
+Contacts belong to BusinessParty, not CustomerRole or SupplierRole.
+
+If ABC Company is both customer and supplier:
+
+Its contacts should remain shared.
+
+Same for:
+
+Addresses
+CR
+VAT
+Business Names
+
+Role-specific commercial settings may remain role-specific where necessary.
+
+==========================================================
+27. ROLE-SPECIFIC SETTINGS
+==========================================================
+
+Customer-specific settings may include:
+
+Customer Number
+Sales Payment Terms
+Credit Limit
+Sales Account references later
+
+Supplier-specific settings may include:
+
+Supplier Number
+Purchase Payment Terms
+Supplier Account references later
+
+Do not mix these into shared identity unnecessarily.
+
+==========================================================
+28. DOCUMENTS
+==========================================================
+
+Prepare party document attachment architecture.
+
+Future documents may include:
+
+Commercial Registration
+VAT Certificate
+National Address
+Contract
+NDA
+Vendor Registration
+Other
+
+For now support basic:
+
+Upload
+Download
+Rename
+Remove if permitted
+
+Metadata:
+
+File Name
+Document Type
+Uploaded By
+Uploaded Date
+
+Use existing storage abstraction.
+
+Enforce organization isolation.
+
+==========================================================
+29. IMPORT CUSTOMERS
+==========================================================
+
+Implement CSV/XLSX import foundation for customers if practical.
+
+Provide:
+
+Download Template
+
+Columns:
+
+Business Name
+Arabic Name
+VAT Number
+CR Number
+Email
+Phone
+City
+Country
+
+Import process should:
+
+Upload
+Validate
+Preview
+Show errors
+Confirm Import
+
+Do not silently import invalid rows.
+
+If XLSX adds unnecessary complexity, implement CSV first cleanly.
+
+==========================================================
+30. EXPORT
+==========================================================
+
+Allow export of filtered customer/supplier lists.
+
+CSV is sufficient initially.
+
+Export only records user has permission to access.
+
+==========================================================
+31. PERMISSIONS
+==========================================================
+
+Register permissions:
+
+customers.view
+customers.create
+customers.edit
+customers.deactivate
+customers.export
+customers.import
+
+suppliers.view
+suppliers.create
+suppliers.edit
+suppliers.deactivate
+suppliers.export
+suppliers.import
+
+contacts.manage
+party_documents.manage
+
+Do not hardcode roles inside components.
+
+Use existing RBAC engine.
+
+==========================================================
+32. DEFAULT ROLE PERMISSIONS
+==========================================================
+
+Set sensible defaults.
+
+Owner:
+all
+
+Admin:
+all operational customer/supplier permissions
+
+Accountant:
+view/create/edit customers and suppliers as appropriate
+
+Sales:
+customer permissions
+
+Purchasing:
+supplier permissions
+
+Viewer:
+view only
+
+Preserve ability to customize later.
+
+==========================================================
+33. AUDIT LOG
+==========================================================
+
+Audit:
+
+BusinessParty created
+BusinessParty updated
+Role added
+Role removed where allowed
+Contact created/updated
+Address created/updated
+Document uploaded
+Status changed
+
+Include relevant before/after values where appropriate.
+
+Never log sensitive secrets.
+
+==========================================================
+34. DELETE POLICY
+==========================================================
+
+Be conservative.
+
+Use:
+
+Active
+Inactive
+
+for normal lifecycle.
+
+Do not permanently delete parties referenced by transactions.
+
+Since transactions do not exist yet, architecture must still anticipate this rule.
+
+==========================================================
+35. ARABIC
+==========================================================
+
+Translate ALL new UI.
+
+Use professional Saudi business terminology.
+
+Suggested terminology:
+
+Customers
+العملاء
+
+Customer
+العميل
+
+Suppliers
+الموردون
+
+Supplier
+المورد
+
+Commercial Registration
+السجل التجاري
+
+VAT Registration Number
+الرقم الضريبي
+
+Contact Person
+جهة الاتصال
+
+Billing Address
+عنوان الفوترة
+
+Shipping Address
+عنوان الشحن
+
+Payment Terms
+شروط الدفع
+
+Credit Limit
+الحد الائتماني
+
+Active
+نشط
+
+Inactive
+غير نشط
+
+Ensure proper RTL behavior.
+
+==========================================================
+36. MOBILE
+==========================================================
+
+Customer and Supplier modules must work on mobile.
+
+Do not squeeze full desktop tables onto tiny screens.
+
+Use responsive table/card strategy.
+
+Primary actions remain accessible.
+
+Customer profile tabs must remain usable.
+
+==========================================================
+37. EMPTY STATES
+==========================================================
+
+Customers empty state:
+
+"No customers yet."
+
+"Add your first customer to start preparing quotations and invoices."
+
+CTA:
+
+Add Customer
+
+Suppliers:
+
+"No suppliers yet."
+
+"Add suppliers to organize purchases and business expenses."
+
+CTA:
+
+Add Supplier
+
+Arabic equivalents required.
+
+==========================================================
+38. FINANCE DASHBOARD INTEGRATION
+==========================================================
+
+After first customer is created:
+
+Dashboard onboarding checklist:
+
+"Add your first customer"
+
+must automatically become completed.
+
+Do not manually toggle it.
+
+Customer count should come from actual records.
+
+Do not yet alter financial KPIs.
+
+==========================================================
+39. GLOBAL SEARCH INTEGRATION
+==========================================================
+
+Extend CTRL/CMD + K search.
+
+Search actual:
+
+Customers
+Suppliers
+
+Results should show:
+
+Name
+Type
+Customer/Supplier number
+
+Selecting result opens profile.
+
+Respect permissions and tenant isolation.
+
+==========================================================
+40. QUICK CREATE
+==========================================================
+
+Update global:
+
++ Create
+
+Customer:
+NOW FUNCTIONAL
+
+Supplier:
+NOW FUNCTIONAL
+
+Quotation:
+Coming Soon
+
+Invoice:
+Coming Soon
+
+Expense:
+Coming Soon
+
+Product:
+Coming Soon
+
+==========================================================
+41. API DESIGN
+==========================================================
+
+Create clean APIs/service boundaries for:
+
+BusinessParty
+Customer
+Supplier
+Contacts
+Addresses
+Documents
+
+All APIs must validate:
+
+Authentication
+Organization context
+Module entitlement
+Permission
+Input
+
+Never trust organizationId sent from frontend without validating current membership/context.
+
+==========================================================
+42. VALIDATION
+==========================================================
+
+Use Zod/server validation.
+
+Validate:
+
+Email
+Phone reasonably
+VAT number
+Required names
+Enum values
+IDs
+pagination
+sorting
+filters
+
+Do not rely solely on frontend validation.
+
+==========================================================
+43. DATABASE INDEXES
+==========================================================
+
+Add appropriate tenant-aware indexes for frequently searched fields such as:
+
+organizationId
+displayName
+customerNumber
+supplierNumber
+vatNumber
+crNumber
+email
+status
+
+Use composite indexes where appropriate.
+
+Avoid premature excessive indexing.
+
+==========================================================
+44. ACCOUNTING PREPARATION
+==========================================================
+
+DO NOT implement accounting entries.
+
+However, ensure customer/supplier architecture can later connect to:
+
+Accounts Receivable
+Accounts Payable
+Invoices
+Purchase Bills
+Payments
+Credit Notes
+Journal Entries
+
+Do not store current balance as an editable customer field.
+
+Balances must eventually be derived from transactions/ledger.
+
+==========================================================
+45. TESTING
+==========================================================
+
+Add automated tests for:
+
+Create customer
+Create supplier
+Customer becomes supplier
+Supplier becomes customer
+Organization isolation
+Permission enforcement
+Finance module entitlement
+VAT validation
+Customer sequence uniqueness
+Supplier sequence uniqueness
+Contact CRUD
+Address CRUD
+Deactivate/reactivate
+Search
+Filters
+Duplicate detection
+
+Most importantly:
+
+Organization A must NEVER retrieve Organization B's parties.
+
+==========================================================
+46. DEVELOPMENT DATA
+==========================================================
+
+Do NOT automatically seed fake customers into normal development organization.
+
+If test fixtures are needed, isolate them to automated tests.
+
+The user's real workspace should remain clean.
+
+==========================================================
+47. DESIGN QUALITY
+==========================================================
+
+Follow existing KHANBAS NEXUS design exactly.
+
+Do not introduce:
+
+new gradients
+random colors
+giant icons
+oversized headings
+generic admin tables
+unnecessary animations
+
+Customer/Supplier pages should feel like a natural continuation of the existing Finance dashboard.
+
+Make tables polished, compact and highly usable.
+
+==========================================================
+48. FINAL QA
+==========================================================
+
+Before completion test:
+
+English
+Arabic RTL
+Desktop
+Tablet
+Mobile
+
+Customer creation
+Customer editing
+Supplier creation
+Supplier editing
+Dual-role party
+Contacts
+Addresses
+Documents
+Search
+Filters
+Pagination
+Permissions
+Tenant isolation
+Audit log
+Global search
+Quick Create
+Dashboard checklist
+
+Run:
+
+database migrations
+tests
+TypeScript checks
+
+Fix console errors.
+
+==========================================================
+49. REPORT BACK
+==========================================================
+
+After completion provide:
+
+1. Database models/migrations created
+2. Routes/APIs created
+3. Customer functionality
+4. Supplier functionality
+5. Shared BusinessParty architecture
+6. Permissions registered
+7. Audit events
+8. Import/export status
+9. Arabic/RTL status
+10. Tenant-isolation test results
+11. Automated test results
+12. Known limitations
+
+STOP.
+
+Do NOT start Products, Quotations or Invoices automatically.

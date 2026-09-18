@@ -289,6 +289,11 @@ export type DashboardSummaryRecentTransactionsItem = {
   amount: string;
 };
 
+export type DashboardSummaryCustomerChecklist = {
+  hasCustomers: boolean;
+  complete: boolean;
+};
+
 export interface DashboardSummary {
   currency: string;
   revenue: string;
@@ -297,7 +302,20 @@ export interface DashboardSummary {
   netProfit: string;
   hasComparativeData: boolean;
   recentTransactions: DashboardSummaryRecentTransactionsItem[];
+  customerCount: number;
+  supplierCount: number;
+  customerChecklist: DashboardSummaryCustomerChecklist;
 }
+
+/**
+ * @nullable
+ */
+export type AuditLogPreviousValues = { [key: string]: unknown } | null;
+
+/**
+ * @nullable
+ */
+export type AuditLogNewValues = { [key: string]: unknown } | null;
 
 export interface AuditLog {
   id: string;
@@ -305,6 +323,12 @@ export interface AuditLog {
   entityType: string;
   /** @nullable */
   entityId?: string | null;
+  /** @nullable */
+  actorName?: string | null;
+  /** @nullable */
+  previousValues?: AuditLogPreviousValues;
+  /** @nullable */
+  newValues?: AuditLogNewValues;
   createdAt: string;
 }
 
@@ -361,4 +385,447 @@ export interface OrganizationModule {
   /** @nullable */
   activatedAt?: string | null;
 }
+
+export type PartyCreateInputPartyType = typeof PartyCreateInputPartyType[keyof typeof PartyCreateInputPartyType];
+
+
+export const PartyCreateInputPartyType = {
+  organization: 'organization',
+  individual: 'individual',
+} as const;
+
+export type PartyCreateInputDefaultLanguage = typeof PartyCreateInputDefaultLanguage[keyof typeof PartyCreateInputDefaultLanguage];
+
+
+export const PartyCreateInputDefaultLanguage = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export interface PartyCreateInput {
+  partyType: PartyCreateInputPartyType;
+  /** @nullable */
+  businessNameEnglish?: string | null;
+  /** @nullable */
+  businessNameArabic?: string | null;
+  /** @nullable */
+  legalNameEnglish?: string | null;
+  /** @nullable */
+  legalNameArabic?: string | null;
+  /** @nullable */
+  firstName?: string | null;
+  /** @nullable */
+  lastName?: string | null;
+  /** @nullable */
+  arabicName?: string | null;
+  /** @nullable */
+  commercialRegistrationNumber?: string | null;
+  vatRegistered?: boolean;
+  /** @nullable */
+  vatNumber?: string | null;
+  /** @nullable */
+  primaryEmail?: string | null;
+  /** @nullable */
+  primaryPhone?: string | null;
+  /** @nullable */
+  website?: string | null;
+  defaultCurrency?: string;
+  defaultLanguage?: PartyCreateInputDefaultLanguage;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  paymentTerms?: string | null;
+  /** @nullable */
+  creditLimit?: string | null;
+  /** @nullable */
+  taxTreatment?: string | null;
+}
+
+export type PartyUpdateInput = PartyCreateInput;
+
+export type PartyStatusInputStatus = typeof PartyStatusInputStatus[keyof typeof PartyStatusInputStatus];
+
+
+export const PartyStatusInputStatus = {
+  active: 'active',
+  inactive: 'inactive',
+} as const;
+
+export interface PartyStatusInput {
+  status: PartyStatusInputStatus;
+}
+
+export interface PartyRoleInput {
+  /** @nullable */
+  paymentTerms?: string | null;
+  /** @nullable */
+  creditLimit?: string | null;
+  /** @nullable */
+  taxTreatment?: string | null;
+}
+
+export type PartyRoleRole = typeof PartyRoleRole[keyof typeof PartyRoleRole];
+
+
+export const PartyRoleRole = {
+  customer: 'customer',
+  supplier: 'supplier',
+} as const;
+
+export interface PartyRole {
+  id: string;
+  role: PartyRoleRole;
+  partyNumber: string;
+  /** @nullable */
+  paymentTerms?: string | null;
+  /** @nullable */
+  creditLimit?: string | null;
+  /** @nullable */
+  taxTreatment?: string | null;
+}
+
+export interface PartyListItem {
+  id: string;
+  displayName: string;
+  /** @nullable */
+  businessNameArabic?: string | null;
+  partyType: string;
+  status: string;
+  /** @nullable */
+  partyNumber?: string | null;
+  /** @nullable */
+  vatNumber?: string | null;
+  /** @nullable */
+  primaryEmail?: string | null;
+  /** @nullable */
+  primaryPhone?: string | null;
+  /** @nullable */
+  city?: string | null;
+  /** @nullable */
+  primaryContact?: string | null;
+  roles: PartyRole[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PartyListResponseSummary = {
+  total: number;
+  active: number;
+  withBalance: number;
+};
+
+export interface PartyListResponse {
+  items: PartyListItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  summary: PartyListResponseSummary;
+}
+
+export type PartyContactInputPreferredLanguage = typeof PartyContactInputPreferredLanguage[keyof typeof PartyContactInputPreferredLanguage];
+
+
+export const PartyContactInputPreferredLanguage = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export interface PartyContactInput {
+  /** @minLength 1 */
+  firstName: string;
+  /** @nullable */
+  lastName?: string | null;
+  /** @nullable */
+  jobTitle?: string | null;
+  /** @nullable */
+  department?: string | null;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  mobile?: string | null;
+  preferredLanguage?: PartyContactInputPreferredLanguage;
+  /** @nullable */
+  notes?: string | null;
+  isPrimary?: boolean;
+}
+
+export type PartyContact = PartyContactInput & {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PartyAddressInputAddressType = typeof PartyAddressInputAddressType[keyof typeof PartyAddressInputAddressType];
+
+
+export const PartyAddressInputAddressType = {
+  billing: 'billing',
+  shipping: 'shipping',
+  registered: 'registered',
+  other: 'other',
+} as const;
+
+export interface PartyAddressInput {
+  /** @nullable */
+  label?: string | null;
+  addressType?: PartyAddressInputAddressType;
+  /** @nullable */
+  buildingNumber?: string | null;
+  /** @nullable */
+  street?: string | null;
+  /** @nullable */
+  district?: string | null;
+  /** @nullable */
+  city?: string | null;
+  /** @nullable */
+  province?: string | null;
+  /** @nullable */
+  postalCode?: string | null;
+  /** @nullable */
+  additionalNumber?: string | null;
+  country?: string;
+  isDefaultBilling?: boolean;
+  isDefaultShipping?: boolean;
+}
+
+export type PartyAddress = PartyAddressInput & {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export interface PartyTagInput {
+  /** @minLength 1 */
+  name: string;
+  /** @nullable */
+  color?: string | null;
+}
+
+export type PartyTag = PartyTagInput & {
+  id: string;
+  createdAt: string;
+};
+
+export interface PartyDocument {
+  id: string;
+  fileName: string;
+  documentType: string;
+  objectPath: string;
+  /** @nullable */
+  contentType?: string | null;
+  /** @nullable */
+  size?: number | null;
+  createdAt: string;
+}
+
+export type PartyDetail = PartyListItem & {
+  roles: PartyRole[];
+  contacts: PartyContact[];
+  addresses: PartyAddress[];
+  tags: PartyTag[];
+  documents: PartyDocument[];
+};
+
+export interface PartyDuplicateInput {
+  /** @nullable */
+  businessNameEnglish?: string | null;
+  /** @nullable */
+  vatNumber?: string | null;
+  /** @nullable */
+  commercialRegistrationNumber?: string | null;
+  /** @nullable */
+  primaryEmail?: string | null;
+  /** @nullable */
+  primaryPhone?: string | null;
+}
+
+export type DuplicateWarningStrength = typeof DuplicateWarningStrength[keyof typeof DuplicateWarningStrength];
+
+
+export const DuplicateWarningStrength = {
+  exact: 'exact',
+  possible: 'possible',
+} as const;
+
+export interface DuplicateWarning {
+  partyId: string;
+  displayName: string;
+  strength: DuplicateWarningStrength;
+  reason: string;
+}
+
+export interface PartyDocumentInput {
+  /**
+     * @minLength 1
+     * @maxLength 255
+     */
+  fileName: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  documentType: string;
+  /** @pattern ^/objects/ */
+  objectPath: string;
+  /**
+     * @maxLength 160
+     * @nullable
+     */
+  contentType?: string | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  size?: number | null;
+}
+
+export interface PartyDocumentUpdateInput {
+  /**
+     * @minLength 1
+     * @maxLength 255
+     */
+  fileName: string;
+}
+
+export type PartyImportInputRowsItem = { [key: string]: unknown };
+
+export interface PartyImportInput {
+  /** @nullable */
+  csv?: string | null;
+  rows?: PartyImportInputRowsItem[];
+}
+
+export type PartyImportPreviewRole = typeof PartyImportPreviewRole[keyof typeof PartyImportPreviewRole];
+
+
+export const PartyImportPreviewRole = {
+  customer: 'customer',
+  supplier: 'supplier',
+} as const;
+
+export type PartyImportPreviewErrorsItem = {
+  row?: number;
+  field?: string;
+  error?: string;
+};
+
+export type PartyImportPreviewRowsItem = { [key: string]: unknown };
+
+export interface PartyImportPreview {
+  role: PartyImportPreviewRole;
+  totalRows: number;
+  validRows: number;
+  errors: PartyImportPreviewErrorsItem[];
+  rows: PartyImportPreviewRowsItem[];
+}
+
+export interface PartyImportResult {
+  imported: number;
+  skipped: number;
+}
+
+export interface RequestUploadUrlInput {
+  name: string;
+  /** @minimum 0 */
+  size: number;
+  contentType: string;
+}
+
+export type RequestUploadUrlResponseMetadata = { [key: string]: unknown };
+
+export interface RequestUploadUrlResponse {
+  uploadURL: string;
+  objectPath: string;
+  metadata?: RequestUploadUrlResponseMetadata;
+}
+
+export type PartySearchParameter = string;
+
+export type PartyPageParameter = number;
+
+export type PartyPageSizeParameter = number;
+
+export type PartySortParameter = typeof PartySortParameter[keyof typeof PartySortParameter];
+
+
+export const PartySortParameter = {
+  name: 'name',
+  number: 'number',
+  created: 'created',
+  updated: 'updated',
+} as const;
+
+export type PartyStatusParameter = typeof PartyStatusParameter[keyof typeof PartyStatusParameter];
+
+
+export const PartyStatusParameter = {
+  active: 'active',
+  inactive: 'inactive',
+} as const;
+
+export type PartyTypeParameter = typeof PartyTypeParameter[keyof typeof PartyTypeParameter];
+
+
+export const PartyTypeParameter = {
+  organization: 'organization',
+  individual: 'individual',
+} as const;
+
+export type PartyVatRegisteredParameter = boolean;
+
+export type PartyCityParameter = string;
+
+export type PartyTagParameter = string;
+
+export type GetCustomersParams = {
+search?: PartySearchParameter;
+/**
+ * @minimum 1
+ */
+page?: PartyPageParameter;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PartyPageSizeParameter;
+sort?: PartySortParameter;
+status?: PartyStatusParameter;
+partyType?: PartyTypeParameter;
+vatRegistered?: PartyVatRegisteredParameter;
+city?: PartyCityParameter;
+tagId?: PartyTagParameter;
+};
+
+export type GetSuppliersParams = {
+search?: PartySearchParameter;
+/**
+ * @minimum 1
+ */
+page?: PartyPageParameter;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PartyPageSizeParameter;
+sort?: PartySortParameter;
+status?: PartyStatusParameter;
+partyType?: PartyTypeParameter;
+vatRegistered?: PartyVatRegisteredParameter;
+city?: PartyCityParameter;
+tagId?: PartyTagParameter;
+};
+
+export type FindPartiesParams = {
+/**
+ * @minLength 1
+ */
+q: string;
+};
+
+export type ExportPartiesParams = {
+search?: PartySearchParameter;
+status?: PartyStatusParameter;
+};
 

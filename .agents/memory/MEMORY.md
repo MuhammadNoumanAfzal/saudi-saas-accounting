@@ -1,1 +1,2 @@
 - [Drizzle foreign-key rollout](drizzle-foreign-key-rollout.md) — referenced unique keys may need their constraint established before a new FK table is pushed.
+- [Express route specificity](express-route-specificity.md) — register fixed suffix routes before generic identifier routes so words like export are not parsed as IDs.

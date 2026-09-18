@@ -26,6 +26,11 @@ import { ErrorBoundary } from '@/components/error-boundary';
 
 import './index.css';
 
+import { Customers } from './pages/customers';
+import { CustomerDetail } from './pages/customer-detail';
+import { Suppliers } from './pages/suppliers';
+import { SupplierDetail } from './pages/supplier-detail';
+
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
@@ -211,6 +216,38 @@ export default function App() {
             </Route>
             <Route path="/settings/language">
               <AuthGuard><LanguageSettings /></AuthGuard>
+            </Route>
+
+            <Route path="/finance/customers">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <Customers />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
+            <Route path="/finance/customers/:id">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <CustomerDetail />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
+            <Route path="/finance/suppliers">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <Suppliers />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
+            <Route path="/finance/suppliers/:id">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <SupplierDetail />
+                </ModuleGuard>
+              </AuthGuard>
             </Route>
 
             {/* Placeholders for coming soon routes */}

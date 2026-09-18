@@ -19,3 +19,4 @@
 
 export * from "./foundation";
 export * from "./module-entitlements";
+export * from "./parties";

@@ -304,7 +304,13 @@ export const GetDashboardSummaryResponse = zod.object({
   "id": zod.string(),
   "label": zod.string(),
   "amount": zod.string()
-}))
+})),
+  "customerCount": zod.number().int(),
+  "supplierCount": zod.number().int(),
+  "customerChecklist": zod.object({
+  "hasCustomers": zod.boolean(),
+  "complete": zod.boolean()
+})
 })
 
 
@@ -320,6 +326,9 @@ export const ListAuditLogsResponseItem = zod.object({
   "action": zod.string(),
   "entityType": zod.string(),
   "entityId": zod.string().nullish(),
+  "actorName": zod.string().nullish(),
+  "previousValues": zod.record(zod.string(), zod.unknown()).nullish(),
+  "newValues": zod.record(zod.string(), zod.unknown()).nullish(),
   "createdAt": zod.coerce.date()
 })
 export const ListAuditLogsResponse = zod.array(ListAuditLogsResponseItem)
@@ -373,5 +382,1479 @@ export const ListOrganizationModulesResponseItem = zod.object({
   "activatedAt": zod.coerce.date().nullish()
 })
 export const ListOrganizationModulesResponse = zod.array(ListOrganizationModulesResponseItem)
+
+
+export const GetCustomersParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const getCustomersQueryPageDefault = 1;
+
+export const getCustomersQueryPageSizeDefault = 25;
+export const getCustomersQueryPageSizeMax = 100;
+
+export const getCustomersQuerySortDefault = `name`;
+
+export const GetCustomersQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "page": zod.coerce.number().int().min(1).default(getCustomersQueryPageDefault),
+  "pageSize": zod.coerce.number().int().min(1).max(getCustomersQueryPageSizeMax).default(getCustomersQueryPageSizeDefault),
+  "sort": zod.enum(['name', 'number', 'created', 'updated']).default(getCustomersQuerySortDefault),
+  "status": zod.enum(['active', 'inactive']).optional(),
+  "partyType": zod.enum(['organization', 'individual']).optional(),
+  "vatRegistered": zod.coerce.boolean().optional(),
+  "city": zod.coerce.string().optional(),
+  "tagId": zod.coerce.string().uuid().optional()
+})
+
+export const GetCustomersResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "displayName": zod.string(),
+  "businessNameArabic": zod.string().nullish(),
+  "partyType": zod.string(),
+  "status": zod.string(),
+  "partyNumber": zod.string().nullish(),
+  "vatNumber": zod.string().nullish(),
+  "primaryEmail": zod.string().nullish(),
+  "primaryPhone": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "primaryContact": zod.string().nullish(),
+  "roles": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "role": zod.enum(['customer', 'supplier']),
+  "partyNumber": zod.string(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "page": zod.number().int(),
+  "pageSize": zod.number().int(),
+  "total": zod.number().int(),
+  "summary": zod.object({
+  "total": zod.number().int(),
+  "active": zod.number().int(),
+  "withBalance": zod.number().int()
+})
+})
+
+
+export const CreateCustomerParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const createCustomerBodyVatRegisteredDefault = false;
+export const createCustomerBodyDefaultCurrencyDefault = `SAR`;
+export const createCustomerBodyDefaultLanguageDefault = `en`;
+
+export const CreateCustomerBody = zod.object({
+  "partyType": zod.enum(['organization', 'individual']),
+  "businessNameEnglish": zod.string().nullish(),
+  "businessNameArabic": zod.string().nullish(),
+  "legalNameEnglish": zod.string().nullish(),
+  "legalNameArabic": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "arabicName": zod.string().nullish(),
+  "commercialRegistrationNumber": zod.string().nullish(),
+  "vatRegistered": zod.boolean().default(createCustomerBodyVatRegisteredDefault),
+  "vatNumber": zod.string().nullish(),
+  "primaryEmail": zod.string().email().nullish(),
+  "primaryPhone": zod.string().nullish(),
+  "website": zod.string().url().nullish(),
+  "defaultCurrency": zod.string().default(createCustomerBodyDefaultCurrencyDefault),
+  "defaultLanguage": zod.enum(['en', 'ar']).default(createCustomerBodyDefaultLanguageDefault),
+  "notes": zod.string().nullish(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})
+
+
+export const createCustomerResponseTwoContactsItemOneIsPrimaryDefault = false;
+export const createCustomerResponseTwoAddressesItemOneCountryDefault = `Saudi Arabia`;
+export const createCustomerResponseTwoAddressesItemOneIsDefaultBillingDefault = false;
+export const createCustomerResponseTwoAddressesItemOneIsDefaultShippingDefault = false;
+
+
+export const CreateCustomerResponse = zod.object({
+  "id": zod.string().uuid(),
+  "displayName": zod.string(),
+  "businessNameArabic": zod.string().nullish(),
+  "partyType": zod.string(),
+  "status": zod.string(),
+  "partyNumber": zod.string().nullish(),
+  "vatNumber": zod.string().nullish(),
+  "primaryEmail": zod.string().nullish(),
+  "primaryPhone": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "primaryContact": zod.string().nullish(),
+  "roles": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "role": zod.enum(['customer', 'supplier']),
+  "partyNumber": zod.string(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "roles": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "role": zod.enum(['customer', 'supplier']),
+  "partyNumber": zod.string(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})),
+  "contacts": zod.array(zod.object({
+  "firstName": zod.string().min(1),
+  "lastName": zod.string().nullish(),
+  "jobTitle": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "email": zod.string().email().nullish(),
+  "phone": zod.string().nullish(),
+  "mobile": zod.string().nullish(),
+  "preferredLanguage": zod.enum(['en', 'ar']).optional(),
+  "notes": zod.string().nullish(),
+  "isPrimary": zod.boolean().default(createCustomerResponseTwoContactsItemOneIsPrimaryDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))),
+  "addresses": zod.array(zod.object({
+  "label": zod.string().nullish(),
+  "addressType": zod.enum(['billing', 'shipping', 'registered', 'other']).optional(),
+  "buildingNumber": zod.string().nullish(),
+  "street": zod.string().nullish(),
+  "district": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "province": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
+  "additionalNumber": zod.string().nullish(),
+  "country": zod.string().default(createCustomerResponseTwoAddressesItemOneCountryDefault),
+  "isDefaultBilling": zod.boolean().default(createCustomerResponseTwoAddressesItemOneIsDefaultBillingDefault),
+  "isDefaultShipping": zod.boolean().default(createCustomerResponseTwoAddressesItemOneIsDefaultShippingDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))),
+  "tags": zod.array(zod.object({
+  "name": zod.string().min(1),
+  "color": zod.string().nullish()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date()
+}))),
+  "documents": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "fileName": zod.string(),
+  "documentType": zod.string(),
+  "objectPath": zod.string(),
+  "contentType": zod.string().nullish(),
+  "size": zod.number().int().nullish(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+export const GetSuppliersParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const getSuppliersQueryPageDefault = 1;
+
+export const getSuppliersQueryPageSizeDefault = 25;
+export const getSuppliersQueryPageSizeMax = 100;
+
+export const getSuppliersQuerySortDefault = `name`;
+
+export const GetSuppliersQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "page": zod.coerce.number().int().min(1).default(getSuppliersQueryPageDefault),
+  "pageSize": zod.coerce.number().int().min(1).max(getSuppliersQueryPageSizeMax).default(getSuppliersQueryPageSizeDefault),
+  "sort": zod.enum(['name', 'number', 'created', 'updated']).default(getSuppliersQuerySortDefault),
+  "status": zod.enum(['active', 'inactive']).optional(),
+  "partyType": zod.enum(['organization', 'individual']).optional(),
+  "vatRegistered": zod.coerce.boolean().optional(),
+  "city": zod.coerce.string().optional(),
+  "tagId": zod.coerce.string().uuid().optional()
+})
+
+export const GetSuppliersResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "displayName": zod.string(),
+  "businessNameArabic": zod.string().nullish(),
+  "partyType": zod.string(),
+  "status": zod.string(),
+  "partyNumber": zod.string().nullish(),
+  "vatNumber": zod.string().nullish(),
+  "primaryEmail": zod.string().nullish(),
+  "primaryPhone": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "primaryContact": zod.string().nullish(),
+  "roles": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "role": zod.enum(['customer', 'supplier']),
+  "partyNumber": zod.string(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "page": zod.number().int(),
+  "pageSize": zod.number().int(),
+  "total": zod.number().int(),
+  "summary": zod.object({
+  "total": zod.number().int(),
+  "active": zod.number().int(),
+  "withBalance": zod.number().int()
+})
+})
+
+
+export const CreateSupplierParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const createSupplierBodyVatRegisteredDefault = false;
+export const createSupplierBodyDefaultCurrencyDefault = `SAR`;
+export const createSupplierBodyDefaultLanguageDefault = `en`;
+
+export const CreateSupplierBody = zod.object({
+  "partyType": zod.enum(['organization', 'individual']),
+  "businessNameEnglish": zod.string().nullish(),
+  "businessNameArabic": zod.string().nullish(),
+  "legalNameEnglish": zod.string().nullish(),
+  "legalNameArabic": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "arabicName": zod.string().nullish(),
+  "commercialRegistrationNumber": zod.string().nullish(),
+  "vatRegistered": zod.boolean().default(createSupplierBodyVatRegisteredDefault),
+  "vatNumber": zod.string().nullish(),
+  "primaryEmail": zod.string().email().nullish(),
+  "primaryPhone": zod.string().nullish(),
+  "website": zod.string().url().nullish(),
+  "defaultCurrency": zod.string().default(createSupplierBodyDefaultCurrencyDefault),
+  "defaultLanguage": zod.enum(['en', 'ar']).default(createSupplierBodyDefaultLanguageDefault),
+  "notes": zod.string().nullish(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})
+
+
+export const createSupplierResponseTwoContactsItemOneIsPrimaryDefault = false;
+export const createSupplierResponseTwoAddressesItemOneCountryDefault = `Saudi Arabia`;
+export const createSupplierResponseTwoAddressesItemOneIsDefaultBillingDefault = false;
+export const createSupplierResponseTwoAddressesItemOneIsDefaultShippingDefault = false;
+
+
+export const CreateSupplierResponse = zod.object({
+  "id": zod.string().uuid(),
+  "displayName": zod.string(),
+  "businessNameArabic": zod.string().nullish(),
+  "partyType": zod.string(),
+  "status": zod.string(),
+  "partyNumber": zod.string().nullish(),
+  "vatNumber": zod.string().nullish(),
+  "primaryEmail": zod.string().nullish(),
+  "primaryPhone": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "primaryContact": zod.string().nullish(),
+  "roles": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "role": zod.enum(['customer', 'supplier']),
+  "partyNumber": zod.string(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "roles": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "role": zod.enum(['customer', 'supplier']),
+  "partyNumber": zod.string(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})),
+  "contacts": zod.array(zod.object({
+  "firstName": zod.string().min(1),
+  "lastName": zod.string().nullish(),
+  "jobTitle": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "email": zod.string().email().nullish(),
+  "phone": zod.string().nullish(),
+  "mobile": zod.string().nullish(),
+  "preferredLanguage": zod.enum(['en', 'ar']).optional(),
+  "notes": zod.string().nullish(),
+  "isPrimary": zod.boolean().default(createSupplierResponseTwoContactsItemOneIsPrimaryDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))),
+  "addresses": zod.array(zod.object({
+  "label": zod.string().nullish(),
+  "addressType": zod.enum(['billing', 'shipping', 'registered', 'other']).optional(),
+  "buildingNumber": zod.string().nullish(),
+  "street": zod.string().nullish(),
+  "district": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "province": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
+  "additionalNumber": zod.string().nullish(),
+  "country": zod.string().default(createSupplierResponseTwoAddressesItemOneCountryDefault),
+  "isDefaultBilling": zod.boolean().default(createSupplierResponseTwoAddressesItemOneIsDefaultBillingDefault),
+  "isDefaultShipping": zod.boolean().default(createSupplierResponseTwoAddressesItemOneIsDefaultShippingDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))),
+  "tags": zod.array(zod.object({
+  "name": zod.string().min(1),
+  "color": zod.string().nullish()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date()
+}))),
+  "documents": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "fileName": zod.string(),
+  "documentType": zod.string(),
+  "objectPath": zod.string(),
+  "contentType": zod.string().nullish(),
+  "size": zod.number().int().nullish(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+export const GetCustomerParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid()
+})
+
+
+export const getCustomerResponseTwoContactsItemOneIsPrimaryDefault = false;
+export const getCustomerResponseTwoAddressesItemOneCountryDefault = `Saudi Arabia`;
+export const getCustomerResponseTwoAddressesItemOneIsDefaultBillingDefault = false;
+export const getCustomerResponseTwoAddressesItemOneIsDefaultShippingDefault = false;
+
+
+export const GetCustomerResponse = zod.object({
+  "id": zod.string().uuid(),
+  "displayName": zod.string(),
+  "businessNameArabic": zod.string().nullish(),
+  "partyType": zod.string(),
+  "status": zod.string(),
+  "partyNumber": zod.string().nullish(),
+  "vatNumber": zod.string().nullish(),
+  "primaryEmail": zod.string().nullish(),
+  "primaryPhone": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "primaryContact": zod.string().nullish(),
+  "roles": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "role": zod.enum(['customer', 'supplier']),
+  "partyNumber": zod.string(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "roles": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "role": zod.enum(['customer', 'supplier']),
+  "partyNumber": zod.string(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})),
+  "contacts": zod.array(zod.object({
+  "firstName": zod.string().min(1),
+  "lastName": zod.string().nullish(),
+  "jobTitle": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "email": zod.string().email().nullish(),
+  "phone": zod.string().nullish(),
+  "mobile": zod.string().nullish(),
+  "preferredLanguage": zod.enum(['en', 'ar']).optional(),
+  "notes": zod.string().nullish(),
+  "isPrimary": zod.boolean().default(getCustomerResponseTwoContactsItemOneIsPrimaryDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))),
+  "addresses": zod.array(zod.object({
+  "label": zod.string().nullish(),
+  "addressType": zod.enum(['billing', 'shipping', 'registered', 'other']).optional(),
+  "buildingNumber": zod.string().nullish(),
+  "street": zod.string().nullish(),
+  "district": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "province": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
+  "additionalNumber": zod.string().nullish(),
+  "country": zod.string().default(getCustomerResponseTwoAddressesItemOneCountryDefault),
+  "isDefaultBilling": zod.boolean().default(getCustomerResponseTwoAddressesItemOneIsDefaultBillingDefault),
+  "isDefaultShipping": zod.boolean().default(getCustomerResponseTwoAddressesItemOneIsDefaultShippingDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))),
+  "tags": zod.array(zod.object({
+  "name": zod.string().min(1),
+  "color": zod.string().nullish()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date()
+}))),
+  "documents": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "fileName": zod.string(),
+  "documentType": zod.string(),
+  "objectPath": zod.string(),
+  "contentType": zod.string().nullish(),
+  "size": zod.number().int().nullish(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+export const UpdateCustomerParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid()
+})
+
+export const updateCustomerBodyOneVatRegisteredDefault = false;
+export const updateCustomerBodyOneDefaultCurrencyDefault = `SAR`;
+export const updateCustomerBodyOneDefaultLanguageDefault = `en`;
+
+export const UpdateCustomerBody = zod.object({
+  "partyType": zod.enum(['organization', 'individual']),
+  "businessNameEnglish": zod.string().nullish(),
+  "businessNameArabic": zod.string().nullish(),
+  "legalNameEnglish": zod.string().nullish(),
+  "legalNameArabic": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "arabicName": zod.string().nullish(),
+  "commercialRegistrationNumber": zod.string().nullish(),
+  "vatRegistered": zod.boolean().default(updateCustomerBodyOneVatRegisteredDefault),
+  "vatNumber": zod.string().nullish(),
+  "primaryEmail": zod.string().email().nullish(),
+  "primaryPhone": zod.string().nullish(),
+  "website": zod.string().url().nullish(),
+  "defaultCurrency": zod.string().default(updateCustomerBodyOneDefaultCurrencyDefault),
+  "defaultLanguage": zod.enum(['en', 'ar']).default(updateCustomerBodyOneDefaultLanguageDefault),
+  "notes": zod.string().nullish(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})
+
+
+export const updateCustomerResponseTwoContactsItemOneIsPrimaryDefault = false;
+export const updateCustomerResponseTwoAddressesItemOneCountryDefault = `Saudi Arabia`;
+export const updateCustomerResponseTwoAddressesItemOneIsDefaultBillingDefault = false;
+export const updateCustomerResponseTwoAddressesItemOneIsDefaultShippingDefault = false;
+
+
+export const UpdateCustomerResponse = zod.object({
+  "id": zod.string().uuid(),
+  "displayName": zod.string(),
+  "businessNameArabic": zod.string().nullish(),
+  "partyType": zod.string(),
+  "status": zod.string(),
+  "partyNumber": zod.string().nullish(),
+  "vatNumber": zod.string().nullish(),
+  "primaryEmail": zod.string().nullish(),
+  "primaryPhone": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "primaryContact": zod.string().nullish(),
+  "roles": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "role": zod.enum(['customer', 'supplier']),
+  "partyNumber": zod.string(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "roles": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "role": zod.enum(['customer', 'supplier']),
+  "partyNumber": zod.string(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})),
+  "contacts": zod.array(zod.object({
+  "firstName": zod.string().min(1),
+  "lastName": zod.string().nullish(),
+  "jobTitle": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "email": zod.string().email().nullish(),
+  "phone": zod.string().nullish(),
+  "mobile": zod.string().nullish(),
+  "preferredLanguage": zod.enum(['en', 'ar']).optional(),
+  "notes": zod.string().nullish(),
+  "isPrimary": zod.boolean().default(updateCustomerResponseTwoContactsItemOneIsPrimaryDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))),
+  "addresses": zod.array(zod.object({
+  "label": zod.string().nullish(),
+  "addressType": zod.enum(['billing', 'shipping', 'registered', 'other']).optional(),
+  "buildingNumber": zod.string().nullish(),
+  "street": zod.string().nullish(),
+  "district": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "province": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
+  "additionalNumber": zod.string().nullish(),
+  "country": zod.string().default(updateCustomerResponseTwoAddressesItemOneCountryDefault),
+  "isDefaultBilling": zod.boolean().default(updateCustomerResponseTwoAddressesItemOneIsDefaultBillingDefault),
+  "isDefaultShipping": zod.boolean().default(updateCustomerResponseTwoAddressesItemOneIsDefaultShippingDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))),
+  "tags": zod.array(zod.object({
+  "name": zod.string().min(1),
+  "color": zod.string().nullish()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date()
+}))),
+  "documents": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "fileName": zod.string(),
+  "documentType": zod.string(),
+  "objectPath": zod.string(),
+  "contentType": zod.string().nullish(),
+  "size": zod.number().int().nullish(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+export const GetSupplierParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid()
+})
+
+
+export const getSupplierResponseTwoContactsItemOneIsPrimaryDefault = false;
+export const getSupplierResponseTwoAddressesItemOneCountryDefault = `Saudi Arabia`;
+export const getSupplierResponseTwoAddressesItemOneIsDefaultBillingDefault = false;
+export const getSupplierResponseTwoAddressesItemOneIsDefaultShippingDefault = false;
+
+
+export const GetSupplierResponse = zod.object({
+  "id": zod.string().uuid(),
+  "displayName": zod.string(),
+  "businessNameArabic": zod.string().nullish(),
+  "partyType": zod.string(),
+  "status": zod.string(),
+  "partyNumber": zod.string().nullish(),
+  "vatNumber": zod.string().nullish(),
+  "primaryEmail": zod.string().nullish(),
+  "primaryPhone": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "primaryContact": zod.string().nullish(),
+  "roles": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "role": zod.enum(['customer', 'supplier']),
+  "partyNumber": zod.string(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "roles": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "role": zod.enum(['customer', 'supplier']),
+  "partyNumber": zod.string(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})),
+  "contacts": zod.array(zod.object({
+  "firstName": zod.string().min(1),
+  "lastName": zod.string().nullish(),
+  "jobTitle": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "email": zod.string().email().nullish(),
+  "phone": zod.string().nullish(),
+  "mobile": zod.string().nullish(),
+  "preferredLanguage": zod.enum(['en', 'ar']).optional(),
+  "notes": zod.string().nullish(),
+  "isPrimary": zod.boolean().default(getSupplierResponseTwoContactsItemOneIsPrimaryDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))),
+  "addresses": zod.array(zod.object({
+  "label": zod.string().nullish(),
+  "addressType": zod.enum(['billing', 'shipping', 'registered', 'other']).optional(),
+  "buildingNumber": zod.string().nullish(),
+  "street": zod.string().nullish(),
+  "district": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "province": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
+  "additionalNumber": zod.string().nullish(),
+  "country": zod.string().default(getSupplierResponseTwoAddressesItemOneCountryDefault),
+  "isDefaultBilling": zod.boolean().default(getSupplierResponseTwoAddressesItemOneIsDefaultBillingDefault),
+  "isDefaultShipping": zod.boolean().default(getSupplierResponseTwoAddressesItemOneIsDefaultShippingDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))),
+  "tags": zod.array(zod.object({
+  "name": zod.string().min(1),
+  "color": zod.string().nullish()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date()
+}))),
+  "documents": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "fileName": zod.string(),
+  "documentType": zod.string(),
+  "objectPath": zod.string(),
+  "contentType": zod.string().nullish(),
+  "size": zod.number().int().nullish(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+export const UpdateSupplierParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid()
+})
+
+export const updateSupplierBodyOneVatRegisteredDefault = false;
+export const updateSupplierBodyOneDefaultCurrencyDefault = `SAR`;
+export const updateSupplierBodyOneDefaultLanguageDefault = `en`;
+
+export const UpdateSupplierBody = zod.object({
+  "partyType": zod.enum(['organization', 'individual']),
+  "businessNameEnglish": zod.string().nullish(),
+  "businessNameArabic": zod.string().nullish(),
+  "legalNameEnglish": zod.string().nullish(),
+  "legalNameArabic": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "arabicName": zod.string().nullish(),
+  "commercialRegistrationNumber": zod.string().nullish(),
+  "vatRegistered": zod.boolean().default(updateSupplierBodyOneVatRegisteredDefault),
+  "vatNumber": zod.string().nullish(),
+  "primaryEmail": zod.string().email().nullish(),
+  "primaryPhone": zod.string().nullish(),
+  "website": zod.string().url().nullish(),
+  "defaultCurrency": zod.string().default(updateSupplierBodyOneDefaultCurrencyDefault),
+  "defaultLanguage": zod.enum(['en', 'ar']).default(updateSupplierBodyOneDefaultLanguageDefault),
+  "notes": zod.string().nullish(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})
+
+
+export const updateSupplierResponseTwoContactsItemOneIsPrimaryDefault = false;
+export const updateSupplierResponseTwoAddressesItemOneCountryDefault = `Saudi Arabia`;
+export const updateSupplierResponseTwoAddressesItemOneIsDefaultBillingDefault = false;
+export const updateSupplierResponseTwoAddressesItemOneIsDefaultShippingDefault = false;
+
+
+export const UpdateSupplierResponse = zod.object({
+  "id": zod.string().uuid(),
+  "displayName": zod.string(),
+  "businessNameArabic": zod.string().nullish(),
+  "partyType": zod.string(),
+  "status": zod.string(),
+  "partyNumber": zod.string().nullish(),
+  "vatNumber": zod.string().nullish(),
+  "primaryEmail": zod.string().nullish(),
+  "primaryPhone": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "primaryContact": zod.string().nullish(),
+  "roles": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "role": zod.enum(['customer', 'supplier']),
+  "partyNumber": zod.string(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "roles": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "role": zod.enum(['customer', 'supplier']),
+  "partyNumber": zod.string(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})),
+  "contacts": zod.array(zod.object({
+  "firstName": zod.string().min(1),
+  "lastName": zod.string().nullish(),
+  "jobTitle": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "email": zod.string().email().nullish(),
+  "phone": zod.string().nullish(),
+  "mobile": zod.string().nullish(),
+  "preferredLanguage": zod.enum(['en', 'ar']).optional(),
+  "notes": zod.string().nullish(),
+  "isPrimary": zod.boolean().default(updateSupplierResponseTwoContactsItemOneIsPrimaryDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))),
+  "addresses": zod.array(zod.object({
+  "label": zod.string().nullish(),
+  "addressType": zod.enum(['billing', 'shipping', 'registered', 'other']).optional(),
+  "buildingNumber": zod.string().nullish(),
+  "street": zod.string().nullish(),
+  "district": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "province": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
+  "additionalNumber": zod.string().nullish(),
+  "country": zod.string().default(updateSupplierResponseTwoAddressesItemOneCountryDefault),
+  "isDefaultBilling": zod.boolean().default(updateSupplierResponseTwoAddressesItemOneIsDefaultBillingDefault),
+  "isDefaultShipping": zod.boolean().default(updateSupplierResponseTwoAddressesItemOneIsDefaultShippingDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))),
+  "tags": zod.array(zod.object({
+  "name": zod.string().min(1),
+  "color": zod.string().nullish()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date()
+}))),
+  "documents": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "fileName": zod.string(),
+  "documentType": zod.string(),
+  "objectPath": zod.string(),
+  "contentType": zod.string().nullish(),
+  "size": zod.number().int().nullish(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+export const UpdatePartyStatusParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid()
+})
+
+export const UpdatePartyStatusBody = zod.object({
+  "status": zod.enum(['active', 'inactive'])
+})
+
+
+export const updatePartyStatusResponseTwoContactsItemOneIsPrimaryDefault = false;
+export const updatePartyStatusResponseTwoAddressesItemOneCountryDefault = `Saudi Arabia`;
+export const updatePartyStatusResponseTwoAddressesItemOneIsDefaultBillingDefault = false;
+export const updatePartyStatusResponseTwoAddressesItemOneIsDefaultShippingDefault = false;
+
+
+export const UpdatePartyStatusResponse = zod.object({
+  "id": zod.string().uuid(),
+  "displayName": zod.string(),
+  "businessNameArabic": zod.string().nullish(),
+  "partyType": zod.string(),
+  "status": zod.string(),
+  "partyNumber": zod.string().nullish(),
+  "vatNumber": zod.string().nullish(),
+  "primaryEmail": zod.string().nullish(),
+  "primaryPhone": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "primaryContact": zod.string().nullish(),
+  "roles": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "role": zod.enum(['customer', 'supplier']),
+  "partyNumber": zod.string(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "roles": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "role": zod.enum(['customer', 'supplier']),
+  "partyNumber": zod.string(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})),
+  "contacts": zod.array(zod.object({
+  "firstName": zod.string().min(1),
+  "lastName": zod.string().nullish(),
+  "jobTitle": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "email": zod.string().email().nullish(),
+  "phone": zod.string().nullish(),
+  "mobile": zod.string().nullish(),
+  "preferredLanguage": zod.enum(['en', 'ar']).optional(),
+  "notes": zod.string().nullish(),
+  "isPrimary": zod.boolean().default(updatePartyStatusResponseTwoContactsItemOneIsPrimaryDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))),
+  "addresses": zod.array(zod.object({
+  "label": zod.string().nullish(),
+  "addressType": zod.enum(['billing', 'shipping', 'registered', 'other']).optional(),
+  "buildingNumber": zod.string().nullish(),
+  "street": zod.string().nullish(),
+  "district": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "province": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
+  "additionalNumber": zod.string().nullish(),
+  "country": zod.string().default(updatePartyStatusResponseTwoAddressesItemOneCountryDefault),
+  "isDefaultBilling": zod.boolean().default(updatePartyStatusResponseTwoAddressesItemOneIsDefaultBillingDefault),
+  "isDefaultShipping": zod.boolean().default(updatePartyStatusResponseTwoAddressesItemOneIsDefaultShippingDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))),
+  "tags": zod.array(zod.object({
+  "name": zod.string().min(1),
+  "color": zod.string().nullish()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date()
+}))),
+  "documents": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "fileName": zod.string(),
+  "documentType": zod.string(),
+  "objectPath": zod.string(),
+  "contentType": zod.string().nullish(),
+  "size": zod.number().int().nullish(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+export const AddPartyRoleParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid(),
+  "role": zod.enum(['customer', 'supplier'])
+})
+
+export const AddPartyRoleBody = zod.object({
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})
+
+export const AddPartyRoleResponse = zod.object({
+  "id": zod.string().uuid(),
+  "role": zod.enum(['customer', 'supplier']),
+  "partyNumber": zod.string(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})
+
+
+export const CheckPartyDuplicatesParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid()
+})
+
+export const CheckPartyDuplicatesBody = zod.object({
+  "businessNameEnglish": zod.string().nullish(),
+  "vatNumber": zod.string().nullish(),
+  "commercialRegistrationNumber": zod.string().nullish(),
+  "primaryEmail": zod.string().nullish(),
+  "primaryPhone": zod.string().nullish()
+})
+
+export const CheckPartyDuplicatesResponseItem = zod.object({
+  "partyId": zod.string().uuid(),
+  "displayName": zod.string(),
+  "strength": zod.enum(['exact', 'possible']),
+  "reason": zod.string()
+})
+export const CheckPartyDuplicatesResponse = zod.array(CheckPartyDuplicatesResponseItem)
+
+
+export const ListPartyContactsParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid()
+})
+
+
+export const listPartyContactsResponseOneIsPrimaryDefault = false;
+
+export const ListPartyContactsResponseItem = zod.object({
+  "firstName": zod.string().min(1),
+  "lastName": zod.string().nullish(),
+  "jobTitle": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "email": zod.string().email().nullish(),
+  "phone": zod.string().nullish(),
+  "mobile": zod.string().nullish(),
+  "preferredLanguage": zod.enum(['en', 'ar']).optional(),
+  "notes": zod.string().nullish(),
+  "isPrimary": zod.boolean().default(listPartyContactsResponseOneIsPrimaryDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+export const ListPartyContactsResponse = zod.array(ListPartyContactsResponseItem)
+
+
+export const CreatePartyContactParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid()
+})
+
+
+export const createPartyContactBodyIsPrimaryDefault = false;
+
+export const CreatePartyContactBody = zod.object({
+  "firstName": zod.string().min(1),
+  "lastName": zod.string().nullish(),
+  "jobTitle": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "email": zod.string().email().nullish(),
+  "phone": zod.string().nullish(),
+  "mobile": zod.string().nullish(),
+  "preferredLanguage": zod.enum(['en', 'ar']).optional(),
+  "notes": zod.string().nullish(),
+  "isPrimary": zod.boolean().default(createPartyContactBodyIsPrimaryDefault)
+})
+
+
+export const createPartyContactResponseOneIsPrimaryDefault = false;
+
+export const CreatePartyContactResponse = zod.object({
+  "firstName": zod.string().min(1),
+  "lastName": zod.string().nullish(),
+  "jobTitle": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "email": zod.string().email().nullish(),
+  "phone": zod.string().nullish(),
+  "mobile": zod.string().nullish(),
+  "preferredLanguage": zod.enum(['en', 'ar']).optional(),
+  "notes": zod.string().nullish(),
+  "isPrimary": zod.boolean().default(createPartyContactResponseOneIsPrimaryDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+
+
+export const UpdatePartyContactParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid(),
+  "contactId": zod.coerce.string().uuid()
+})
+
+
+export const updatePartyContactBodyIsPrimaryDefault = false;
+
+export const UpdatePartyContactBody = zod.object({
+  "firstName": zod.string().min(1),
+  "lastName": zod.string().nullish(),
+  "jobTitle": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "email": zod.string().email().nullish(),
+  "phone": zod.string().nullish(),
+  "mobile": zod.string().nullish(),
+  "preferredLanguage": zod.enum(['en', 'ar']).optional(),
+  "notes": zod.string().nullish(),
+  "isPrimary": zod.boolean().default(updatePartyContactBodyIsPrimaryDefault)
+})
+
+
+export const updatePartyContactResponseOneIsPrimaryDefault = false;
+
+export const UpdatePartyContactResponse = zod.object({
+  "firstName": zod.string().min(1),
+  "lastName": zod.string().nullish(),
+  "jobTitle": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "email": zod.string().email().nullish(),
+  "phone": zod.string().nullish(),
+  "mobile": zod.string().nullish(),
+  "preferredLanguage": zod.enum(['en', 'ar']).optional(),
+  "notes": zod.string().nullish(),
+  "isPrimary": zod.boolean().default(updatePartyContactResponseOneIsPrimaryDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+
+
+export const DeletePartyContactParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid(),
+  "contactId": zod.coerce.string().uuid()
+})
+
+export const DeletePartyContactResponse = zod.void()
+
+
+export const ListPartyAddressesParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid()
+})
+
+export const listPartyAddressesResponseOneCountryDefault = `Saudi Arabia`;
+export const listPartyAddressesResponseOneIsDefaultBillingDefault = false;
+export const listPartyAddressesResponseOneIsDefaultShippingDefault = false;
+
+export const ListPartyAddressesResponseItem = zod.object({
+  "label": zod.string().nullish(),
+  "addressType": zod.enum(['billing', 'shipping', 'registered', 'other']).optional(),
+  "buildingNumber": zod.string().nullish(),
+  "street": zod.string().nullish(),
+  "district": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "province": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
+  "additionalNumber": zod.string().nullish(),
+  "country": zod.string().default(listPartyAddressesResponseOneCountryDefault),
+  "isDefaultBilling": zod.boolean().default(listPartyAddressesResponseOneIsDefaultBillingDefault),
+  "isDefaultShipping": zod.boolean().default(listPartyAddressesResponseOneIsDefaultShippingDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+export const ListPartyAddressesResponse = zod.array(ListPartyAddressesResponseItem)
+
+
+export const CreatePartyAddressParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid()
+})
+
+export const createPartyAddressBodyCountryDefault = `Saudi Arabia`;
+export const createPartyAddressBodyIsDefaultBillingDefault = false;
+export const createPartyAddressBodyIsDefaultShippingDefault = false;
+
+export const CreatePartyAddressBody = zod.object({
+  "label": zod.string().nullish(),
+  "addressType": zod.enum(['billing', 'shipping', 'registered', 'other']).optional(),
+  "buildingNumber": zod.string().nullish(),
+  "street": zod.string().nullish(),
+  "district": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "province": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
+  "additionalNumber": zod.string().nullish(),
+  "country": zod.string().default(createPartyAddressBodyCountryDefault),
+  "isDefaultBilling": zod.boolean().default(createPartyAddressBodyIsDefaultBillingDefault),
+  "isDefaultShipping": zod.boolean().default(createPartyAddressBodyIsDefaultShippingDefault)
+})
+
+export const createPartyAddressResponseOneCountryDefault = `Saudi Arabia`;
+export const createPartyAddressResponseOneIsDefaultBillingDefault = false;
+export const createPartyAddressResponseOneIsDefaultShippingDefault = false;
+
+export const CreatePartyAddressResponse = zod.object({
+  "label": zod.string().nullish(),
+  "addressType": zod.enum(['billing', 'shipping', 'registered', 'other']).optional(),
+  "buildingNumber": zod.string().nullish(),
+  "street": zod.string().nullish(),
+  "district": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "province": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
+  "additionalNumber": zod.string().nullish(),
+  "country": zod.string().default(createPartyAddressResponseOneCountryDefault),
+  "isDefaultBilling": zod.boolean().default(createPartyAddressResponseOneIsDefaultBillingDefault),
+  "isDefaultShipping": zod.boolean().default(createPartyAddressResponseOneIsDefaultShippingDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+
+
+export const UpdatePartyAddressParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid(),
+  "addressId": zod.coerce.string().uuid()
+})
+
+export const updatePartyAddressBodyCountryDefault = `Saudi Arabia`;
+export const updatePartyAddressBodyIsDefaultBillingDefault = false;
+export const updatePartyAddressBodyIsDefaultShippingDefault = false;
+
+export const UpdatePartyAddressBody = zod.object({
+  "label": zod.string().nullish(),
+  "addressType": zod.enum(['billing', 'shipping', 'registered', 'other']).optional(),
+  "buildingNumber": zod.string().nullish(),
+  "street": zod.string().nullish(),
+  "district": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "province": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
+  "additionalNumber": zod.string().nullish(),
+  "country": zod.string().default(updatePartyAddressBodyCountryDefault),
+  "isDefaultBilling": zod.boolean().default(updatePartyAddressBodyIsDefaultBillingDefault),
+  "isDefaultShipping": zod.boolean().default(updatePartyAddressBodyIsDefaultShippingDefault)
+})
+
+export const updatePartyAddressResponseOneCountryDefault = `Saudi Arabia`;
+export const updatePartyAddressResponseOneIsDefaultBillingDefault = false;
+export const updatePartyAddressResponseOneIsDefaultShippingDefault = false;
+
+export const UpdatePartyAddressResponse = zod.object({
+  "label": zod.string().nullish(),
+  "addressType": zod.enum(['billing', 'shipping', 'registered', 'other']).optional(),
+  "buildingNumber": zod.string().nullish(),
+  "street": zod.string().nullish(),
+  "district": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "province": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
+  "additionalNumber": zod.string().nullish(),
+  "country": zod.string().default(updatePartyAddressResponseOneCountryDefault),
+  "isDefaultBilling": zod.boolean().default(updatePartyAddressResponseOneIsDefaultBillingDefault),
+  "isDefaultShipping": zod.boolean().default(updatePartyAddressResponseOneIsDefaultShippingDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+
+
+export const DeletePartyAddressParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid(),
+  "addressId": zod.coerce.string().uuid()
+})
+
+export const DeletePartyAddressResponse = zod.void()
+
+
+export const ListPartyTagsParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+
+
+
+export const ListPartyTagsResponseItem = zod.object({
+  "name": zod.string().min(1),
+  "color": zod.string().nullish()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date()
+}))
+export const ListPartyTagsResponse = zod.array(ListPartyTagsResponseItem)
+
+
+export const CreatePartyTagParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+
+
+
+export const CreatePartyTagBody = zod.object({
+  "name": zod.string().min(1),
+  "color": zod.string().nullish()
+})
+
+
+
+
+export const CreatePartyTagResponse = zod.object({
+  "name": zod.string().min(1),
+  "color": zod.string().nullish()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "createdAt": zod.coerce.date()
+}))
+
+
+export const AssignPartyTagParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid(),
+  "tagId": zod.coerce.string().uuid()
+})
+
+export const AssignPartyTagResponse = zod.void()
+
+
+export const RemovePartyTagParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid(),
+  "tagId": zod.coerce.string().uuid()
+})
+
+export const RemovePartyTagResponse = zod.void()
+
+
+export const FindPartiesParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+
+
+
+export const FindPartiesQueryParams = zod.object({
+  "q": zod.coerce.string().min(1)
+})
+
+export const FindPartiesResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "displayName": zod.string(),
+  "businessNameArabic": zod.string().nullish(),
+  "partyType": zod.string(),
+  "status": zod.string(),
+  "partyNumber": zod.string().nullish(),
+  "vatNumber": zod.string().nullish(),
+  "primaryEmail": zod.string().nullish(),
+  "primaryPhone": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "primaryContact": zod.string().nullish(),
+  "roles": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "role": zod.enum(['customer', 'supplier']),
+  "partyNumber": zod.string(),
+  "paymentTerms": zod.string().nullish(),
+  "creditLimit": zod.string().nullish(),
+  "taxTreatment": zod.string().nullish()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const FindPartiesResponse = zod.array(FindPartiesResponseItem)
+
+
+export const DownloadPartyImportTemplateParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "role": zod.enum(['customers', 'suppliers'])
+})
+
+export const DownloadPartyImportTemplateResponse = zod.unknown()
+
+
+export const PreviewPartyImportParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "role": zod.enum(['customers', 'suppliers'])
+})
+
+export const PreviewPartyImportBody = zod.object({
+  "csv": zod.string().nullish(),
+  "rows": zod.array(zod.record(zod.string(), zod.unknown())).optional()
+})
+
+export const PreviewPartyImportResponse = zod.object({
+  "role": zod.enum(['customer', 'supplier']),
+  "totalRows": zod.number().int(),
+  "validRows": zod.number().int(),
+  "errors": zod.array(zod.object({
+  "row": zod.number().int().optional(),
+  "field": zod.string().optional(),
+  "error": zod.string().optional()
+})),
+  "rows": zod.array(zod.record(zod.string(), zod.unknown()))
+})
+
+
+export const ConfirmPartyImportParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "role": zod.enum(['customers', 'suppliers'])
+})
+
+export const ConfirmPartyImportBody = zod.object({
+  "csv": zod.string().nullish(),
+  "rows": zod.array(zod.record(zod.string(), zod.unknown())).optional()
+})
+
+export const ConfirmPartyImportResponse = zod.object({
+  "imported": zod.number().int(),
+  "skipped": zod.number().int()
+})
+
+
+export const ExportPartiesParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "role": zod.enum(['customers', 'suppliers'])
+})
+
+export const ExportPartiesQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "status": zod.enum(['active', 'inactive']).optional()
+})
+
+export const ExportPartiesResponse = zod.unknown()
+
+
+export const requestStorageUploadUrlBodySizeMin = 0;
+
+
+
+export const RequestStorageUploadUrlBody = zod.object({
+  "name": zod.string(),
+  "size": zod.number().int().min(requestStorageUploadUrlBodySizeMin),
+  "contentType": zod.string()
+})
+
+export const RequestStorageUploadUrlResponse = zod.object({
+  "uploadURL": zod.string().url(),
+  "objectPath": zod.string(),
+  "metadata": zod.record(zod.string(), zod.unknown()).optional()
+})
+
+
+export const DownloadStorageObjectParams = zod.object({
+  "objectPath": zod.coerce.string()
+})
+
+export const DownloadStorageObjectResponse = zod.unknown()
+
+
+export const DownloadPartyDocumentParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid(),
+  "documentId": zod.coerce.string().uuid()
+})
+
+export const DownloadPartyDocumentResponse = zod.unknown()
+
+
+export const ListPartyDocumentsParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid()
+})
+
+export const ListPartyDocumentsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "fileName": zod.string(),
+  "documentType": zod.string(),
+  "objectPath": zod.string(),
+  "contentType": zod.string().nullish(),
+  "size": zod.number().int().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ListPartyDocumentsResponse = zod.array(ListPartyDocumentsResponseItem)
+
+
+export const CreatePartyDocumentParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid()
+})
+
+export const createPartyDocumentBodyFileNameMax = 255;
+
+export const createPartyDocumentBodyDocumentTypeMax = 80;
+
+export const createPartyDocumentBodyObjectPathRegExp = new RegExp('^/objects');
+export const createPartyDocumentBodyContentTypeMax = 160;
+
+export const createPartyDocumentBodySizeMin = 0;
+
+
+
+export const CreatePartyDocumentBody = zod.object({
+  "fileName": zod.string().min(1).max(createPartyDocumentBodyFileNameMax),
+  "documentType": zod.string().min(1).max(createPartyDocumentBodyDocumentTypeMax),
+  "objectPath": zod.string().regex(createPartyDocumentBodyObjectPathRegExp),
+  "contentType": zod.string().max(createPartyDocumentBodyContentTypeMax).nullish(),
+  "size": zod.number().int().min(createPartyDocumentBodySizeMin).nullish()
+})
+
+export const CreatePartyDocumentResponse = zod.object({
+  "id": zod.string().uuid(),
+  "fileName": zod.string(),
+  "documentType": zod.string(),
+  "objectPath": zod.string(),
+  "contentType": zod.string().nullish(),
+  "size": zod.number().int().nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const UpdatePartyDocumentParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid(),
+  "documentId": zod.coerce.string().uuid()
+})
+
+export const updatePartyDocumentBodyFileNameMax = 255;
+
+
+
+export const UpdatePartyDocumentBody = zod.object({
+  "fileName": zod.string().min(1).max(updatePartyDocumentBodyFileNameMax)
+})
+
+export const UpdatePartyDocumentResponse = zod.object({
+  "id": zod.string().uuid(),
+  "fileName": zod.string(),
+  "documentType": zod.string(),
+  "objectPath": zod.string(),
+  "contentType": zod.string().nullish(),
+  "size": zod.number().int().nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const DeletePartyDocumentParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "partyId": zod.coerce.string().uuid(),
+  "documentId": zod.coerce.string().uuid()
+})
+
+export const DeletePartyDocumentResponse = zod.void()
 
 

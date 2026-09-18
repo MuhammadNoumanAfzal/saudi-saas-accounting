@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { DashboardSummaryCustomerChecklist } from './dashboardSummaryCustomerChecklist';
 import type { DashboardSummaryRecentTransactionsItem } from './dashboardSummaryRecentTransactionsItem';
 
 export interface DashboardSummary {
@@ -15,4 +16,7 @@ export interface DashboardSummary {
   netProfit: string;
   hasComparativeData: boolean;
   recentTransactions: DashboardSummaryRecentTransactionsItem[];
+  customerCount: number;
+  supplierCount: number;
+  customerChecklist: DashboardSummaryCustomerChecklist;
 }
