@@ -310,6 +310,11 @@ export const GetDashboardSummaryResponse = zod.object({
   "customerChecklist": zod.object({
   "hasCustomers": zod.boolean(),
   "complete": zod.boolean()
+}),
+  "itemCount": zod.number().int(),
+  "itemChecklist": zod.object({
+  "hasItems": zod.boolean(),
+  "complete": zod.boolean()
 })
 })
 
@@ -1856,5 +1861,340 @@ export const DeletePartyDocumentParams = zod.object({
 })
 
 export const DeletePartyDocumentResponse = zod.void()
+
+
+export const ListCatalogItemsParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const listCatalogItemsQueryPageDefault = 1;
+
+export const listCatalogItemsQueryPageSizeDefault = 25;
+export const listCatalogItemsQueryPageSizeMax = 100;
+
+export const listCatalogItemsQuerySortDefault = `name`;
+
+export const ListCatalogItemsQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "type": zod.enum(['PRODUCT', 'SERVICE']).optional(),
+  "status": zod.enum(['ACTIVE', 'INACTIVE']).optional(),
+  "taxCategory": zod.enum(['STANDARD', 'ZERO_RATED', 'EXEMPT', 'OUT_OF_SCOPE']).optional(),
+  "page": zod.coerce.number().int().min(1).default(listCatalogItemsQueryPageDefault),
+  "pageSize": zod.coerce.number().int().min(1).max(listCatalogItemsQueryPageSizeMax).default(listCatalogItemsQueryPageSizeDefault),
+  "sort": zod.enum(['name', 'code', 'created', 'updated']).default(listCatalogItemsQuerySortDefault)
+})
+
+
+
+export const listCatalogItemsResponseItemsItemOneSalesPriceRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const listCatalogItemsResponseItemsItemOnePurchasePriceRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const listCatalogItemsResponseItemsItemOneTaxRateRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const listCatalogItemsResponseItemsItemOneTrackInventoryDefault = false;
+
+export const ListCatalogItemsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "type": zod.enum(['PRODUCT', 'SERVICE']),
+  "name": zod.string().min(1),
+  "nameAr": zod.string().min(1),
+  "description": zod.string().nullish(),
+  "descriptionAr": zod.string().nullish(),
+  "unitId": zod.string().uuid(),
+  "salesPrice": zod.string().regex(listCatalogItemsResponseItemsItemOneSalesPriceRegExp),
+  "purchasePrice": zod.string().regex(listCatalogItemsResponseItemsItemOnePurchasePriceRegExp),
+  "taxCategory": zod.enum(['STANDARD', 'ZERO_RATED', 'EXEMPT', 'OUT_OF_SCOPE']),
+  "taxRate": zod.string().regex(listCatalogItemsResponseItemsItemOneTaxRateRegExp),
+  "sku": zod.string().nullish(),
+  "barcode": zod.string().nullish(),
+  "trackInventory": zod.boolean().default(listCatalogItemsResponseItemsItemOneTrackInventoryDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "organizationId": zod.string().uuid(),
+  "code": zod.string(),
+  "status": zod.enum(['ACTIVE', 'INACTIVE']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))),
+  "page": zod.number().int(),
+  "pageSize": zod.number().int(),
+  "total": zod.number().int(),
+  "summary": zod.object({
+  "total": zod.number().int(),
+  "products": zod.number().int(),
+  "services": zod.number().int(),
+  "active": zod.number().int()
+})
+})
+
+
+export const CreateCatalogItemParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+
+
+export const createCatalogItemBodySalesPriceRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const createCatalogItemBodyPurchasePriceRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const createCatalogItemBodyTaxRateRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const createCatalogItemBodyTrackInventoryDefault = false;
+
+export const CreateCatalogItemBody = zod.object({
+  "type": zod.enum(['PRODUCT', 'SERVICE']),
+  "name": zod.string().min(1),
+  "nameAr": zod.string().min(1),
+  "description": zod.string().nullish(),
+  "descriptionAr": zod.string().nullish(),
+  "unitId": zod.string().uuid(),
+  "salesPrice": zod.string().regex(createCatalogItemBodySalesPriceRegExp),
+  "purchasePrice": zod.string().regex(createCatalogItemBodyPurchasePriceRegExp),
+  "taxCategory": zod.enum(['STANDARD', 'ZERO_RATED', 'EXEMPT', 'OUT_OF_SCOPE']),
+  "taxRate": zod.string().regex(createCatalogItemBodyTaxRateRegExp),
+  "sku": zod.string().nullish(),
+  "barcode": zod.string().nullish(),
+  "trackInventory": zod.boolean().default(createCatalogItemBodyTrackInventoryDefault)
+})
+
+
+
+export const createCatalogItemResponseOneSalesPriceRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const createCatalogItemResponseOnePurchasePriceRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const createCatalogItemResponseOneTaxRateRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const createCatalogItemResponseOneTrackInventoryDefault = false;
+
+export const CreateCatalogItemResponse = zod.object({
+  "type": zod.enum(['PRODUCT', 'SERVICE']),
+  "name": zod.string().min(1),
+  "nameAr": zod.string().min(1),
+  "description": zod.string().nullish(),
+  "descriptionAr": zod.string().nullish(),
+  "unitId": zod.string().uuid(),
+  "salesPrice": zod.string().regex(createCatalogItemResponseOneSalesPriceRegExp),
+  "purchasePrice": zod.string().regex(createCatalogItemResponseOnePurchasePriceRegExp),
+  "taxCategory": zod.enum(['STANDARD', 'ZERO_RATED', 'EXEMPT', 'OUT_OF_SCOPE']),
+  "taxRate": zod.string().regex(createCatalogItemResponseOneTaxRateRegExp),
+  "sku": zod.string().nullish(),
+  "barcode": zod.string().nullish(),
+  "trackInventory": zod.boolean().default(createCatalogItemResponseOneTrackInventoryDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "organizationId": zod.string().uuid(),
+  "code": zod.string(),
+  "status": zod.enum(['ACTIVE', 'INACTIVE']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+
+
+export const GetCatalogItemParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "itemId": zod.coerce.string().uuid()
+})
+
+
+
+export const getCatalogItemResponseOneSalesPriceRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const getCatalogItemResponseOnePurchasePriceRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const getCatalogItemResponseOneTaxRateRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const getCatalogItemResponseOneTrackInventoryDefault = false;
+
+export const GetCatalogItemResponse = zod.object({
+  "type": zod.enum(['PRODUCT', 'SERVICE']),
+  "name": zod.string().min(1),
+  "nameAr": zod.string().min(1),
+  "description": zod.string().nullish(),
+  "descriptionAr": zod.string().nullish(),
+  "unitId": zod.string().uuid(),
+  "salesPrice": zod.string().regex(getCatalogItemResponseOneSalesPriceRegExp),
+  "purchasePrice": zod.string().regex(getCatalogItemResponseOnePurchasePriceRegExp),
+  "taxCategory": zod.enum(['STANDARD', 'ZERO_RATED', 'EXEMPT', 'OUT_OF_SCOPE']),
+  "taxRate": zod.string().regex(getCatalogItemResponseOneTaxRateRegExp),
+  "sku": zod.string().nullish(),
+  "barcode": zod.string().nullish(),
+  "trackInventory": zod.boolean().default(getCatalogItemResponseOneTrackInventoryDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "organizationId": zod.string().uuid(),
+  "code": zod.string(),
+  "status": zod.enum(['ACTIVE', 'INACTIVE']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+
+
+export const UpdateCatalogItemParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "itemId": zod.coerce.string().uuid()
+})
+
+
+
+export const updateCatalogItemBodyOneSalesPriceRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const updateCatalogItemBodyOnePurchasePriceRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const updateCatalogItemBodyOneTaxRateRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const updateCatalogItemBodyOneTrackInventoryDefault = false;
+
+export const UpdateCatalogItemBody = zod.object({
+  "type": zod.enum(['PRODUCT', 'SERVICE']),
+  "name": zod.string().min(1),
+  "nameAr": zod.string().min(1),
+  "description": zod.string().nullish(),
+  "descriptionAr": zod.string().nullish(),
+  "unitId": zod.string().uuid(),
+  "salesPrice": zod.string().regex(updateCatalogItemBodyOneSalesPriceRegExp),
+  "purchasePrice": zod.string().regex(updateCatalogItemBodyOnePurchasePriceRegExp),
+  "taxCategory": zod.enum(['STANDARD', 'ZERO_RATED', 'EXEMPT', 'OUT_OF_SCOPE']),
+  "taxRate": zod.string().regex(updateCatalogItemBodyOneTaxRateRegExp),
+  "sku": zod.string().nullish(),
+  "barcode": zod.string().nullish(),
+  "trackInventory": zod.boolean().default(updateCatalogItemBodyOneTrackInventoryDefault)
+})
+
+
+
+export const updateCatalogItemResponseOneSalesPriceRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const updateCatalogItemResponseOnePurchasePriceRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const updateCatalogItemResponseOneTaxRateRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const updateCatalogItemResponseOneTrackInventoryDefault = false;
+
+export const UpdateCatalogItemResponse = zod.object({
+  "type": zod.enum(['PRODUCT', 'SERVICE']),
+  "name": zod.string().min(1),
+  "nameAr": zod.string().min(1),
+  "description": zod.string().nullish(),
+  "descriptionAr": zod.string().nullish(),
+  "unitId": zod.string().uuid(),
+  "salesPrice": zod.string().regex(updateCatalogItemResponseOneSalesPriceRegExp),
+  "purchasePrice": zod.string().regex(updateCatalogItemResponseOnePurchasePriceRegExp),
+  "taxCategory": zod.enum(['STANDARD', 'ZERO_RATED', 'EXEMPT', 'OUT_OF_SCOPE']),
+  "taxRate": zod.string().regex(updateCatalogItemResponseOneTaxRateRegExp),
+  "sku": zod.string().nullish(),
+  "barcode": zod.string().nullish(),
+  "trackInventory": zod.boolean().default(updateCatalogItemResponseOneTrackInventoryDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "organizationId": zod.string().uuid(),
+  "code": zod.string(),
+  "status": zod.enum(['ACTIVE', 'INACTIVE']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+
+
+export const UpdateCatalogItemStatusParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "itemId": zod.coerce.string().uuid()
+})
+
+export const UpdateCatalogItemStatusBody = zod.object({
+  "status": zod.enum(['ACTIVE', 'INACTIVE'])
+})
+
+
+
+export const updateCatalogItemStatusResponseOneSalesPriceRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const updateCatalogItemStatusResponseOnePurchasePriceRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const updateCatalogItemStatusResponseOneTaxRateRegExp = new RegExp('^\\d+(\\.\\d{1,2})?$');
+export const updateCatalogItemStatusResponseOneTrackInventoryDefault = false;
+
+export const UpdateCatalogItemStatusResponse = zod.object({
+  "type": zod.enum(['PRODUCT', 'SERVICE']),
+  "name": zod.string().min(1),
+  "nameAr": zod.string().min(1),
+  "description": zod.string().nullish(),
+  "descriptionAr": zod.string().nullish(),
+  "unitId": zod.string().uuid(),
+  "salesPrice": zod.string().regex(updateCatalogItemStatusResponseOneSalesPriceRegExp),
+  "purchasePrice": zod.string().regex(updateCatalogItemStatusResponseOnePurchasePriceRegExp),
+  "taxCategory": zod.enum(['STANDARD', 'ZERO_RATED', 'EXEMPT', 'OUT_OF_SCOPE']),
+  "taxRate": zod.string().regex(updateCatalogItemStatusResponseOneTaxRateRegExp),
+  "sku": zod.string().nullish(),
+  "barcode": zod.string().nullish(),
+  "trackInventory": zod.boolean().default(updateCatalogItemStatusResponseOneTrackInventoryDefault)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "organizationId": zod.string().uuid(),
+  "code": zod.string(),
+  "status": zod.enum(['ACTIVE', 'INACTIVE']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+
+
+export const ListCatalogUnitsParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const ListCatalogUnitsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "code": zod.string(),
+  "name": zod.string(),
+  "nameAr": zod.string()
+})
+export const ListCatalogUnitsResponse = zod.array(ListCatalogUnitsResponseItem)
+
+
+export const ListCatalogTaxDefinitionsParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const ListCatalogTaxDefinitionsResponseItem = zod.object({
+  "category": zod.enum(['STANDARD', 'ZERO_RATED', 'EXEMPT', 'OUT_OF_SCOPE']),
+  "rate": zod.string(),
+  "name": zod.string(),
+  "nameAr": zod.string()
+})
+export const ListCatalogTaxDefinitionsResponse = zod.array(ListCatalogTaxDefinitionsResponseItem)
+
+
+export const DownloadCatalogImportTemplateParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const DownloadCatalogImportTemplateResponse = zod.unknown()
+
+
+export const PreviewCatalogImportParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const PreviewCatalogImportBody = zod.object({
+  "csv": zod.string().nullish(),
+  "rows": zod.array(zod.record(zod.string(), zod.unknown())).optional()
+})
+
+export const PreviewCatalogImportResponse = zod.object({
+  "totalRows": zod.number().int(),
+  "validRows": zod.number().int(),
+  "errors": zod.array(zod.record(zod.string(), zod.unknown())),
+  "rows": zod.array(zod.record(zod.string(), zod.unknown()))
+})
+
+
+export const ConfirmCatalogImportParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const ConfirmCatalogImportBody = zod.object({
+  "csv": zod.string().nullish(),
+  "rows": zod.array(zod.record(zod.string(), zod.unknown())).optional()
+})
+
+export const ConfirmCatalogImportResponse = zod.object({
+  "imported": zod.number().int(),
+  "skipped": zod.number().int()
+})
+
+
+export const ExportCatalogItemsParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const ExportCatalogItemsQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "type": zod.enum(['PRODUCT', 'SERVICE']).optional(),
+  "status": zod.enum(['ACTIVE', 'INACTIVE']).optional(),
+  "taxCategory": zod.enum(['STANDARD', 'ZERO_RATED', 'EXEMPT', 'OUT_OF_SCOPE']).optional()
+})
+
+export const ExportCatalogItemsResponse = zod.unknown()
 
 

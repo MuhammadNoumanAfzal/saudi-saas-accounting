@@ -16,6 +16,10 @@ export type PartyPermission =
   | "suppliers.import"
   | "contacts.manage"
   | "party_documents.manage";
+  // Catalog permissions intentionally live alongside the existing finance RBAC.
+export type CatalogPermission =
+  | "products.view" | "products.create" | "products.edit" | "products.deactivate"
+  | "products.import" | "products.export";
 
 const rolePermissions: Record<string, Set<PartyPermission>> = {
   owner: new Set([
@@ -37,6 +41,14 @@ const rolePermissions: Record<string, Set<PartyPermission>> = {
   purchasing: new Set(["suppliers.view", "suppliers.create", "suppliers.edit", "suppliers.deactivate", "suppliers.export", "suppliers.import", "contacts.manage", "party_documents.manage"]),
   viewer: new Set(["customers.view", "suppliers.view"]),
 };
+const catalogPermissions: Record<string, Set<CatalogPermission>> = {
+  owner: new Set(["products.view", "products.create", "products.edit", "products.deactivate", "products.import", "products.export"]),
+  admin: new Set(["products.view", "products.create", "products.edit", "products.deactivate", "products.import", "products.export"]),
+  accountant: new Set(["products.view", "products.create", "products.edit"]),
+  sales: new Set(["products.view", "products.create", "products.edit"]),
+  purchasing: new Set(["products.view", "products.create", "products.edit"]),
+  viewer: new Set(["products.view"]),
+};
 
 export function hasPartyPermission(
   membership: OrganizationMembership,
@@ -46,5 +58,9 @@ export function hasPartyPermission(
 }
 
 export function permissionsForRole(role: string) {
-  return [...(rolePermissions[role] ?? [])];
+  return [...(rolePermissions[role] ?? []), ...(catalogPermissions[role] ?? [])];
+}
+
+export function hasCatalogPermission(membership: OrganizationMembership, permission: CatalogPermission) {
+  return catalogPermissions[membership.role]?.has(permission) ?? false;
 }

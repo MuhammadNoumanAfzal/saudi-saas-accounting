@@ -1,0 +1,449 @@
+Continue the EXISTING KHANBAS NEXUS project.
+
+CREDIT-EFFICIENCY RULE:
+Do not inspect, refactor, rewrite, or redesign unrelated working modules.
+Reuse the existing Nexus Finance patterns/components/services.
+Modify only files required for this feature.
+Do not perform broad architectural refactoring.
+Run targeted tests while developing and one final relevant verification.
+
+Build:
+
+Nexus Finance → Catalog → Products & Services
+
+This is the next functional module.
+
+Do NOT build quotations, invoices, inventory transactions, accounting entries or ZATCA integration yet.
+
+---------------------------------------
+1. DATA MODEL
+---------------------------------------
+
+Create a tenant-scoped Product/Service entity.
+
+Fields:
+
+organizationId
+type: PRODUCT | SERVICE
+code
+name
+nameAr
+description
+descriptionAr
+unit
+salesPrice
+purchasePrice
+taxCategory
+taxRate
+sku (optional)
+barcode (optional)
+trackInventory boolean
+status ACTIVE | INACTIVE
+createdAt
+updatedAt
+
+Use DECIMAL/NUMERIC for all monetary values.
+
+Never use floating point for money.
+
+Product/service code must be unique within organization.
+
+Automatically generate codes safely:
+
+ITEM-00001
+ITEM-00002
+
+Do not use record count + 1.
+
+---------------------------------------
+2. PRODUCT VS SERVICE
+---------------------------------------
+
+User selects:
+
+Product
+Service
+
+Product may support inventory tracking.
+
+Service must not require stock information.
+
+Examples are only explanatory; do NOT seed fake records.
+
+---------------------------------------
+3. UNITS OF MEASURE
+---------------------------------------
+
+Create reusable organization-level Units of Measure.
+
+Provide sensible initial Saudi SME/common units such as:
+
+Piece — قطعة
+Unit — وحدة
+Hour — ساعة
+Day — يوم
+Month — شهر
+Meter — متر
+Square Meter — متر مربع
+Kilogram — كيلوجرام
+Liter — لتر
+Box — صندوق
+Service — خدمة
+
+Architecture must allow organization to add custom units later.
+
+Do not overbuild UOM management now.
+
+---------------------------------------
+4. TAX
+---------------------------------------
+
+Support:
+
+Standard VAT — 15%
+Zero Rated — 0%
+Exempt
+Out of Scope
+
+Do NOT hardcode tax calculation logic separately inside UI components.
+
+Use centralized tax definitions/services so invoices can reuse them later.
+
+Default for a new normal taxable item:
+15%
+
+Do NOT connect to ZATCA yet.
+
+---------------------------------------
+5. LIST PAGE
+---------------------------------------
+
+Activate:
+
+Finance → Catalog → Products & Services
+
+Match the existing Customers/Suppliers design.
+
+Header:
+
+Products & Services
+
+Subtitle:
+
+Manage what your business sells and purchases.
+
+Actions:
+
+Import
+Export
++ New Item
+
+Summary cards:
+
+Total Items
+Products
+Services
+Active
+
+Then:
+
+Search
+Type filter
+Status filter
+Tax filter
+
+Table columns:
+
+Item
+Code
+Type
+Unit
+Sales Price
+Purchase Price
+VAT
+Status
+
+Actions:
+
+View
+Edit
+Deactivate
+
+Use server-side tenant-scoped search/pagination where appropriate.
+
+---------------------------------------
+6. EMPTY STATE
+---------------------------------------
+
+When empty:
+
+No products or services yet.
+
+Add the items you sell or purchase to use them in quotations and invoices.
+
+CTA:
+
+Add Item
+
+No fake data.
+
+---------------------------------------
+7. CREATE ITEM
+---------------------------------------
+
+Reuse the same side-drawer UX used for New Supplier.
+
+Keep initial form SIMPLE.
+
+Fields visible initially:
+
+Type
+Name English
+Name Arabic
+Unit
+Sales Price
+Purchase Price
+VAT Treatment
+
+If Product:
+
+Track Inventory toggle
+
+Expandable:
+
+More details
+
+contains:
+
+Description English
+Description Arabic
+SKU
+Barcode
+Custom Code if supported
+
+Primary:
+
+Save
+
+Secondary:
+
+Cancel
+
+Do not overwhelm the user.
+
+---------------------------------------
+8. ITEM PROFILE
+---------------------------------------
+
+Create a simple item detail page consistent with Customer/Supplier profiles.
+
+Show:
+
+Name
+Code
+Type
+Status
+
+Sales Price
+Purchase Price
+Unit
+VAT
+
+Tabs:
+
+Overview
+Transactions
+Activity
+
+Transactions currently shows:
+
+No transactions yet.
+
+Future invoices, quotations, purchases and inventory movements will appear here.
+
+Activity must use real audit events.
+
+---------------------------------------
+9. INVENTORY PREPARATION
+---------------------------------------
+
+Do NOT implement inventory movements yet.
+
+For products:
+
+trackInventory = true/false
+
+Do NOT create an editable "current stock" field.
+
+Future stock quantity must be calculated from inventory movements.
+
+This is important.
+
+---------------------------------------
+10. PERMISSIONS
+---------------------------------------
+
+Register:
+
+products.view
+products.create
+products.edit
+products.deactivate
+products.import
+products.export
+
+Use existing RBAC.
+
+Do not hardcode role checks in UI.
+
+---------------------------------------
+11. SECURITY
+---------------------------------------
+
+All APIs must enforce:
+
+authentication
+organization context
+Finance module entitlement
+permission
+server-side validation
+
+Organization A must never access Organization B's items.
+
+---------------------------------------
+12. AUDIT
+---------------------------------------
+
+Record real events:
+
+Item created
+Item updated
+Item deactivated
+Item reactivated
+
+Use existing AuditLog architecture.
+
+---------------------------------------
+13. GLOBAL INTEGRATION
+---------------------------------------
+
+Update global search:
+
+Customers
+Suppliers
+Products/Services
+
+Update Quick Create:
+
+Customer — functional
+Supplier — functional
+Product/Service — functional
+
+Quotation — Coming Soon
+Invoice — Coming Soon
+Expense — Coming Soon
+
+When first item is created, automatically complete dashboard onboarding item:
+
+Add a product or service
+
+Do not manually store fake completion.
+
+---------------------------------------
+14. ARABIC
+---------------------------------------
+
+Translate all UI and ensure RTL.
+
+Use:
+
+Products & Services
+المنتجات والخدمات
+
+Product
+منتج
+
+Service
+خدمة
+
+Sales Price
+سعر البيع
+
+Purchase Price
+سعر الشراء
+
+Unit
+الوحدة
+
+VAT
+ضريبة القيمة المضافة
+
+Active
+نشط
+
+Inactive
+غير نشط
+
+---------------------------------------
+15. IMPORT/EXPORT
+---------------------------------------
+
+Reuse the import/export architecture already built for Customers/Suppliers.
+
+Do NOT create a second independent import system.
+
+CSV support is sufficient.
+
+---------------------------------------
+16. DESIGN
+---------------------------------------
+
+Reuse existing Nexus components.
+
+DO NOT redesign:
+
+sidebar
+header
+tables
+drawers
+cards
+buttons
+search
+filters
+typography
+colors
+
+Products & Services must visually match Customers/Suppliers.
+
+---------------------------------------
+17. TEST
+---------------------------------------
+
+Only add/run targeted tests needed for this module:
+
+create product
+create service
+tenant isolation
+permissions
+unique code generation
+VAT values
+deactivate/reactivate
+
+Then run one relevant final TypeScript/test verification.
+
+Do not repeatedly run expensive full-project analysis.
+
+---------------------------------------
+18. STOP
+---------------------------------------
+
+After implementation report briefly:
+
+- files/features changed
+- database migration
+- tests passed
+- known limitations
+
+STOP.
+
+Do not begin Quotations, Invoices, Inventory or Accounting.

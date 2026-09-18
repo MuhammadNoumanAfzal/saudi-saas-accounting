@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, Link } from 'wouter';
 import { useClerk, useUser } from '@clerk/react';
-import { getGetCurrentSessionQueryKey, getListOrganizationModulesQueryKey, getFindPartiesQueryKey, useGetCurrentSession, useUpdateUserPreferences, useListOrganizationModules, useFindParties } from '@workspace/api-client-react';
+import { getGetCurrentSessionQueryKey, getListOrganizationModulesQueryKey, getFindPartiesQueryKey, useGetCurrentSession, useUpdateUserPreferences, useListOrganizationModules, useFindParties, useListCatalogItems, getListCatalogItemsQueryKey } from '@workspace/api-client-react';
 import { MODULE_REGISTRY } from '@workspace/platform-core';
 import { useDebounce } from '@/hooks/use-debounce';
 import {
@@ -90,7 +90,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         { href: '/finance/expenses', label: t('Expenses', 'المصروفات'), soon: true },
       ]
     },
-    { href: '/products', label: t('Catalog', 'الكتالوج'), icon: Package, soon: true },
+    { href: '/finance/items', label: t('Catalog', 'الكتالوج'), icon: Package },
     { href: '/accounting', label: t('Accounting', 'المحاسبة'), icon: Landmark, soon: true },
     { href: '/reports', label: t('Reports', 'التقارير'), icon: BarChart3, soon: true },
   ];
@@ -118,6 +118,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     query: {
       enabled: !!orgId && overlay === 'search' && debouncedSearch.length >= 2,
       queryKey: getFindPartiesQueryKey(orgId, { q: debouncedSearch })
+    }
+  });
+
+  const { data: catalogResults } = useListCatalogItems(orgId, {
+    search: debouncedSearch,
+    pageSize: 5
+  }, {
+    query: {
+      enabled: !!orgId && overlay === 'search' && debouncedSearch.length >= 2,
+      queryKey: getListCatalogItemsQueryKey(orgId, { search: debouncedSearch, pageSize: 5 })
     }
   });
 
@@ -435,6 +445,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       </button>
                     );
                   })}
+                  {catalogResults?.items?.map(item => (
+                    <button key={item.id} onClick={() => { setLocation(`/finance/items/${item.id}`); setOverlay(null); }} className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-medium hover:bg-muted text-left">
+                      <div>
+                        <div className="text-foreground">{item.name}</div>
+                        <div className="text-[10px] text-muted-foreground">{item.code} · {item.type === 'PRODUCT' ? t('Product', 'منتج') : t('Service', 'خدمة')}</div>
+                      </div>
+                      <ChevronRight size={16} className="text-muted-foreground shrink-0" />
+                    </button>
+                  ))}
                   {searchableRoutes.map(([href, label]) => (
                     <button key={href} onClick={() => { setLocation(href); setOverlay(null); }} className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-medium hover:bg-muted">
                       {label}<ChevronRight size={16} className="text-muted-foreground" />
@@ -452,7 +471,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   { label: t('Quotation', 'عرض سعر'), soon: true },
                   { label: t('Invoice', 'فاتورة'), soon: true },
                   { label: t('Expense', 'مصروف'), soon: true },
-                  { label: t('Product', 'منتج'), soon: true }
+                  { label: t('Product', 'منتج'), route: '/finance/items?new=1' }
                 ].map(item => (
                   <button key={item.label} className="rounded-xl border border-border p-4 text-start text-sm font-semibold hover:border-primary/40 hover:bg-primary/5" onClick={() => {
                     if (item.route) {

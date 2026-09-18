@@ -294,6 +294,11 @@ export type DashboardSummaryCustomerChecklist = {
   complete: boolean;
 };
 
+export type DashboardSummaryItemChecklist = {
+  hasItems: boolean;
+  complete: boolean;
+};
+
 export interface DashboardSummary {
   currency: string;
   revenue: string;
@@ -305,6 +310,127 @@ export interface DashboardSummary {
   customerCount: number;
   supplierCount: number;
   customerChecklist: DashboardSummaryCustomerChecklist;
+  itemCount: number;
+  itemChecklist: DashboardSummaryItemChecklist;
+}
+
+export type CatalogItemType = typeof CatalogItemType[keyof typeof CatalogItemType];
+
+
+export const CatalogItemType = {
+  PRODUCT: 'PRODUCT',
+  SERVICE: 'SERVICE',
+} as const;
+
+export type CatalogItemStatus = typeof CatalogItemStatus[keyof typeof CatalogItemStatus];
+
+
+export const CatalogItemStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+} as const;
+
+export type TaxCategory = typeof TaxCategory[keyof typeof TaxCategory];
+
+
+export const TaxCategory = {
+  STANDARD: 'STANDARD',
+  ZERO_RATED: 'ZERO_RATED',
+  EXEMPT: 'EXEMPT',
+  OUT_OF_SCOPE: 'OUT_OF_SCOPE',
+} as const;
+
+export interface CatalogItemInput {
+  type: CatalogItemType;
+  /** @minLength 1 */
+  name: string;
+  /** @minLength 1 */
+  nameAr: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  descriptionAr?: string | null;
+  unitId: string;
+  /** @pattern ^\d+(\.\d{1,2})?$ */
+  salesPrice: string;
+  /** @pattern ^\d+(\.\d{1,2})?$ */
+  purchasePrice: string;
+  taxCategory: TaxCategory;
+  /** @pattern ^\d+(\.\d{1,2})?$ */
+  taxRate: string;
+  /** @nullable */
+  sku?: string | null;
+  /** @nullable */
+  barcode?: string | null;
+  trackInventory?: boolean;
+}
+
+export type CatalogItemUpdate = CatalogItemInput;
+
+export interface CatalogItemStatusInput {
+  status: CatalogItemStatus;
+}
+
+export interface CatalogUnit {
+  id: string;
+  code: string;
+  name: string;
+  nameAr: string;
+}
+
+export type CatalogItem = CatalogItemInput & {
+  id: string;
+  organizationId: string;
+  code: string;
+  status: CatalogItemStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CatalogListResponseSummary = {
+  total: number;
+  products: number;
+  services: number;
+  active: number;
+};
+
+export interface CatalogListResponse {
+  items: CatalogItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  summary: CatalogListResponseSummary;
+}
+
+export interface TaxDefinition {
+  category: TaxCategory;
+  rate: string;
+  name: string;
+  nameAr: string;
+}
+
+export type CatalogImportInputRowsItem = { [key: string]: unknown };
+
+export interface CatalogImportInput {
+  /** @nullable */
+  csv?: string | null;
+  rows?: CatalogImportInputRowsItem[];
+}
+
+export type CatalogImportPreviewErrorsItem = { [key: string]: unknown };
+
+export type CatalogImportPreviewRowsItem = { [key: string]: unknown };
+
+export interface CatalogImportPreview {
+  totalRows: number;
+  validRows: number;
+  errors: CatalogImportPreviewErrorsItem[];
+  rows: CatalogImportPreviewRowsItem[];
+}
+
+export interface CatalogImportResult {
+  imported: number;
+  skipped: number;
 }
 
 /**
@@ -827,5 +953,39 @@ q: string;
 export type ExportPartiesParams = {
 search?: PartySearchParameter;
 status?: PartyStatusParameter;
+};
+
+export type ListCatalogItemsParams = {
+search?: string;
+type?: CatalogItemType;
+status?: CatalogItemStatus;
+taxCategory?: TaxCategory;
+/**
+ * @minimum 1
+ */
+page?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: number;
+sort?: ListCatalogItemsSort;
+};
+
+export type ListCatalogItemsSort = typeof ListCatalogItemsSort[keyof typeof ListCatalogItemsSort];
+
+
+export const ListCatalogItemsSort = {
+  name: 'name',
+  code: 'code',
+  created: 'created',
+  updated: 'updated',
+} as const;
+
+export type ExportCatalogItemsParams = {
+search?: string;
+type?: CatalogItemType;
+status?: CatalogItemStatus;
+taxCategory?: TaxCategory;
 };
 

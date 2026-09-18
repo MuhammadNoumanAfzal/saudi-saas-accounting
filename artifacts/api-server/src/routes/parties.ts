@@ -14,6 +14,7 @@ import { requireAnyFinancePartyPermission, requireFinancePartyPermission } from 
 import { writeAuditLog } from "../lib/audit";
 import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
 import { Readable } from "node:stream";
+import { parseCsvRows } from "../lib/csv";
 
 const router = Router();
 const storage = new ObjectStorageService();
@@ -185,22 +186,16 @@ router.delete("/organizations/:organizationId/parties/:partyId/documents/:docume
   await audit(req, "deleted", "party_document", d.id, { fileName: d.fileName }, null);
   return res.status(204).send();
 });
-function csvRows(text: string) {
-  const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter(Boolean);
-  if (!lines.length) return [];
-  const headers = lines.shift()!.split(",").map(x => x.trim());
-  return lines.map(line => { const cells = line.split(","); return Object.fromEntries(headers.map((h, i) => [h, (cells[i] || "").trim()])); });
-}
 function importRole(req: any) { const role = String(req.params.role); return role === "customers" ? "customer" : role === "suppliers" ? "supplier" : null; }
 function importPermission(req: any, action: string) { const role = importRole(req); return role ? `${role}s.${action}` as any : null; }
 router.get("/organizations/:organizationId/:role/import/template", async (req: any, res, next) => { const p = importPermission(req, "export"); if (!p) return res.status(400).json({ error: "Invalid role" }); return requireFinancePartyPermission(p)(req, res, next); }, (req, res) => res.type("text/csv").send("partyType,businessNameEnglish,businessNameArabic,firstName,lastName,commercialRegistrationNumber,vatRegistered,vatNumber,primaryEmail,primaryPhone\norganization,,,,,,,false,,,\n"));
 router.post("/organizations/:organizationId/:role/import/preview", async (req: any, res, next) => { const p = importPermission(req, "import"); if (!p) return res.status(400).json({ error: "Invalid role" }); return requireFinancePartyPermission(p)(req, res, next); }, async (req: any, res) => {
-  const rows = Array.isArray(req.body.rows) ? req.body.rows : csvRows(String(req.body.csv || "")); const errors: any[] = [];
+  const rows = Array.isArray(req.body.rows) ? req.body.rows : parseCsvRows(String(req.body.csv || "")); const errors: any[] = [];
   rows.forEach((r: any, i: number) => { if (!["organization", "individual"].includes(r.partyType)) errors.push({ row: i + 2, field: "partyType", error: "Must be organization or individual" }); if (r.vatRegistered === "true" && !(/^\d{15}$/.test(r.vatNumber || "") && String(r.vatNumber).startsWith("3") && String(r.vatNumber).endsWith("3"))) errors.push({ row: i + 2, field: "vatNumber", error: "Invalid Saudi VAT format" }); });
   res.json({ role: importRole(req), totalRows: rows.length, validRows: rows.length - errors.length, errors, rows });
 });
 router.post("/organizations/:organizationId/:role/import/confirm", async (req: any, res, next) => { const p = importPermission(req, "import"); if (!p) return res.status(400).json({ error: "Invalid role" }); return requireFinancePartyPermission(p)(req, res, next); }, async (req: any, res) => {
-  const role = importRole(req)!; const rows = Array.isArray(req.body.rows) ? req.body.rows : csvRows(String(req.body.csv || "")); const invalid = rows.filter((r: any) => !["organization", "individual"].includes(r.partyType) || (r.vatRegistered === "true" && !(/^\d{15}$/.test(r.vatNumber || "") && String(r.vatNumber).startsWith("3") && String(r.vatNumber).endsWith("3"))));
+  const role = importRole(req)!; const rows = Array.isArray(req.body.rows) ? req.body.rows : parseCsvRows(String(req.body.csv || "")); const invalid = rows.filter((r: any) => !["organization", "individual"].includes(r.partyType) || (r.vatRegistered === "true" && !(/^\d{15}$/.test(r.vatNumber || "") && String(r.vatNumber).startsWith("3") && String(r.vatNumber).endsWith("3"))));
   if (invalid.length) return res.status(400).json({ error: "Import contains invalid rows", invalidRows: invalid.length });
   for (const row of rows) { const body = { ...row, vatRegistered: row.vatRegistered === true || row.vatRegistered === "true" }; const [p] = await db.insert(businessPartiesTable).values({ ...body, organizationId: org(req), displayName: name(body) } as any).returning(); const r = await nextNumber(org(req), role); await db.insert(partyRolesTable).values({ organizationId: org(req), partyId: p.id, role, partyNumber: r }); await audit(req, "imported", "business_party", p.id, null, p); }
   return res.status(201).json({ imported: rows.length, skipped: 0 });

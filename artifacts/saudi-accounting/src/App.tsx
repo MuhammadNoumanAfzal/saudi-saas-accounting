@@ -30,6 +30,8 @@ import { Customers } from './pages/customers';
 import { CustomerDetail } from './pages/customer-detail';
 import { Suppliers } from './pages/suppliers';
 import { SupplierDetail } from './pages/supplier-detail';
+import { CatalogItems } from './pages/catalog-items';
+import { CatalogItemDetail } from './pages/catalog-item-detail';
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
@@ -246,6 +248,22 @@ export default function App() {
               <AuthGuard>
                 <ModuleGuard moduleKey="finance">
                   <SupplierDetail />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
+            <Route path="/finance/items">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <CatalogItems />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
+            <Route path="/finance/items/:id">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <CatalogItemDetail />
                 </ModuleGuard>
               </AuthGuard>
             </Route>

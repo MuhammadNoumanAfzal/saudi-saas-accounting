@@ -64,7 +64,8 @@ export function FinanceOverview() {
   const isEmtpy = !summary || !summary.recentTransactions?.length;
 
   const hasCustomers = summary?.customerChecklist?.hasCustomers;
-  const completedSteps = 1 + (hasCustomers ? 1 : 0);
+  const hasItems = summary?.itemChecklist?.hasItems;
+  const completedSteps = 1 + (hasCustomers ? 1 : 0) + (hasItems ? 1 : 0);
   const totalSteps = 6;
   const percent = Math.round((completedSteps / totalSteps) * 100);
 
@@ -135,13 +136,22 @@ export function FinanceOverview() {
                   </div>
                 </div>
               )}
-              <div className="flex items-start gap-3 p-3 rounded-xl border border-border bg-card">
-                <Circle size={16} className="text-muted-foreground shrink-0 mt-0.5" />
-                <div>
-                   <div className="text-sm font-semibold">{t('Add a product or service', 'إضافة منتج أو خدمة')}</div>
-                   <Link href="/products" className="text-xs text-primary font-medium mt-1 inline-block">{t('Coming soon', 'قريباً')}</Link>
+              {summary?.itemChecklist?.hasItems ? (
+                <div className="flex items-start gap-3 p-3 rounded-xl border border-primary/20 bg-primary/5">
+                  <CheckCircle2 size={16} className="text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <div className="text-sm font-semibold line-through text-muted-foreground">{t('Add a product or service', 'إضافة منتج أو خدمة')}</div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-start gap-3 p-3 rounded-xl border border-border bg-card">
+                  <Circle size={16} className="text-muted-foreground shrink-0 mt-0.5" />
+                  <div>
+                     <div className="text-sm font-semibold">{t('Add a product or service', 'إضافة منتج أو خدمة')}</div>
+                     <Link href="/finance/items?new=1" className="text-xs text-primary font-medium mt-1 inline-block">{t('Add Item', 'إضافة صنف')}</Link>
+                  </div>
+                </div>
+              )}
               <div className="flex items-start gap-3 p-3 rounded-xl border border-border bg-card">
                 <Circle size={16} className="text-muted-foreground shrink-0 mt-0.5" />
                 <div>

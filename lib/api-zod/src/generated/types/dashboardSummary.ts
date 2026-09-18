@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { DashboardSummaryCustomerChecklist } from './dashboardSummaryCustomerChecklist';
+import type { DashboardSummaryItemChecklist } from './dashboardSummaryItemChecklist';
 import type { DashboardSummaryRecentTransactionsItem } from './dashboardSummaryRecentTransactionsItem';
 
 export interface DashboardSummary {
@@ -19,4 +20,6 @@ export interface DashboardSummary {
   customerCount: number;
   supplierCount: number;
   customerChecklist: DashboardSummaryCustomerChecklist;
+  itemCount: number;
+  itemChecklist: DashboardSummaryItemChecklist;
 }

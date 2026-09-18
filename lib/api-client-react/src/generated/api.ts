@@ -21,14 +21,25 @@ import type {
 
 import type {
   AuditLog,
+  CatalogImportInput,
+  CatalogImportPreview,
+  CatalogImportResult,
+  CatalogItem,
+  CatalogItemInput,
+  CatalogItemStatusInput,
+  CatalogItemUpdate,
+  CatalogListResponse,
+  CatalogUnit,
   CurrentSession,
   DashboardSummary,
   DuplicateWarning,
+  ExportCatalogItemsParams,
   ExportPartiesParams,
   FindPartiesParams,
   GetCustomersParams,
   GetSuppliersParams,
   HealthStatus,
+  ListCatalogItemsParams,
   ModuleDefinition,
   Organization,
   OrganizationInput,
@@ -57,6 +68,7 @@ import type {
   PartyUpdateInput,
   RequestUploadUrlInput,
   RequestUploadUrlResponse,
+  TaxDefinition,
   UserPreferences,
   UserPreferencesInput
 } from './api.schemas';
@@ -3712,4 +3724,878 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getDeletePartyDocumentMutationOptions(options));
     }
+
+export const getListCatalogItemsUrl = (organizationId: string,
+    params?: ListCatalogItemsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/organizations/${organizationId}/catalog/items?${stringifiedParams}` : `/api/organizations/${organizationId}/catalog/items`
+}
+
+export const listCatalogItems = async (organizationId: string,
+    params?: ListCatalogItemsParams, options?: Parameters<typeof customFetch>[1]): Promise<CatalogListResponse> => {
+
+  return customFetch<CatalogListResponse>(getListCatalogItemsUrl(organizationId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCatalogItemsQueryKey = (organizationId: string,
+    params?: ListCatalogItemsParams,) => {
+    return [
+    `/api/organizations/${organizationId}/catalog/items`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListCatalogItemsQueryOptions = <TData = Awaited<ReturnType<typeof listCatalogItems>>, TError = ErrorType<unknown>>(organizationId: string,
+    params?: ListCatalogItemsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCatalogItems>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCatalogItemsQueryKey(organizationId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCatalogItems>>> = ({ signal }) => listCatalogItems(organizationId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: organizationId !== null && organizationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCatalogItems>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCatalogItemsQueryResult = NonNullable<Awaited<ReturnType<typeof listCatalogItems>>>
+export type ListCatalogItemsQueryError = ErrorType<unknown>
+
+
+
+export function useListCatalogItems<TData = Awaited<ReturnType<typeof listCatalogItems>>, TError = ErrorType<unknown>>(
+ organizationId: string,
+    params?: ListCatalogItemsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCatalogItems>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCatalogItemsQueryOptions(organizationId,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateCatalogItemUrl = (organizationId: string,) => {
+
+
+
+
+  return `/api/organizations/${organizationId}/catalog/items`
+}
+
+export const createCatalogItem = async (organizationId: string,
+    catalogItemInput: CatalogItemInput, options?: Parameters<typeof customFetch>[1]): Promise<CatalogItem> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CatalogItem>(getCreateCatalogItemUrl(organizationId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(catalogItemInput)
+  }
+);}
+
+
+
+
+
+export const getCreateCatalogItemMutationKey = () => ['createCatalogItem'] as const;
+
+export const getCreateCatalogItemMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCatalogItem>>, TError,CreateCatalogItemMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCatalogItem>>, TError,CreateCatalogItemMutationVariables, TContext> => {
+
+const mutationKey = getCreateCatalogItemMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCatalogItem>>, CreateCatalogItemMutationVariables> = (props) => {
+          const {organizationId,data} = props ?? {};
+
+          return  createCatalogItem(organizationId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCatalogItemMutationResult = NonNullable<Awaited<ReturnType<typeof createCatalogItem>>>
+    export type CreateCatalogItemMutationBody = BodyType<CatalogItemInput>
+    export type CreateCatalogItemMutationError = ErrorType<unknown>
+    export type CreateCatalogItemMutationVariables = {organizationId: string;data: BodyType<CatalogItemInput>}
+
+    export const useCreateCatalogItem = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCatalogItem>>, TError,CreateCatalogItemMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createCatalogItem>>,
+        TError,
+        CreateCatalogItemMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateCatalogItemMutationOptions(options));
+    }
+
+export const getGetCatalogItemUrl = (organizationId: string,
+    itemId: string,) => {
+
+
+
+
+  return `/api/organizations/${organizationId}/catalog/items/${itemId}`
+}
+
+export const getCatalogItem = async (organizationId: string,
+    itemId: string, options?: Parameters<typeof customFetch>[1]): Promise<CatalogItem> => {
+
+  return customFetch<CatalogItem>(getGetCatalogItemUrl(organizationId,itemId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCatalogItemQueryKey = (organizationId: string,
+    itemId: string,) => {
+    return [
+    `/api/organizations/${organizationId}/catalog/items/${itemId}`
+    ] as const;
+    }
+
+
+export const getGetCatalogItemQueryOptions = <TData = Awaited<ReturnType<typeof getCatalogItem>>, TError = ErrorType<unknown>>(organizationId: string,
+    itemId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCatalogItem>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCatalogItemQueryKey(organizationId,itemId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCatalogItem>>> = ({ signal }) => getCatalogItem(organizationId,itemId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: organizationId !== null && organizationId !== undefined && itemId !== null && itemId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCatalogItem>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCatalogItemQueryResult = NonNullable<Awaited<ReturnType<typeof getCatalogItem>>>
+export type GetCatalogItemQueryError = ErrorType<unknown>
+
+
+
+export function useGetCatalogItem<TData = Awaited<ReturnType<typeof getCatalogItem>>, TError = ErrorType<unknown>>(
+ organizationId: string,
+    itemId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCatalogItem>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCatalogItemQueryOptions(organizationId,itemId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateCatalogItemUrl = (organizationId: string,
+    itemId: string,) => {
+
+
+
+
+  return `/api/organizations/${organizationId}/catalog/items/${itemId}`
+}
+
+export const updateCatalogItem = async (organizationId: string,
+    itemId: string,
+    catalogItemUpdate: CatalogItemUpdate, options?: Parameters<typeof customFetch>[1]): Promise<CatalogItem> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CatalogItem>(getUpdateCatalogItemUrl(organizationId,itemId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(catalogItemUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateCatalogItemMutationKey = () => ['updateCatalogItem'] as const;
+
+export const getUpdateCatalogItemMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCatalogItem>>, TError,UpdateCatalogItemMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateCatalogItem>>, TError,UpdateCatalogItemMutationVariables, TContext> => {
+
+const mutationKey = getUpdateCatalogItemMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCatalogItem>>, UpdateCatalogItemMutationVariables> = (props) => {
+          const {organizationId,itemId,data} = props ?? {};
+
+          return  updateCatalogItem(organizationId,itemId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateCatalogItemMutationResult = NonNullable<Awaited<ReturnType<typeof updateCatalogItem>>>
+    export type UpdateCatalogItemMutationBody = BodyType<CatalogItemUpdate>
+    export type UpdateCatalogItemMutationError = ErrorType<unknown>
+    export type UpdateCatalogItemMutationVariables = {organizationId: string;itemId: string;data: BodyType<CatalogItemUpdate>}
+
+    export const useUpdateCatalogItem = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCatalogItem>>, TError,UpdateCatalogItemMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateCatalogItem>>,
+        TError,
+        UpdateCatalogItemMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateCatalogItemMutationOptions(options));
+    }
+
+export const getUpdateCatalogItemStatusUrl = (organizationId: string,
+    itemId: string,) => {
+
+
+
+
+  return `/api/organizations/${organizationId}/catalog/items/${itemId}/status`
+}
+
+export const updateCatalogItemStatus = async (organizationId: string,
+    itemId: string,
+    catalogItemStatusInput: CatalogItemStatusInput, options?: Parameters<typeof customFetch>[1]): Promise<CatalogItem> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CatalogItem>(getUpdateCatalogItemStatusUrl(organizationId,itemId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(catalogItemStatusInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateCatalogItemStatusMutationKey = () => ['updateCatalogItemStatus'] as const;
+
+export const getUpdateCatalogItemStatusMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCatalogItemStatus>>, TError,UpdateCatalogItemStatusMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateCatalogItemStatus>>, TError,UpdateCatalogItemStatusMutationVariables, TContext> => {
+
+const mutationKey = getUpdateCatalogItemStatusMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCatalogItemStatus>>, UpdateCatalogItemStatusMutationVariables> = (props) => {
+          const {organizationId,itemId,data} = props ?? {};
+
+          return  updateCatalogItemStatus(organizationId,itemId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateCatalogItemStatusMutationResult = NonNullable<Awaited<ReturnType<typeof updateCatalogItemStatus>>>
+    export type UpdateCatalogItemStatusMutationBody = BodyType<CatalogItemStatusInput>
+    export type UpdateCatalogItemStatusMutationError = ErrorType<unknown>
+    export type UpdateCatalogItemStatusMutationVariables = {organizationId: string;itemId: string;data: BodyType<CatalogItemStatusInput>}
+
+    export const useUpdateCatalogItemStatus = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCatalogItemStatus>>, TError,UpdateCatalogItemStatusMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateCatalogItemStatus>>,
+        TError,
+        UpdateCatalogItemStatusMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateCatalogItemStatusMutationOptions(options));
+    }
+
+export const getListCatalogUnitsUrl = (organizationId: string,) => {
+
+
+
+
+  return `/api/organizations/${organizationId}/catalog/units`
+}
+
+export const listCatalogUnits = async (organizationId: string, options?: Parameters<typeof customFetch>[1]): Promise<CatalogUnit[]> => {
+
+  return customFetch<CatalogUnit[]>(getListCatalogUnitsUrl(organizationId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCatalogUnitsQueryKey = (organizationId: string,) => {
+    return [
+    `/api/organizations/${organizationId}/catalog/units`
+    ] as const;
+    }
+
+
+export const getListCatalogUnitsQueryOptions = <TData = Awaited<ReturnType<typeof listCatalogUnits>>, TError = ErrorType<unknown>>(organizationId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCatalogUnits>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCatalogUnitsQueryKey(organizationId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCatalogUnits>>> = ({ signal }) => listCatalogUnits(organizationId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: organizationId !== null && organizationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCatalogUnits>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCatalogUnitsQueryResult = NonNullable<Awaited<ReturnType<typeof listCatalogUnits>>>
+export type ListCatalogUnitsQueryError = ErrorType<unknown>
+
+
+
+export function useListCatalogUnits<TData = Awaited<ReturnType<typeof listCatalogUnits>>, TError = ErrorType<unknown>>(
+ organizationId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCatalogUnits>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCatalogUnitsQueryOptions(organizationId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListCatalogTaxDefinitionsUrl = (organizationId: string,) => {
+
+
+
+
+  return `/api/organizations/${organizationId}/catalog/tax-definitions`
+}
+
+export const listCatalogTaxDefinitions = async (organizationId: string, options?: Parameters<typeof customFetch>[1]): Promise<TaxDefinition[]> => {
+
+  return customFetch<TaxDefinition[]>(getListCatalogTaxDefinitionsUrl(organizationId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCatalogTaxDefinitionsQueryKey = (organizationId: string,) => {
+    return [
+    `/api/organizations/${organizationId}/catalog/tax-definitions`
+    ] as const;
+    }
+
+
+export const getListCatalogTaxDefinitionsQueryOptions = <TData = Awaited<ReturnType<typeof listCatalogTaxDefinitions>>, TError = ErrorType<unknown>>(organizationId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCatalogTaxDefinitions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCatalogTaxDefinitionsQueryKey(organizationId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCatalogTaxDefinitions>>> = ({ signal }) => listCatalogTaxDefinitions(organizationId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: organizationId !== null && organizationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCatalogTaxDefinitions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCatalogTaxDefinitionsQueryResult = NonNullable<Awaited<ReturnType<typeof listCatalogTaxDefinitions>>>
+export type ListCatalogTaxDefinitionsQueryError = ErrorType<unknown>
+
+
+
+export function useListCatalogTaxDefinitions<TData = Awaited<ReturnType<typeof listCatalogTaxDefinitions>>, TError = ErrorType<unknown>>(
+ organizationId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCatalogTaxDefinitions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCatalogTaxDefinitionsQueryOptions(organizationId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDownloadCatalogImportTemplateUrl = (organizationId: string,) => {
+
+
+
+
+  return `/api/organizations/${organizationId}/catalog/import/template`
+}
+
+export const downloadCatalogImportTemplate = async (organizationId: string, options?: Parameters<typeof customFetch>[1]): Promise<string> => {
+
+  return customFetch<string>(getDownloadCatalogImportTemplateUrl(organizationId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadCatalogImportTemplateQueryKey = (organizationId: string,) => {
+    return [
+    `/api/organizations/${organizationId}/catalog/import/template`
+    ] as const;
+    }
+
+
+export const getDownloadCatalogImportTemplateQueryOptions = <TData = Awaited<ReturnType<typeof downloadCatalogImportTemplate>>, TError = ErrorType<unknown>>(organizationId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadCatalogImportTemplate>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadCatalogImportTemplateQueryKey(organizationId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadCatalogImportTemplate>>> = ({ signal }) => downloadCatalogImportTemplate(organizationId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: organizationId !== null && organizationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadCatalogImportTemplate>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadCatalogImportTemplateQueryResult = NonNullable<Awaited<ReturnType<typeof downloadCatalogImportTemplate>>>
+export type DownloadCatalogImportTemplateQueryError = ErrorType<unknown>
+
+
+
+export function useDownloadCatalogImportTemplate<TData = Awaited<ReturnType<typeof downloadCatalogImportTemplate>>, TError = ErrorType<unknown>>(
+ organizationId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadCatalogImportTemplate>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadCatalogImportTemplateQueryOptions(organizationId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPreviewCatalogImportUrl = (organizationId: string,) => {
+
+
+
+
+  return `/api/organizations/${organizationId}/catalog/import/preview`
+}
+
+export const previewCatalogImport = async (organizationId: string,
+    catalogImportInput: CatalogImportInput, options?: Parameters<typeof customFetch>[1]): Promise<CatalogImportPreview> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CatalogImportPreview>(getPreviewCatalogImportUrl(organizationId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(catalogImportInput)
+  }
+);}
+
+
+
+
+
+export const getPreviewCatalogImportMutationKey = () => ['previewCatalogImport'] as const;
+
+export const getPreviewCatalogImportMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewCatalogImport>>, TError,PreviewCatalogImportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof previewCatalogImport>>, TError,PreviewCatalogImportMutationVariables, TContext> => {
+
+const mutationKey = getPreviewCatalogImportMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof previewCatalogImport>>, PreviewCatalogImportMutationVariables> = (props) => {
+          const {organizationId,data} = props ?? {};
+
+          return  previewCatalogImport(organizationId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PreviewCatalogImportMutationResult = NonNullable<Awaited<ReturnType<typeof previewCatalogImport>>>
+    export type PreviewCatalogImportMutationBody = BodyType<CatalogImportInput>
+    export type PreviewCatalogImportMutationError = ErrorType<unknown>
+    export type PreviewCatalogImportMutationVariables = {organizationId: string;data: BodyType<CatalogImportInput>}
+
+    export const usePreviewCatalogImport = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewCatalogImport>>, TError,PreviewCatalogImportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof previewCatalogImport>>,
+        TError,
+        PreviewCatalogImportMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPreviewCatalogImportMutationOptions(options));
+    }
+
+export const getConfirmCatalogImportUrl = (organizationId: string,) => {
+
+
+
+
+  return `/api/organizations/${organizationId}/catalog/import/confirm`
+}
+
+export const confirmCatalogImport = async (organizationId: string,
+    catalogImportInput: CatalogImportInput, options?: Parameters<typeof customFetch>[1]): Promise<CatalogImportResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CatalogImportResult>(getConfirmCatalogImportUrl(organizationId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(catalogImportInput)
+  }
+);}
+
+
+
+
+
+export const getConfirmCatalogImportMutationKey = () => ['confirmCatalogImport'] as const;
+
+export const getConfirmCatalogImportMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmCatalogImport>>, TError,ConfirmCatalogImportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof confirmCatalogImport>>, TError,ConfirmCatalogImportMutationVariables, TContext> => {
+
+const mutationKey = getConfirmCatalogImportMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmCatalogImport>>, ConfirmCatalogImportMutationVariables> = (props) => {
+          const {organizationId,data} = props ?? {};
+
+          return  confirmCatalogImport(organizationId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConfirmCatalogImportMutationResult = NonNullable<Awaited<ReturnType<typeof confirmCatalogImport>>>
+    export type ConfirmCatalogImportMutationBody = BodyType<CatalogImportInput>
+    export type ConfirmCatalogImportMutationError = ErrorType<unknown>
+    export type ConfirmCatalogImportMutationVariables = {organizationId: string;data: BodyType<CatalogImportInput>}
+
+    export const useConfirmCatalogImport = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmCatalogImport>>, TError,ConfirmCatalogImportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof confirmCatalogImport>>,
+        TError,
+        ConfirmCatalogImportMutationVariables,
+        TContext
+      > => {
+      return useMutation(getConfirmCatalogImportMutationOptions(options));
+    }
+
+export const getExportCatalogItemsUrl = (organizationId: string,
+    params?: ExportCatalogItemsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/organizations/${organizationId}/catalog/export?${stringifiedParams}` : `/api/organizations/${organizationId}/catalog/export`
+}
+
+export const exportCatalogItems = async (organizationId: string,
+    params?: ExportCatalogItemsParams, options?: Parameters<typeof customFetch>[1]): Promise<string> => {
+
+  return customFetch<string>(getExportCatalogItemsUrl(organizationId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getExportCatalogItemsQueryKey = (organizationId: string,
+    params?: ExportCatalogItemsParams,) => {
+    return [
+    `/api/organizations/${organizationId}/catalog/export`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getExportCatalogItemsQueryOptions = <TData = Awaited<ReturnType<typeof exportCatalogItems>>, TError = ErrorType<unknown>>(organizationId: string,
+    params?: ExportCatalogItemsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportCatalogItems>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getExportCatalogItemsQueryKey(organizationId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof exportCatalogItems>>> = ({ signal }) => exportCatalogItems(organizationId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: organizationId !== null && organizationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof exportCatalogItems>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ExportCatalogItemsQueryResult = NonNullable<Awaited<ReturnType<typeof exportCatalogItems>>>
+export type ExportCatalogItemsQueryError = ErrorType<unknown>
+
+
+
+export function useExportCatalogItems<TData = Awaited<ReturnType<typeof exportCatalogItems>>, TError = ErrorType<unknown>>(
+ organizationId: string,
+    params?: ExportCatalogItemsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportCatalogItems>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getExportCatalogItemsQueryOptions(organizationId,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 

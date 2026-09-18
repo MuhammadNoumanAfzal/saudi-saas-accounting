@@ -31,6 +31,7 @@ import {
   organizationsTable,
   userPreferencesTable,
   usersTable,
+  catalogItemsTable,
 } from "@workspace/db";
 import { MODULE_REGISTRY } from "@workspace/platform-core";
 import {
@@ -318,6 +319,11 @@ router.get(
         recentTransactions: [],
         customerCount: Number((await db.select({ count: sql<number>`count(*)` }).from(partyRolesTable).where(and(eq(partyRolesTable.organizationId, params.data.organizationId), eq(partyRolesTable.role, "customer"))))[0]?.count ?? 0),
         supplierCount: Number((await db.select({ count: sql<number>`count(*)` }).from(partyRolesTable).where(and(eq(partyRolesTable.organizationId, params.data.organizationId), eq(partyRolesTable.role, "supplier"))))[0]?.count ?? 0),
+         itemCount: Number((await db.select({ count: sql<number>`count(*)` }).from(catalogItemsTable).where(eq(catalogItemsTable.organizationId, params.data.organizationId)))[0]?.count ?? 0),
+         itemChecklist: {
+           hasItems: Number((await db.select({ count: sql<number>`count(*)` }).from(catalogItemsTable).where(eq(catalogItemsTable.organizationId, params.data.organizationId)))[0]?.count ?? 0) > 0,
+           complete: Number((await db.select({ count: sql<number>`count(*)` }).from(catalogItemsTable).where(eq(catalogItemsTable.organizationId, params.data.organizationId)))[0]?.count ?? 0) > 0,
+         },
         customerChecklist: {
           hasCustomers: Number((await db.select({ count: sql<number>`count(*)` }).from(partyRolesTable).where(and(eq(partyRolesTable.organizationId, params.data.organizationId), eq(partyRolesTable.role, "customer"))))[0]?.count ?? 0) > 0,
           complete: Number((await db.select({ count: sql<number>`count(*)` }).from(partyRolesTable).where(and(eq(partyRolesTable.organizationId, params.data.organizationId), eq(partyRolesTable.role, "customer"))))[0]?.count ?? 0) > 0,
