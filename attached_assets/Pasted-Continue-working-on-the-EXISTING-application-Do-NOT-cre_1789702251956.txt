@@ -1,0 +1,1043 @@
+Continue working on the EXISTING application.
+
+Do NOT create a new project.
+Do NOT rebuild the application.
+Do NOT remove or break functionality completed in previous phases.
+
+We are making an important product architecture evolution BEFORE building the first business module.
+
+==========================================================
+PRODUCT EVOLUTION
+MIZAN → KHANBAS NEXUS
+==========================================================
+
+The product is no longer intended to become only an accounting application.
+
+It will become a modular, interconnected Saudi business platform.
+
+New product name:
+
+KHANBAS NEXUS
+
+Primary descriptor:
+
+Connected Business Platform
+
+Brand architecture:
+
+KHANBAS NEXUS
+│
+├── Nexus Finance
+├── Nexus Fleet
+├── Nexus Projects
+├── Nexus Assets
+├── Nexus Intelligence
+└── Nexus Automate
+
+IMPORTANT:
+
+Only Nexus Finance is currently being developed.
+
+Do NOT build Fleet, Projects, Assets, Intelligence or Automate.
+
+This phase establishes the modular architecture so those products can be added later without rebuilding the platform.
+
+==========================================================
+1. PRESERVE EXISTING DESIGN
+==========================================================
+
+The current Mizan visual design has been approved.
+
+DO NOT redesign it.
+
+Preserve:
+
+- deep green
+- warm off-white
+- gold accent
+- typography approach
+- spacing philosophy
+- card styling
+- subtle borders
+- premium Saudi SaaS appearance
+- existing responsive behavior
+- existing onboarding UX
+- existing dashboard UX
+
+This is primarily a BRAND + ARCHITECTURE evolution.
+
+Replace Mizan branding with KHANBAS NEXUS while preserving the visual quality.
+
+==========================================================
+2. BRAND UPDATE
+==========================================================
+
+Replace user-facing:
+
+Mizan
+
+with:
+
+KHANBAS NEXUS
+
+Where a shorter product reference is required, use:
+
+NEXUS
+
+Do not rename database entities unnecessarily simply because the brand changed.
+
+Remove old Mizan references from:
+
+Landing page
+Authentication
+Onboarding
+Dashboard
+Metadata
+Page titles
+Emails/templates if any
+Settings
+Footer
+Empty states
+Development seed display
+README/product documentation
+
+Do not leave mixed Mizan/Nexus branding.
+
+==========================================================
+3. BRAND PRESENTATION
+==========================================================
+
+Primary brand:
+
+KHANBAS
+NEXUS
+
+or visually:
+
+KHANBAS NEXUS
+
+Use typography hierarchy so NEXUS can become the recognizable product identity.
+
+Descriptor:
+
+Connected Business Platform
+
+Do NOT make the logo visually complicated.
+
+Do NOT introduce unnecessary network graphics, glowing nodes, AI gradients or futuristic clichés.
+
+The product must remain professional enough for:
+
+SMEs
+enterprises
+contractors
+logistics companies
+industrial companies
+healthcare organizations
+government-related organizations
+
+==========================================================
+4. LANDING PAGE COPY
+==========================================================
+
+Update the marketing message so it no longer describes only accounting.
+
+Hero direction:
+
+Run your business.
+Connected.
+
+Supporting message:
+
+KHANBAS NEXUS brings your business operations into one connected platform — starting with finance and expanding with the capabilities your organization needs.
+
+Primary CTA:
+
+Get started
+
+Secondary CTA:
+
+Explore Nexus
+
+Supporting product message:
+
+Start with what you need.
+Add more when you need it.
+
+Do NOT advertise modules as already available if they are not implemented.
+
+Clearly distinguish:
+
+Available
+Coming Soon
+
+==========================================================
+5. PLATFORM CONCEPT
+==========================================================
+
+Introduce three architectural layers:
+
+NEXUS CORE
+NEXUS MODULES
+NEXUS INTEGRATIONS
+
+NEXUS CORE provides shared platform capabilities:
+
+Organizations
+Users
+Roles
+Permissions
+Branches
+Locations
+Notifications
+Documents
+Audit Logs
+Settings
+Search
+Workflows
+Subscriptions / Entitlements
+
+NEXUS MODULES provide business functionality.
+
+NEXUS INTEGRATIONS connect external systems and services.
+
+==========================================================
+6. MODULE REGISTRY
+==========================================================
+
+Create a centralized Module Registry.
+
+Do NOT hardcode module availability throughout random UI components.
+
+Create a module definition architecture.
+
+A module should support fields conceptually similar to:
+
+id
+key
+name
+nameAr
+description
+descriptionAr
+category
+icon
+route
+status
+sortOrder
+dependencies
+availableForActivation
+createdAt
+updatedAt
+
+Initial module definitions:
+
+FINANCE
+FLEET
+PROJECTS
+ASSETS
+INTELLIGENCE
+AUTOMATE
+
+Keys:
+
+finance
+fleet
+projects
+assets
+intelligence
+automate
+
+==========================================================
+7. MODULE STATUS
+==========================================================
+
+Support module lifecycle states such as:
+
+AVAILABLE
+COMING_SOON
+BETA
+DISABLED
+
+Current configuration:
+
+Nexus Finance
+AVAILABLE
+
+Nexus Fleet
+COMING_SOON
+
+Nexus Projects
+COMING_SOON
+
+Nexus Assets
+COMING_SOON
+
+Nexus Intelligence
+COMING_SOON
+
+Nexus Automate
+COMING_SOON
+
+Do NOT build functionality for coming-soon modules.
+
+==========================================================
+8. ORGANIZATION MODULE ENTITLEMENTS
+==========================================================
+
+Create proper organization-level module entitlements.
+
+Conceptual entity:
+
+OrganizationModule
+
+Fields should include:
+
+id
+organizationId
+moduleKey
+enabled
+activatedAt
+deactivatedAt
+configuration
+createdAt
+updatedAt
+
+Use appropriate database design.
+
+Every organization can have different modules enabled.
+
+Example:
+
+Organization A
+
+Finance        ON
+Fleet          OFF
+Projects       OFF
+Assets         OFF
+Intelligence   OFF
+Automate       OFF
+
+Organization B in the future could have:
+
+Finance        ON
+Fleet          ON
+Projects       ON
+Assets         OFF
+Intelligence   ON
+Automate       OFF
+
+==========================================================
+9. SERVER-SIDE MODULE ENFORCEMENT
+==========================================================
+
+CRITICAL SECURITY REQUIREMENT:
+
+Hiding navigation is NOT sufficient.
+
+If an organization does not have a module enabled:
+
+Its protected API routes must reject access.
+
+Its protected application routes must reject access.
+
+Its data must not become accessible by manually entering URLs.
+
+Create centralized module-entitlement middleware/guards.
+
+Example:
+
+requireModule("finance")
+
+Future:
+
+requireModule("fleet")
+
+Do not scatter entitlement checks throughout business logic.
+
+==========================================================
+10. FEATURE ENTITLEMENTS
+==========================================================
+
+Prepare architecture for modules to contain features.
+
+Example:
+
+Finance
+│
+├── customers
+├── suppliers
+├── products
+├── quotations
+├── invoices
+├── purchases
+├── expenses
+├── accounting
+├── inventory
+├── reports
+└── zatca
+
+Eventually subscription plans may enable different features.
+
+Do not implement commercial plans yet.
+
+But design entitlement architecture so later we can support:
+
+Module entitlement
++
+Feature entitlement
+
+without major refactoring.
+
+==========================================================
+11. MODULE + PERMISSION RELATIONSHIP
+==========================================================
+
+Modules and permissions are different concepts.
+
+Example:
+
+Organization has Finance enabled.
+
+User A:
+finance access
+invoice creation
+reports access
+
+User B:
+finance access
+reports view only
+
+Therefore authorization becomes:
+
+1. Does organization have module?
+2. Does user have required permission?
+
+Both must pass.
+
+Preserve the existing RBAC architecture.
+
+==========================================================
+12. SHARED BUSINESS ENTITIES
+==========================================================
+
+IMPORTANT ARCHITECTURAL DECISION:
+
+Some data belongs to NEXUS CORE rather than individual modules.
+
+Prepare architecture for future shared entities such as:
+
+Organization
+Branch
+Location
+User
+Contact
+Document
+Attachment
+Tag
+Comment
+Notification
+AuditEvent
+
+Do NOT duplicate these concepts inside every future module.
+
+Example:
+
+A Location created for a warehouse may eventually be referenced by:
+
+Finance
+Fleet
+Assets
+Projects
+Video Intelligence
+
+There should not be five unrelated copies of the same physical location.
+
+==========================================================
+13. CROSS-MODULE REFERENCES
+==========================================================
+
+Prepare a clean architecture for modules to reference shared records.
+
+Examples for future use:
+
+Fleet vehicle
+→ Asset
+→ Location
+→ Project
+→ Financial cost center
+
+Video camera
+→ Asset
+→ Site/Location
+
+Maintenance expense
+→ Fleet vehicle
+→ Finance transaction
+
+Project invoice
+→ Project
+→ Finance invoice
+
+Do NOT implement these workflows now.
+
+Only make sure architecture does not prevent them.
+
+Avoid tight circular dependencies between modules.
+
+==========================================================
+14. EVENT-DRIVEN PREPARATION
+==========================================================
+
+Prepare a lightweight domain-event architecture.
+
+Examples of future events:
+
+invoice.created
+invoice.paid
+
+vehicle.created
+vehicle.maintenance.completed
+
+project.created
+
+asset.assigned
+
+camera.alert.created
+
+Do NOT introduce unnecessary microservices.
+
+The application can remain a modular monolith for now.
+
+However, business modules should communicate through clean service boundaries/events where appropriate rather than directly modifying each other's database logic.
+
+==========================================================
+15. MODULAR MONOLITH
+==========================================================
+
+Use a MODULAR MONOLITH architecture for the current stage.
+
+Do NOT create multiple independently deployed microservices yet.
+
+Desired structure conceptually:
+
+core/
+
+modules/
+    finance/
+    fleet/
+    projects/
+    assets/
+    intelligence/
+    automate/
+
+integrations/
+    zatca/
+    maps/
+    notifications/
+    storage/
+
+shared/
+
+The exact implementation can follow the existing project architecture where appropriate.
+
+Do not perform destructive refactoring merely to match folder names.
+
+==========================================================
+16. NEXUS APP SWITCHER
+==========================================================
+
+Add a clean Product/Module Switcher to the authenticated application.
+
+It should feel similar to a modern enterprise SaaS app launcher.
+
+Accessible near:
+
+NEXUS logo
+or organization switcher
+
+Opening it displays:
+
+Nexus Finance
+Available
+
+Nexus Fleet
+Coming Soon
+
+Nexus Projects
+Coming Soon
+
+Nexus Assets
+Coming Soon
+
+Nexus Intelligence
+Coming Soon
+
+Nexus Automate
+Coming Soon
+
+Do NOT make this visually dominant.
+
+It should be elegant and compact.
+
+==========================================================
+17. MODULE EXPERIENCE
+==========================================================
+
+When user selects:
+
+Nexus Finance
+
+they remain inside the same platform but enter Finance context.
+
+The sidebar should show Finance-related navigation.
+
+Do not force users to navigate through irrelevant modules.
+
+Future example:
+
+If customer only subscribes to Finance:
+
+They primarily see Finance.
+
+If they have Finance + Fleet:
+
+Module switcher gives:
+
+Finance
+Fleet
+
+and navigation adapts to selected module.
+
+==========================================================
+18. FINANCE NAVIGATION
+==========================================================
+
+Treat the existing accounting-oriented navigation as:
+
+NEXUS FINANCE
+
+Finance sidebar:
+
+Overview
+
+SALES
+Customers
+Quotations
+Invoices
+Credit Notes
+
+PURCHASES
+Suppliers
+Purchase Bills
+Expenses
+
+CATALOG
+Products & Services
+Inventory
+
+ACCOUNTING
+Chart of Accounts
+Journal Entries
+General Ledger
+Payments
+
+REPORTS
+Financial Reports
+VAT Reports
+
+Settings remains Platform/Core settings.
+
+ZATCA remains an integration/settings area associated with Finance.
+
+==========================================================
+19. PLATFORM HOME
+==========================================================
+
+Create the architectural concept of:
+
+NEXUS HOME
+
+This is different from:
+
+FINANCE DASHBOARD
+
+Nexus Home should eventually show cross-module business information.
+
+For now it can remain simple.
+
+Show:
+
+Welcome to KHANBAS NEXUS
+
+Active modules
+
+Nexus Finance
+Active
+
+Coming soon modules
+
+and organization information.
+
+Do NOT fill Nexus Home with fake data.
+
+==========================================================
+20. FINANCE DASHBOARD
+==========================================================
+
+Preserve the financial dashboard created in the previous phase.
+
+It becomes:
+
+Nexus Finance → Overview
+
+Do not throw it away.
+
+Do not redesign it unnecessarily.
+
+Its future data will include:
+
+Revenue
+Receivables
+Expenses
+Net Profit
+Cash Flow
+Invoices
+VAT
+Recent Transactions
+
+==========================================================
+21. SETTINGS — MODULES
+==========================================================
+
+Add:
+
+Settings → Modules
+
+Display cards/list:
+
+Nexus Finance
+Active
+
+Nexus Fleet
+Coming Soon
+
+Nexus Projects
+Coming Soon
+
+Nexus Assets
+Coming Soon
+
+Nexus Intelligence
+Coming Soon
+
+Nexus Automate
+Coming Soon
+
+For now users cannot activate Coming Soon modules.
+
+Do not create fake purchase/activation flows.
+
+==========================================================
+22. PLATFORM ADMIN PREPARATION
+==========================================================
+
+Prepare architecture for a future KHANBAS internal platform administrator.
+
+This is NOT an organization admin.
+
+Future Platform Admin may manage:
+
+Organizations
+Module availability
+Subscriptions
+Platform configuration
+Support
+System health
+
+Do not build the full admin portal now.
+
+But do not confuse:
+
+Platform Admin
+
+with:
+
+Organization Owner/Admin.
+
+==========================================================
+23. FUTURE SUBSCRIPTIONS
+==========================================================
+
+Prepare architecture for future SaaS subscriptions.
+
+Potential future concepts:
+
+Subscription
+Plan
+ModuleEntitlement
+FeatureEntitlement
+UsageLimit
+
+Do not implement billing.
+
+Do not integrate Stripe or any payment gateway.
+
+Do not create fake pricing.
+
+Only ensure OrganizationModule architecture can evolve into subscription-controlled entitlements.
+
+==========================================================
+24. INTEGRATION REGISTRY
+==========================================================
+
+Create architectural preparation for integrations.
+
+Future integrations may include:
+
+ZATCA
+GPS/Telematics
+Video Management Systems
+AI Video Analytics
+Maps
+SMS
+Email
+Payment Gateways
+Banks
+ERP APIs
+Government platforms
+
+Do not implement them now.
+
+ZATCA remains the first major planned external integration.
+
+==========================================================
+25. AUDIT LOG
+==========================================================
+
+Module changes must be auditable.
+
+Log events such as:
+
+module.enabled
+module.disabled
+
+including:
+
+organization
+module
+actor
+timestamp
+
+Do not allow organizations to manipulate entitlement records directly through insecure APIs.
+
+==========================================================
+26. ARABIC
+==========================================================
+
+Translate new terminology professionally.
+
+Examples:
+
+KHANBAS NEXUS
+خانـباس نكسس
+
+Connected Business Platform
+منصة أعمال مترابطة
+
+Finance
+المالية
+
+Fleet
+إدارة الأسطول
+
+Projects
+المشاريع
+
+Assets
+الأصول
+
+Intelligence
+التحليلات الذكية
+
+Automate
+الأتمتة
+
+Modules
+الوحدات
+
+Coming Soon
+قريباً
+
+Active
+نشط
+
+Use contextually appropriate Saudi business Arabic throughout.
+
+Maintain proper RTL behavior.
+
+==========================================================
+27. MOBILE
+==========================================================
+
+Module switcher must work well on mobile.
+
+Do not introduce another permanent navigation bar.
+
+Use compact drawer/sheet/popover patterns appropriate to screen size.
+
+==========================================================
+28. PERFORMANCE
+==========================================================
+
+Do not load code/data for every future module unnecessarily.
+
+Architecture should support sensible module-level code splitting where applicable.
+
+Coming Soon modules should not contain large fake implementations.
+
+==========================================================
+29. DO NOT BUILD
+==========================================================
+
+Do NOT implement:
+
+Fleet management
+GPS tracking
+Vehicle management
+Projects
+Assets
+Video analytics
+Camera management
+AI analytics
+Automation workflows
+Subscription billing
+
+Do NOT start building those modules.
+
+They exist only architecturally.
+
+==========================================================
+30. CURRENT DEVELOPMENT PRIORITY
+==========================================================
+
+After this architecture phase, development will continue with:
+
+NEXUS FINANCE
+
+The next planned implementation will be:
+
+Customers + Suppliers
+
+followed by:
+
+Products & Services
+Quotations
+Invoices
+Purchases
+Expenses
+Accounting Engine
+Reports
+Inventory
+VAT
+ZATCA
+
+Therefore ensure Finance is ready for those modules.
+
+==========================================================
+31. MIGRATION SAFETY
+==========================================================
+
+Do not destroy existing users or organizations.
+
+Create proper database migrations.
+
+Existing organizations should automatically receive:
+
+Nexus Finance = enabled
+
+during migration.
+
+Existing onboarding data must remain intact.
+
+Existing authentication must remain intact.
+
+Existing settings must remain intact.
+
+==========================================================
+32. TESTS
+==========================================================
+
+Add tests proving:
+
+Organization A with Finance enabled:
+can access Finance.
+
+Organization B without Finance:
+cannot access Finance API.
+
+Organization B cannot bypass restriction using direct URL/API.
+
+RBAC still applies after module entitlement passes.
+
+Tenant isolation remains intact.
+
+Existing authentication tests remain passing.
+
+==========================================================
+33. FINAL QUALITY CHECK
+==========================================================
+
+Before finishing:
+
+Run migrations.
+
+Run tests.
+
+Run TypeScript checks.
+
+Check console errors.
+
+Check mobile.
+
+Check English.
+
+Check Arabic RTL.
+
+Check module switcher.
+
+Check Nexus Home.
+
+Check Finance dashboard.
+
+Check Settings → Modules.
+
+Check tenant isolation.
+
+Check entitlement enforcement.
+
+Search codebase for user-facing "Mizan".
+
+There should be no accidental old-brand references remaining.
+
+==========================================================
+34. REPORT BACK
+==========================================================
+
+When finished provide:
+
+1. Branding changes completed
+2. Database changes
+3. Module registry implementation
+4. Organization entitlement implementation
+5. Server-side guards
+6. Module switcher implementation
+7. Nexus Home implementation
+8. Finance navigation changes
+9. Tests added
+10. Migration status
+11. Any remaining Mizan references and why
+12. Known limitations
+
+STOP after completing this phase.
+
+Do not begin Customers/Suppliers automatically.

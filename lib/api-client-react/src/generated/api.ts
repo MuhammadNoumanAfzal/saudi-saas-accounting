@@ -24,8 +24,10 @@ import type {
   CurrentSession,
   DashboardSummary,
   HealthStatus,
+  ModuleDefinition,
   Organization,
   OrganizationInput,
+  OrganizationModule,
   OrganizationUpdate,
   UserPreferences,
   UserPreferencesInput
@@ -697,6 +699,160 @@ export function useListAuditLogs<TData = Awaited<ReturnType<typeof listAuditLogs
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListAuditLogsQueryOptions(organizationId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListModulesUrl = () => {
+
+
+
+
+  return `/api/modules`
+}
+
+/**
+ * @summary List the platform module registry
+ */
+export const listModules = async ( options?: Parameters<typeof customFetch>[1]): Promise<ModuleDefinition[]> => {
+
+  return customFetch<ModuleDefinition[]>(getListModulesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListModulesQueryKey = () => {
+    return [
+    `/api/modules`
+    ] as const;
+    }
+
+
+export const getListModulesQueryOptions = <TData = Awaited<ReturnType<typeof listModules>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listModules>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListModulesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listModules>>> = ({ signal }) => listModules({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listModules>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListModulesQueryResult = NonNullable<Awaited<ReturnType<typeof listModules>>>
+export type ListModulesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List the platform module registry
+ */
+
+export function useListModules<TData = Awaited<ReturnType<typeof listModules>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listModules>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListModulesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListOrganizationModulesUrl = (organizationId: string,) => {
+
+
+
+
+  return `/api/organizations/${organizationId}/modules`
+}
+
+/**
+ * @summary List module entitlements for an organization
+ */
+export const listOrganizationModules = async (organizationId: string, options?: Parameters<typeof customFetch>[1]): Promise<OrganizationModule[]> => {
+
+  return customFetch<OrganizationModule[]>(getListOrganizationModulesUrl(organizationId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOrganizationModulesQueryKey = (organizationId: string,) => {
+    return [
+    `/api/organizations/${organizationId}/modules`
+    ] as const;
+    }
+
+
+export const getListOrganizationModulesQueryOptions = <TData = Awaited<ReturnType<typeof listOrganizationModules>>, TError = ErrorType<void>>(organizationId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOrganizationModules>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOrganizationModulesQueryKey(organizationId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOrganizationModules>>> = ({ signal }) => listOrganizationModules(organizationId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: organizationId !== null && organizationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOrganizationModules>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOrganizationModulesQueryResult = NonNullable<Awaited<ReturnType<typeof listOrganizationModules>>>
+export type ListOrganizationModulesQueryError = ErrorType<void>
+
+
+/**
+ * @summary List module entitlements for an organization
+ */
+
+export function useListOrganizationModules<TData = Awaited<ReturnType<typeof listOrganizationModules>>, TError = ErrorType<void>>(
+ organizationId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOrganizationModules>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOrganizationModulesQueryOptions(organizationId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

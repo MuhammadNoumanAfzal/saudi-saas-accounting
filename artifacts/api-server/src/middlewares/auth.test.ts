@@ -5,10 +5,12 @@ import request from "supertest";
 import {
   db,
   organizationMembershipsTable,
+  organizationModulesTable,
   organizationsTable,
   usersTable,
 } from "@workspace/db";
 import { getMembership } from "./auth";
+import { synchronizeModuleRegistry } from "../lib/moduleEntitlements";
 
 vi.mock("@clerk/express", () => ({
   clerkMiddleware:
@@ -33,6 +35,7 @@ describe("tenant membership isolation", () => {
   let organizationBId = "";
 
   beforeAll(async () => {
+    await synchronizeModuleRegistry();
     const [userA, userB] = await db
       .insert(usersTable)
       .values([
@@ -67,7 +70,14 @@ describe("tenant membership isolation", () => {
     await db.insert(organizationMembershipsTable).values([
       { userId: userAId, organizationId: organizationAId, role: "owner" },
       { userId: userBId, organizationId: organizationBId, role: "owner" },
+      { userId: userBId, organizationId: organizationAId, role: "viewer" },
     ]);
+    await db.insert(organizationModulesTable).values({
+      organizationId: organizationAId,
+      moduleKey: "finance",
+      enabled: true,
+      activatedAt: new Date(),
+    });
   });
 
   afterAll(async () => {
@@ -107,6 +117,37 @@ describe("tenant membership isolation", () => {
     const response = await request(app)
       .get(`/api/organizations/${organizationBId}`)
       .set("x-test-clerk-user-id", `tenant-test-a-${nonce}`);
+
+    expect(response.status).toBe(403);
+    expect(response.body).toEqual({ error: "Organization access denied" });
+  });
+
+  it("allows Finance access when the organization entitlement is enabled", async () => {
+    const { default: app } = await import("../app");
+    const response = await request(app)
+      .get(`/api/organizations/${organizationAId}/dashboard`)
+      .set("x-test-clerk-user-id", `tenant-test-a-${nonce}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.currency).toBe("SAR");
+  });
+
+  it("rejects direct Finance API access when the module is disabled", async () => {
+    const { default: app } = await import("../app");
+    const response = await request(app)
+      .get(`/api/organizations/${organizationBId}/dashboard`)
+      .set("x-test-clerk-user-id", `tenant-test-b-${nonce}`);
+
+    expect(response.status).toBe(403);
+    expect(response.body).toEqual({ error: "Module is not enabled" });
+  });
+
+  it("keeps RBAC restrictions after module entitlement succeeds", async () => {
+    const { default: app } = await import("../app");
+    const response = await request(app)
+      .patch(`/api/organizations/${organizationAId}`)
+      .set("x-test-clerk-user-id", `tenant-test-b-${nonce}`)
+      .send({ legalNameEnglish: "Viewer must not update" });
 
     expect(response.status).toBe(403);
     expect(response.body).toEqual({ error: "Organization access denied" });

@@ -36,7 +36,7 @@ export function ZatcaSettings() {
         <Zap size={40} className="text-accent mb-6" />
         <h2 className="text-lg font-bold mb-2">{t('E-Invoicing Phase 2 Ready', 'جاهز للمرحلة الثانية من الفوترة')}</h2>
         <p className="text-sm text-muted-foreground max-w-[450px]">
-          {t('Mizan is architected for full ZATCA compliance. The integration portal will open automatically when your organization is requested to connect to the FATOORA platform.', 'تم تصميم ميزان للتوافق الكامل مع هيئة الزكاة والضريبة. ستُفتح بوابة الربط تلقائياً عندما يُطلب من منشأتك الربط بمنصة فاتورة.')}
+          {t('KHANBAS NEXUS is architected for full ZATCA compliance. The integration portal will open automatically when your organization is requested to connect to the FATOORA platform.', 'تم تصميم خانـباس نكسس للتوافق الكامل مع هيئة الزكاة والضريبة. ستُفتح بوابة الربط تلقائياً عندما يُطلب من منشأتك الربط بمنصة فاتورة.')}
         </p>
       </div>
     </div>

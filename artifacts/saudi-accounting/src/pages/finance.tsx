@@ -4,7 +4,7 @@ import { useTranslation, Button } from '@/lib/utils';
 import { Link } from 'wouter';
 import { WalletCards, CreditCard, FileText, BarChart3, Clock3, Sparkles, ArrowRight, ArrowLeft, CheckCircle2, Circle } from 'lucide-react';
 
-export function Dashboard() {
+export function FinanceOverview() {
   const { data: session, isLoading: sessionLoading } = useGetCurrentSession();
   const { t, isRtl } = useTranslation();
   
@@ -20,13 +20,13 @@ export function Dashboard() {
   });
 
   const [checklistOpen, setChecklistOpen] = useState(() => {
-    return localStorage.getItem('mizan_checklist_open') !== 'false';
+    return localStorage.getItem('nexus_checklist_open') !== 'false';
   });
 
   const toggleChecklist = () => {
     const next = !checklistOpen;
     setChecklistOpen(next);
-    localStorage.setItem('mizan_checklist_open', String(next));
+    localStorage.setItem('nexus_checklist_open', String(next));
   };
 
   const currentDate = new Intl.DateTimeFormat(isRtl ? 'ar-SA' : 'en-SA', { 
@@ -68,7 +68,7 @@ export function Dashboard() {
       <header className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
           <div className="text-primary text-xs font-bold uppercase tracking-wider mb-2">
-            {t('Mizan Workspace', 'مساحة عمل ميزان')}
+            {t('KHANBAS NEXUS Finance', 'خانـباس نكسس المالية')}
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
              {greeting}, {isRtl ? (organization?.legalNameArabic || organization?.legalNameEnglish) : organization?.legalNameEnglish}

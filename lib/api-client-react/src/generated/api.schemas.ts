@@ -308,3 +308,57 @@ export interface AuditLog {
   createdAt: string;
 }
 
+export type ModuleDefinitionKey = typeof ModuleDefinitionKey[keyof typeof ModuleDefinitionKey];
+
+
+export const ModuleDefinitionKey = {
+  finance: 'finance',
+  fleet: 'fleet',
+  projects: 'projects',
+  assets: 'assets',
+  intelligence: 'intelligence',
+  automate: 'automate',
+} as const;
+
+export type ModuleDefinitionCategory = typeof ModuleDefinitionCategory[keyof typeof ModuleDefinitionCategory];
+
+
+export const ModuleDefinitionCategory = {
+  business: 'business',
+  intelligence: 'intelligence',
+  automation: 'automation',
+} as const;
+
+export type ModuleDefinitionStatus = typeof ModuleDefinitionStatus[keyof typeof ModuleDefinitionStatus];
+
+
+export const ModuleDefinitionStatus = {
+  AVAILABLE: 'AVAILABLE',
+  COMING_SOON: 'COMING_SOON',
+  BETA: 'BETA',
+  DISABLED: 'DISABLED',
+} as const;
+
+export interface ModuleDefinition {
+  key: ModuleDefinitionKey;
+  name: string;
+  nameAr: string;
+  description: string;
+  descriptionAr: string;
+  category: ModuleDefinitionCategory;
+  icon: string;
+  route: string;
+  status: ModuleDefinitionStatus;
+  sortOrder: number;
+  dependencies: string[];
+  availableForActivation: boolean;
+  features: string[];
+}
+
+export interface OrganizationModule {
+  module: ModuleDefinition;
+  enabled: boolean;
+  /** @nullable */
+  activatedAt?: string | null;
+}
+

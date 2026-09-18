@@ -16,6 +16,8 @@ tags:
     description: Organization and workspace operations
   - name: dashboard
     description: Dashboard summaries
+  - name: modules
+    description: Platform module registry and organization entitlements
 paths:
   /healthz:
     get:
@@ -165,6 +167,38 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/AuditLog"
+        "403":
+          description: Organization access denied
+  /modules:
+    get:
+      operationId: listModules
+      tags: [modules]
+      summary: List the platform module registry
+      responses:
+        "200":
+          description: Platform modules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ModuleDefinition"
+  /organizations/{organizationId}/modules:
+    get:
+      operationId: listOrganizationModules
+      tags: [modules]
+      summary: List module entitlements for an organization
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      responses:
+        "200":
+          description: Organization module entitlements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrganizationModule"
         "403":
           description: Organization access denied
 components:
@@ -456,5 +490,66 @@ components:
           type: ["string", "null"]
         createdAt:
           type: string
+          format: date-time
+    ModuleDefinition:
+      type: object
+      required:
+        - key
+        - name
+        - nameAr
+        - description
+        - descriptionAr
+        - category
+        - icon
+        - route
+        - status
+        - sortOrder
+        - dependencies
+        - availableForActivation
+        - features
+      properties:
+        key:
+          type: string
+          enum: [finance, fleet, projects, assets, intelligence, automate]
+        name:
+          type: string
+        nameAr:
+          type: string
+        description:
+          type: string
+        descriptionAr:
+          type: string
+        category:
+          type: string
+          enum: [business, intelligence, automation]
+        icon:
+          type: string
+        route:
+          type: string
+        status:
+          type: string
+          enum: [AVAILABLE, COMING_SOON, BETA, DISABLED]
+        sortOrder:
+          type: integer
+        dependencies:
+          type: array
+          items:
+            type: string
+        availableForActivation:
+          type: boolean
+        features:
+          type: array
+          items:
+            type: string
+    OrganizationModule:
+      type: object
+      required: [module, enabled]
+      properties:
+        module:
+          $ref: "#/components/schemas/ModuleDefinition"
+        enabled:
+          type: boolean
+        activatedAt:
+          type: ["string", "null"]
           format: date-time
 

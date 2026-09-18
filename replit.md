@@ -1,6 +1,6 @@
-# Mizan — Saudi Accounting Foundation
+# KHANBAS NEXUS — Connected Business Platform
 
-A multi-tenant, Saudi-first accounting SaaS workspace with secure authentication, five-step organization onboarding, bilingual RTL/LTR navigation, persisted preferences, settings, audit logging, and an empty-safe dashboard.
+A modular, multi-tenant Saudi business platform. Nexus Core owns shared platform capabilities and organization entitlements; Nexus Finance is the first available module.
 
 ## Run & Operate
 
@@ -27,11 +27,17 @@ A multi-tenant, Saudi-first accounting SaaS workspace with secure authentication
 - `artifacts/api-server` — Express API and authorization boundaries
 - `lib/api-spec/openapi.yaml` — API source of truth
 - `lib/db/src/schema/foundation.ts` — tenant foundation schema
+- `lib/db/src/schema/module-entitlements.ts` — module catalog and organization entitlements
+- `lib/platform-core` — centralized module and integration registries
 
 ## Architecture decisions
 
 - Clerk owns authentication; browser API calls use its same-origin session cookie.
 - Organization membership is checked on every tenant-scoped API route.
+- Protected module APIs require an enabled organization module entitlement after membership validation.
+- Module entitlement and user permission checks are separate authorization layers.
+- Shared business entities belong to Nexus Core rather than being duplicated per module.
+- The system remains a modular monolith; future modules communicate through clean service/event boundaries rather than microservices.
 - Financial dashboard values remain zero until real accounting modules exist.
 - ZATCA is isolated as future functionality and has no fake integration.
 

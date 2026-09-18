@@ -5,11 +5,14 @@ import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient';
-import { useGetCurrentSession } from '@workspace/api-client-react';
+import { getListOrganizationModulesQueryKey, useGetCurrentSession, useListOrganizationModules } from '@workspace/api-client-react';
+import type { ModuleKey } from '@workspace/platform-core';
 
 import { AppShell } from './components/layout/app-shell';
 import { Onboarding } from './pages/onboarding';
-import { Dashboard } from './pages/dashboard';
+import { FinanceOverview } from './pages/finance';
+import { NexusHome } from './pages/nexus-home';
+import { ModulesSettings } from './pages/settings/modules';
 import { OrganizationProfile } from './pages/settings/organization-profile';
 import { UsersSettings } from './pages/settings/users';
 import { AppearanceSettings } from './pages/settings/appearance';
@@ -61,6 +64,37 @@ function SessionGuard({ children }: { children: React.ReactNode }) {
   }
 
   return <AppShell>{children}</AppShell>;
+}
+
+function ModuleGuard({
+  moduleKey,
+  children,
+}: {
+  moduleKey: ModuleKey;
+  children: React.ReactNode;
+}) {
+  const { data: session, isLoading: sessionLoading } = useGetCurrentSession();
+  const organizationId =
+    session?.preferences.currentOrganizationId ??
+    session?.organizations[0]?.organization.id ??
+    '';
+  const { data: modules, isLoading: modulesLoading } =
+    useListOrganizationModules(organizationId, {
+      query: {
+        enabled: Boolean(organizationId),
+        queryKey: getListOrganizationModulesQueryKey(organizationId),
+      },
+    });
+
+  if (sessionLoading || modulesLoading) {
+    return <div className="min-h-[40vh] rounded-2xl bg-muted/30 animate-pulse" />;
+  }
+
+  const enabled = modules?.some(
+    (entitlement) =>
+      entitlement.module.key === moduleKey && entitlement.enabled,
+  );
+  return enabled ? <>{children}</> : <Redirect to="/home" />;
 }
 
 function SignInPage() {
@@ -130,8 +164,28 @@ export default function App() {
               <AuthGuard><Onboarding /></AuthGuard>
             </Route>
 
+            <Route path="/home">
+              <AuthGuard><NexusHome /></AuthGuard>
+            </Route>
+
+            <Route path="/finance">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <FinanceOverview />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
             <Route path="/dashboard">
-              <AuthGuard><Dashboard /></AuthGuard>
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <Redirect to="/finance" />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
+            <Route path="/settings/modules">
+              <AuthGuard><ModulesSettings /></AuthGuard>
             </Route>
 
             <Route path="/settings/organization">

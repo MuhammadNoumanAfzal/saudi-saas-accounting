@@ -93,7 +93,7 @@ export function Onboarding() {
           {
             onSuccess: async () => {
               await queryClient.invalidateQueries({ queryKey: getGetCurrentSessionQueryKey() });
-              setLocation('/dashboard');
+              setLocation('/home');
             },
           },
         );
@@ -107,8 +107,8 @@ export function Onboarding() {
     <div className={`min-h-[100dvh] bg-background flex flex-col ${isRtl ? 'text-right' : 'text-left'}`} dir={isRtl ? 'rtl' : 'ltr'}>
       <header className="px-6 py-6 flex justify-between items-center max-w-[960px] w-full mx-auto">
         <div className="flex items-center gap-3">
-          <img src="/logo.svg" alt="Mizan" className="w-8 h-8 rounded-lg" />
-          <span className="font-bold tracking-tight text-xl">mizan<span className="text-accent">.</span></span>
+          <img src="/logo.svg" alt="KHANBAS NEXUS" className="w-8 h-8 rounded-lg" />
+          <span className="font-bold tracking-tight text-xl uppercase">NEXUS</span>
         </div>
         <div className="text-xs font-semibold text-muted-foreground">
           {t(`Step ${step} of 5`, `الخطوة ${step} من 5`)}

@@ -11,6 +11,9 @@ import {
   GetOrganizationResponse,
   ListAuditLogsParams,
   ListAuditLogsResponse,
+  ListModulesResponse,
+  ListOrganizationModulesParams,
+  ListOrganizationModulesResponse,
   OrganizationMembership,
   UpdateUserPreferencesBody,
   UpdateUserPreferencesResponse,
@@ -22,15 +25,19 @@ import {
   auditLogsTable,
   db,
   organizationMembershipsTable,
+  organizationModulesTable,
   organizationsTable,
   userPreferencesTable,
   usersTable,
 } from "@workspace/db";
+import { MODULE_REGISTRY } from "@workspace/platform-core";
 import {
   getMembership,
   getOrCreateLocalUser,
   requireAuthentication,
 } from "../middlewares/auth";
+import { enableFinanceForOrganization } from "../lib/moduleEntitlements";
+import { requireModule } from "../middlewares/moduleEntitlement";
 
 const router: IRouter = Router();
 router.use(requireAuthentication);
@@ -171,6 +178,7 @@ router.post("/organizations", async (req, res): Promise<void> => {
     userId: user.id,
     role: "owner",
   });
+  await enableFinanceForOrganization(organization.id);
   await db.insert(auditLogsTable).values({
     organizationId: organization.id,
     userId: user.id,
@@ -268,6 +276,7 @@ router.patch(
 
 router.get(
   "/organizations/:organizationId/dashboard",
+  requireModule("finance"),
   async (req, res): Promise<void> => {
     const params = GetDashboardSummaryParams.safeParse(req.params);
     if (!params.success) {
@@ -306,6 +315,61 @@ router.get(
         hasComparativeData: false,
         recentTransactions: [],
       }),
+    );
+  },
+);
+
+router.get("/modules", (_req, res): void => {
+  res.json(ListModulesResponse.parse(MODULE_REGISTRY));
+});
+
+router.get(
+  "/organizations/:organizationId/modules",
+  async (req, res): Promise<void> => {
+    const params = ListOrganizationModulesParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const user = await getOrCreateLocalUser(req);
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    const membership = await getMembership(
+      user.id,
+      params.data.organizationId,
+    );
+    if (!membership) {
+      res.status(403).json({ error: "Organization access denied" });
+      return;
+    }
+    const entitlements = await db
+      .select()
+      .from(organizationModulesTable)
+      .where(
+        eq(
+          organizationModulesTable.organizationId,
+          params.data.organizationId,
+        ),
+      );
+    const byKey = new Map(
+      entitlements.map((entitlement) => [
+        entitlement.moduleKey,
+        entitlement,
+      ]),
+    );
+    res.json(
+      ListOrganizationModulesResponse.parse(
+        MODULE_REGISTRY.map((module) => {
+          const entitlement = byKey.get(module.key);
+          return {
+            module,
+            enabled: entitlement?.enabled ?? false,
+            activatedAt: entitlement?.activatedAt?.toISOString() ?? null,
+          };
+        }),
+      ),
     );
   },
 );

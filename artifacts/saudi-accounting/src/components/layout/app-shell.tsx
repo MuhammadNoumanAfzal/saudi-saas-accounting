@@ -1,31 +1,35 @@
 import { useEffect, useState } from 'react';
 import { useLocation, Link } from 'wouter';
 import { useClerk, useUser } from '@clerk/react';
-import { getGetCurrentSessionQueryKey, useGetCurrentSession, useUpdateUserPreferences } from '@workspace/api-client-react';
+import { getGetCurrentSessionQueryKey, getListOrganizationModulesQueryKey, useGetCurrentSession, useUpdateUserPreferences, useListOrganizationModules } from '@workspace/api-client-react';
+import { MODULE_REGISTRY } from '@workspace/platform-core';
 import {
   Menu, X, Home, Receipt, ShoppingBag, Package, Landmark, BarChart3,
   Building2, Users, Store, Languages, ShieldCheck, SlidersHorizontal, FileClock, Zap,
-  Search, Plus, Bell, HelpCircle, ChevronRight, Check
+  Search, Plus, Bell, HelpCircle, ChevronRight, Check, Grid, ArrowLeft,
+  ArrowRight
 } from 'lucide-react';
 import { useTranslation } from '@/lib/utils';
 import { queryClient } from '@/lib/queryClient';
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-function stripBase(path: string) {
-  return basePath && path.startsWith(basePath) ? path.slice(basePath.length) || '/' : path;
-}
-
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { data: session } = useGetCurrentSession();
   const { t, isRtl } = useTranslation();
   const [location, setLocation] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [overlay, setOverlay] = useState<'search' | 'create' | 'notifications' | 'help' | 'user' | null>(null);
+  const [overlay, setOverlay] = useState<'search' | 'create' | 'notifications' | 'help' | 'user' | 'modules' | null>(null);
   const [search, setSearch] = useState('');
   
   const updatePrefs = useUpdateUserPreferences();
   const [collapsed, setCollapsed] = useState(false);
+
+  const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization.id || '';
+  const { data: orgModules } = useListOrganizationModules(orgId, {
+    query: { enabled: !!orgId, queryKey: getListOrganizationModulesQueryKey(orgId) }
+  });
+  const activeModuleKeys = new Set(orgModules?.filter(m => m.enabled).map(m => m.module.key) || []);
 
   useEffect(() => {
     setCollapsed(session?.preferences?.sidebarCollapsed ?? false);
@@ -66,16 +70,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [isRtl, session?.preferences?.appearance]);
 
   const navPrimary = [
-    { href: '/dashboard', label: t('Overview', 'نظرة عامة'), icon: Home },
+    { href: '/finance', label: t('Overview', 'نظرة عامة'), icon: Home },
     { href: '/sales', label: t('Sales', 'المبيعات'), icon: Receipt, soon: true },
     { href: '/purchases', label: t('Purchases', 'المشتريات'), icon: ShoppingBag, soon: true },
-    { href: '/products', label: t('Products', 'المنتجات'), icon: Package, soon: true },
+    { href: '/products', label: t('Catalog', 'الكتالوج'), icon: Package, soon: true },
     { href: '/accounting', label: t('Accounting', 'المحاسبة'), icon: Landmark, soon: true },
     { href: '/reports', label: t('Reports', 'التقارير'), icon: BarChart3, soon: true },
   ];
 
   const navSettings = [
     { href: '/settings/organization', label: t('Organization', 'المنشأة'), icon: Building2 },
+    { href: '/settings/modules', label: t('Modules', 'الوحدات'), icon: Grid },
     { href: '/settings/users', label: t('Users & roles', 'المستخدمون والأدوار'), icon: Users },
     { href: '/settings/branches', label: t('Branches', 'الفروع'), icon: Store },
     { href: '/settings/language', label: t('Language & region', 'اللغة والمنطقة'), icon: Languages },
@@ -89,8 +94,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { user } = useUser();
   const org = session?.organizations?.find(o => o.organization.id === session.preferences.currentOrganizationId)?.organization || session?.organizations?.[0]?.organization;
   const searchableRoutes = [
-    ['/dashboard', t('Dashboard', 'لوحة المعلومات')],
+    ['/finance', t('Finance Overview', 'نظرة عامة على المالية')],
     ['/settings/organization', t('Organization profile', 'ملف المنشأة')],
+    ['/settings/modules', t('Modules', 'الوحدات')],
     ['/settings/users', t('Users & roles', 'المستخدمون والأدوار')],
     ['/settings/branches', t('Branches', 'الفروع')],
     ['/settings/language', t('Language & region', 'اللغة والمنطقة')],
@@ -110,7 +116,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {
         onSuccess: async () => {
           await queryClient.invalidateQueries({ queryKey: getGetCurrentSessionQueryKey() });
-          setLocation('/dashboard');
+          setLocation('/home');
         },
       },
     );
@@ -125,41 +131,66 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   };
 
+  const isHome = location === '/home';
+
   const SidebarContent = () => (
     <>
-      <div className="flex items-center gap-3 px-3 mb-8 h-12">
-        <img src={`${basePath}/logo.svg`} className="h-8 w-8 rounded-lg shrink-0" alt="Mizan" />
+      <button
+        type="button"
+        aria-label="NEXUS"
+        title={t('Open NEXUS modules', 'فتح وحدات نكسس')}
+        onClick={() => {
+          setMobileOpen(false);
+          setOverlay('modules');
+        }}
+        className="mx-2 mb-6 flex h-12 items-center gap-3 rounded-xl px-2 text-start transition-colors hover:bg-white/5"
+      >
+        <img src={`${basePath}/logo.svg`} className="h-8 w-8 rounded-lg shrink-0" alt="NEXUS" />
         {!collapsed && (
           <div className="flex-1 min-w-0 overflow-hidden">
-            <div className="text-base font-bold tracking-tight text-primary-foreground truncate">mizan<span className="text-accent">.</span></div>
+            <div className="text-base font-bold tracking-tight text-primary-foreground truncate">NEXUS</div>
+            <div className="text-[10px] text-primary-foreground/50">
+              {t('Open modules', 'فتح الوحدات')}
+            </div>
           </div>
         )}
-      </div>
+        {!collapsed && <Grid size={15} className="text-primary-foreground/45" />}
+      </button>
 
       <div className="flex-1 overflow-y-auto overflow-x-hidden space-y-6 scrollbar-hide px-3 pb-6">
-        <div>
-          {!collapsed && <div className="mb-2 px-2 text-[10px] font-bold uppercase tracking-wider text-primary-foreground/50">{t('Workspace', 'مساحة العمل')}</div>}
-          <nav className="space-y-0.5">
-            {navPrimary.map(item => {
-              const active = location === item.href;
-              const Icon = item.icon;
-              return (
-                <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors ${active ? 'bg-accent/10 text-accent' : 'text-primary-foreground/70 hover:bg-white/5 hover:text-primary-foreground'}`} title={collapsed ? item.label : undefined}>
-                  <Icon size={18} className="shrink-0" />
-                  {!collapsed && (
-                    <>
-                      <span className="flex-1 truncate">{item.label}</span>
-                      {item.soon && <span className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-primary-foreground/60">{t('Soon', 'قريباً')}</span>}
-                    </>
-                  )}
+        {!isHome && (
+          <div>
+            {!collapsed && (
+              <div className="mb-2 px-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-primary-foreground/50">
+                <span>{t('Finance', 'المالية')}</span>
+                <Link href="/home" className="text-primary-foreground/60 hover:text-primary-foreground flex items-center gap-1 transition-colors" title={t('Back to Home', 'العودة للرئيسية')}>
+                  {isRtl ? <ArrowRight size={12} /> : <ArrowLeft size={12} />}
+                  <span>{t('Home', 'الرئيسية')}</span>
                 </Link>
-              );
-            })}
-          </nav>
-        </div>
+              </div>
+            )}
+            <nav className="space-y-0.5">
+              {navPrimary.map(item => {
+                const active = location === item.href;
+                const Icon = item.icon;
+                return (
+                  <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors ${active ? 'bg-accent/10 text-accent' : 'text-primary-foreground/70 hover:bg-white/5 hover:text-primary-foreground'}`} title={collapsed ? item.label : undefined}>
+                    <Icon size={18} className="shrink-0" />
+                    {!collapsed && (
+                      <>
+                        <span className="flex-1 truncate">{item.label}</span>
+                        {item.soon && <span className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-primary-foreground/60">{t('Soon', 'قريباً')}</span>}
+                      </>
+                    )}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        )}
 
         <div>
-          {!collapsed && <div className="mb-2 px-2 text-[10px] font-bold uppercase tracking-wider text-primary-foreground/50">{t('Settings', 'الإعدادات')}</div>}
+          {!collapsed && <div className="mb-2 px-2 text-[10px] font-bold uppercase tracking-wider text-primary-foreground/50">{t('Platform Settings', 'إعدادات المنصة')}</div>}
           <nav className="space-y-0.5">
             {navSettings.map(item => {
               const active = location === item.href;
@@ -224,25 +255,34 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Menu size={18} />
             </button>
 
+            {/* App Switcher */}
+            <button onClick={() => setOverlay('modules')} className="hidden sm:flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm font-bold text-foreground hover:bg-muted transition-colors border border-transparent hover:border-border">
+              <Grid size={16} className="text-primary" />
+              <span>NEXUS</span>
+            </button>
+
             {org && (
-              <label className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-md hover:bg-muted cursor-pointer transition-colors">
-                <div className="h-5 w-5 rounded bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
-                  {org.legalNameEnglish.charAt(0)}
-                </div>
-                <select
-                  className="max-w-44 bg-transparent text-sm font-medium outline-none"
-                  value={org.id}
-                  onChange={event => selectOrganization(event.target.value)}
-                  aria-label={t('Switch organization', 'تبديل المنشأة')}
-                >
-                  {session?.organizations?.map(item => (
-                    <option key={item.organization.id} value={item.organization.id}>
-                      {isRtl ? (item.organization.legalNameArabic || item.organization.legalNameEnglish) : item.organization.legalNameEnglish}
-                    </option>
-                  ))}
-                  <option value="create">{t('+ Create organization', '+ إنشاء منشأة')}</option>
-                </select>
-              </label>
+              <>
+                <span className="hidden sm:inline-block text-muted-foreground/40">/</span>
+                <label className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-md hover:bg-muted cursor-pointer transition-colors">
+                  <div className="h-5 w-5 rounded bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
+                    {org.legalNameEnglish.charAt(0)}
+                  </div>
+                  <select
+                    className="max-w-44 bg-transparent text-sm font-medium outline-none"
+                    value={org.id}
+                    onChange={event => selectOrganization(event.target.value)}
+                    aria-label={t('Switch organization', 'تبديل المنشأة')}
+                  >
+                    {session?.organizations?.map(item => (
+                      <option key={item.organization.id} value={item.organization.id}>
+                        {isRtl ? (item.organization.legalNameArabic || item.organization.legalNameEnglish) : item.organization.legalNameEnglish}
+                      </option>
+                    ))}
+                    <option value="create">{t('+ Create organization', '+ إنشاء منشأة')}</option>
+                  </select>
+                </label>
+              </>
             )}
           </div>
 
@@ -282,14 +322,48 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-card shadow-2xl" onMouseDown={event => event.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-border px-5 py-4">
               <h2 className="font-bold">
-                {overlay === 'search' && t('Search Mizan', 'البحث في ميزان')}
+                {overlay === 'search' && t('Search KHANBAS NEXUS', 'البحث في خانـباس نكسس')}
                 {overlay === 'create' && t('Quick create', 'إنشاء سريع')}
                 {overlay === 'notifications' && t('Notifications', 'الإشعارات')}
                 {overlay === 'help' && t('Help', 'المساعدة')}
                 {overlay === 'user' && t('Your account', 'حسابك')}
+                {overlay === 'modules' && t('NEXUS Modules', 'وحدات نكسس')}
               </h2>
               <button onClick={() => setOverlay(null)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted"><X size={18} /></button>
             </div>
+            
+            {overlay === 'modules' && (
+              <div className="p-2 max-h-[60vh] overflow-auto">
+                <div className="grid grid-cols-2 gap-2 p-2">
+                  {MODULE_REGISTRY.map(moduleDef => {
+                    const isActive = activeModuleKeys.has(moduleDef.key);
+                    
+                    if (isActive) {
+                      return (
+                        <button key={moduleDef.key} onClick={() => { setLocation(moduleDef.route); setOverlay(null); }} className="flex flex-col items-center justify-center p-4 rounded-xl border border-transparent hover:border-primary/20 hover:bg-primary/5 transition-all text-center group">
+                          <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                            {moduleDef.icon === 'wallet-cards' && <Zap size={20} />}
+                            {moduleDef.icon !== 'wallet-cards' && <Grid size={20} />}
+                          </div>
+                          <span className="text-sm font-bold text-foreground">{isRtl ? moduleDef.nameAr : moduleDef.name}</span>
+                        </button>
+                      );
+                    }
+                    
+                    return (
+                      <div key={moduleDef.key} className="flex flex-col items-center justify-center p-4 rounded-xl border border-border bg-card/50 opacity-60 text-center">
+                        <div className="h-10 w-10 rounded-xl bg-muted text-muted-foreground flex items-center justify-center mb-3">
+                          <Grid size={20} />
+                        </div>
+                        <span className="text-sm font-bold text-foreground">{isRtl ? moduleDef.nameAr : moduleDef.name}</span>
+                        <span className="text-[10px] text-muted-foreground mt-1">{t('Coming Soon', 'قريباً')}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {overlay === 'search' && (
               <div className="p-4">
                 <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3">
@@ -316,7 +390,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             )}
             {overlay === 'notifications' && <div className="p-10 text-center"><Bell className="mx-auto text-muted-foreground/40" /><p className="mt-4 font-bold">{t("You're all caught up.", 'لا توجد إشعارات جديدة.')}</p><p className="mt-1 text-sm text-muted-foreground">{t('New account activity will appear here.', 'سيظهر نشاط الحساب الجديد هنا.')}</p></div>}
-            {overlay === 'help' && <div className="p-8 text-center"><HelpCircle className="mx-auto text-primary" /><p className="mt-4 font-bold">{t('Mizan help center', 'مركز مساعدة ميزان')}</p><p className="mt-2 text-sm text-muted-foreground">{t('Guided help will be available as accounting modules are introduced.', 'ستتوفر المساعدة الإرشادية مع إضافة وحدات المحاسبة.')}</p></div>}
+            {overlay === 'help' && <div className="p-8 text-center"><HelpCircle className="mx-auto text-primary" /><p className="mt-4 font-bold">{t('KHANBAS NEXUS help center', 'مركز مساعدة خانـباس نكسس')}</p><p className="mt-2 text-sm text-muted-foreground">{t('Guided help will be available as modules are introduced.', 'ستتوفر المساعدة الإرشادية مع إضافة الوحدات.')}</p></div>}
             {overlay === 'user' && (
               <div className="p-4">
                 <div className="mb-3 rounded-xl bg-muted/40 p-4"><div className="font-bold">{user?.fullName || session?.user.displayName}</div><div className="mt-1 text-xs text-muted-foreground">{user?.primaryEmailAddress?.emailAddress || session?.user.email}</div></div>

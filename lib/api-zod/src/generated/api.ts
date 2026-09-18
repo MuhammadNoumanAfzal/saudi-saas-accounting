@@ -325,3 +325,53 @@ export const ListAuditLogsResponseItem = zod.object({
 export const ListAuditLogsResponse = zod.array(ListAuditLogsResponseItem)
 
 
+/**
+ * @summary List the platform module registry
+ */
+export const ListModulesResponseItem = zod.object({
+  "key": zod.enum(['finance', 'fleet', 'projects', 'assets', 'intelligence', 'automate']),
+  "name": zod.string(),
+  "nameAr": zod.string(),
+  "description": zod.string(),
+  "descriptionAr": zod.string(),
+  "category": zod.enum(['business', 'intelligence', 'automation']),
+  "icon": zod.string(),
+  "route": zod.string(),
+  "status": zod.enum(['AVAILABLE', 'COMING_SOON', 'BETA', 'DISABLED']),
+  "sortOrder": zod.number().int(),
+  "dependencies": zod.array(zod.string()),
+  "availableForActivation": zod.boolean(),
+  "features": zod.array(zod.string())
+})
+export const ListModulesResponse = zod.array(ListModulesResponseItem)
+
+
+/**
+ * @summary List module entitlements for an organization
+ */
+export const ListOrganizationModulesParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const ListOrganizationModulesResponseItem = zod.object({
+  "module": zod.object({
+  "key": zod.enum(['finance', 'fleet', 'projects', 'assets', 'intelligence', 'automate']),
+  "name": zod.string(),
+  "nameAr": zod.string(),
+  "description": zod.string(),
+  "descriptionAr": zod.string(),
+  "category": zod.enum(['business', 'intelligence', 'automation']),
+  "icon": zod.string(),
+  "route": zod.string(),
+  "status": zod.enum(['AVAILABLE', 'COMING_SOON', 'BETA', 'DISABLED']),
+  "sortOrder": zod.number().int(),
+  "dependencies": zod.array(zod.string()),
+  "availableForActivation": zod.boolean(),
+  "features": zod.array(zod.string())
+}),
+  "enabled": zod.boolean(),
+  "activatedAt": zod.coerce.date().nullish()
+})
+export const ListOrganizationModulesResponse = zod.array(ListOrganizationModulesResponseItem)
+
+

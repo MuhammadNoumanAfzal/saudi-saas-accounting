@@ -1,11 +1,10 @@
-# Mizan — Saudi Accounting Foundation
+# KHANBAS NEXUS — Connected Business Platform
 
-Mizan is a multi-tenant accounting and e-invoicing SaaS workspace for Saudi
-SMEs. The current Phase 2 foundation includes authentication, organization
-isolation, a five-step company onboarding flow, organization switching,
-bilingual LTR/RTL workspace navigation, persisted preferences, audit logging,
-settings, and an empty-safe financial dashboard. Accounting transactions and
-ZATCA operations are intentionally deferred.
+KHANBAS NEXUS is a modular, interconnected Saudi business platform. Nexus Core
+provides shared organizations, users, roles, settings, audit logs, search, and
+module entitlements. Nexus Finance is the first available business module.
+Fleet, Projects, Assets, Intelligence, and Automate are registry entries only
+and contain no fabricated product functionality.
 
 ## Stack
 
@@ -24,6 +23,11 @@ ZATCA operations are intentionally deferred.
 - `lib/api-client-react` — generated browser client and React Query hooks
 - `lib/api-zod` — generated server validation schemas
 - `lib/db` — PostgreSQL schema and database client
+- `lib/platform-core` — shared module and integration registries
+
+The application is a modular monolith. Shared business concepts belong to Nexus
+Core, while module APIs remain behind centralized organization entitlements and
+existing RBAC checks.
 
 The API contract must be updated before handlers or callers. After changing
 `lib/api-spec/openapi.yaml`, regenerate clients:
@@ -69,8 +73,9 @@ pnpm --filter @workspace/db run push
 ```
 
 The current schema contains users, organizations, organization memberships,
-user preferences, and audit logs. No accounting transaction tables exist in
-Phase 2.
+user preferences, audit logs, module definitions, and organization module
+entitlements. Existing and newly created organizations receive Nexus Finance
+as an enabled entitlement. No accounting transaction tables exist yet.
 
 ## Validation
 
@@ -85,17 +90,23 @@ pnpm run typecheck
 - Clerk-managed password and session security
 - Server-side authentication middleware
 - Server-side organization membership checks
+- Server-side module entitlement guards
 - Role checks for organization settings mutations
 - Zod request and response validation generated from OpenAPI
 - Parameterized Drizzle queries
 - Redacted structured request logging
 - Environment-based secrets
 - Auditable organization create/update actions
-- Automated cross-tenant API denial test
+- Automated cross-tenant, module denial, and RBAC tests
 
 ## Current limitations
 
-- Accounting, inventory, VAT, and financial reporting modules are not built.
+- Nexus Finance customers, suppliers, accounting, inventory, VAT, and financial
+  reporting features are not built.
+- Fleet, Projects, Assets, Intelligence, and Automate are Coming Soon and cannot
+  be activated.
+- Feature entitlements and subscriptions are architecturally anticipated but
+  commercial plans and billing are not implemented.
 - ZATCA is represented only as a future settings destination; no API,
   signing, clearance, or credential handling is implemented.
 - Users and branches screens establish the product surface but their CRUD APIs
