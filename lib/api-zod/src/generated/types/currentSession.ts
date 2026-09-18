@@ -7,8 +7,10 @@
  */
 import type { OrganizationMembership } from './organizationMembership';
 import type { User } from './user';
+import type { UserPreferences } from './userPreferences';
 
 export interface CurrentSession {
   user: User;
   organizations: OrganizationMembership[];
+  preferences: UserPreferences;
 }

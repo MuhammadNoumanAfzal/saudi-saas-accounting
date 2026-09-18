@@ -5,7 +5,10 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { OrganizationBusinessType } from './organizationBusinessType';
 import type { OrganizationDefaultLanguage } from './organizationDefaultLanguage';
+import type { OrganizationInvoiceLanguage } from './organizationInvoiceLanguage';
+import type { OrganizationNumberFormat } from './organizationNumberFormat';
 
 export interface Organization {
   id: string;
@@ -17,6 +20,8 @@ export interface Organization {
   /** @nullable */
   tradingNameArabic?: string | null;
   /** @nullable */
+  businessType?: OrganizationBusinessType;
+  /** @nullable */
   vatNumber?: string | null;
   /** @nullable */
   commercialRegistrationNumber?: string | null;
@@ -25,6 +30,8 @@ export interface Organization {
   city?: string | null;
   /** @nullable */
   address?: string | null;
+  /** @nullable */
+  streetName?: string | null;
   /** @nullable */
   postalCode?: string | null;
   /** @nullable */
@@ -46,5 +53,8 @@ export interface Organization {
   defaultLanguage: OrganizationDefaultLanguage;
   timezone: string;
   vatRegistered: boolean;
+  numberFormat?: OrganizationNumberFormat;
+  invoiceLanguage?: OrganizationInvoiceLanguage;
+  onboardingCompleted?: boolean;
   createdAt?: Date;
 }

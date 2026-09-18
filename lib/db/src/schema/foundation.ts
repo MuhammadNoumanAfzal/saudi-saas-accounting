@@ -21,6 +21,26 @@ export const membershipRoleEnum = pgEnum("membership_role", [
   "purchasing",
   "viewer",
 ]);
+export const businessTypeEnum = pgEnum("business_type", [
+  "establishment",
+  "limited_liability_company",
+  "joint_stock_company",
+  "professional_company",
+  "non_profit",
+  "other",
+]);
+export const numberFormatEnum = pgEnum("number_format", ["western", "arabic"]);
+export const invoiceLanguageEnum = pgEnum("invoice_language", [
+  "en",
+  "ar",
+  "bilingual",
+]);
+export const appearanceEnum = pgEnum("appearance", [
+  "light",
+  "dark",
+  "system",
+]);
+export const densityEnum = pgEnum("density", ["compact", "comfortable"]);
 
 export const usersTable = pgTable(
   "users",
@@ -44,11 +64,13 @@ export const organizationsTable = pgTable(
     legalNameArabic: text("legal_name_arabic"),
     tradingNameEnglish: text("trading_name_english"),
     tradingNameArabic: text("trading_name_arabic"),
+    businessType: businessTypeEnum("business_type"),
     vatNumber: text("vat_number"),
     commercialRegistrationNumber: text("commercial_registration_number"),
     country: text("country").notNull().default("Saudi Arabia"),
     city: text("city"),
     address: text("address"),
+    streetName: text("street_name"),
     postalCode: text("postal_code"),
     additionalNumber: text("additional_number"),
     buildingNumber: text("building_number"),
@@ -62,6 +84,15 @@ export const organizationsTable = pgTable(
     defaultLanguage: languageEnum("default_language").notNull().default("en"),
     timezone: text("timezone").notNull().default("Asia/Riyadh"),
     vatRegistered: boolean("vat_registered").notNull().default(false),
+    numberFormat: numberFormatEnum("number_format")
+      .notNull()
+      .default("western"),
+    invoiceLanguage: invoiceLanguageEnum("invoice_language")
+      .notNull()
+      .default("bilingual"),
+    onboardingCompleted: boolean("onboarding_completed")
+      .notNull()
+      .default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -72,6 +103,31 @@ export const organizationsTable = pgTable(
   (table) => [
     index("organizations_country_idx").on(table.country),
     index("organizations_created_at_idx").on(table.createdAt),
+  ],
+);
+
+export const userPreferencesTable = pgTable(
+  "user_preferences",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    language: languageEnum("language").notNull().default("en"),
+    appearance: appearanceEnum("appearance").notNull().default("light"),
+    density: densityEnum("density").notNull().default("comfortable"),
+    sidebarCollapsed: boolean("sidebar_collapsed").notNull().default(false),
+    currentOrganizationId: uuid("current_organization_id").references(
+      () => organizationsTable.id,
+      { onDelete: "set null" },
+    ),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("user_preferences_user_idx").on(table.userId),
+    index("user_preferences_current_org_idx").on(table.currentOrganizationId),
   ],
 );
 
@@ -128,8 +184,12 @@ export const auditLogsTable = pgTable(
   ],
 );
 
-export const usersRelations = relations(usersTable, ({ many }) => ({
+export const usersRelations = relations(usersTable, ({ many, one }) => ({
   memberships: many(organizationMembershipsTable),
+  preferences: one(userPreferencesTable, {
+    fields: [usersTable.id],
+    references: [userPreferencesTable.userId],
+  }),
 }));
 
 export const organizationsRelations = relations(
@@ -171,9 +231,12 @@ export const insertMembershipSchema = createInsertSchema(
   organizationMembershipsTable,
 );
 export const insertAuditLogSchema = createInsertSchema(auditLogsTable);
+export const insertUserPreferencesSchema =
+  createInsertSchema(userPreferencesTable);
 
 export type User = typeof usersTable.$inferSelect;
 export type Organization = typeof organizationsTable.$inferSelect;
 export type OrganizationMembership =
   typeof organizationMembershipsTable.$inferSelect;
 export type AuditLog = typeof auditLogsTable.$inferSelect;
+export type UserPreferences = typeof userPreferencesTable.$inferSelect;

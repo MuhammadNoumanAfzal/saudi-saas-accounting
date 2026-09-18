@@ -15,12 +15,44 @@ export interface User {
   displayName: string;
 }
 
+/**
+ * @nullable
+ */
+export type OrganizationBusinessType = typeof OrganizationBusinessType[keyof typeof OrganizationBusinessType] | null;
+
+
+export const OrganizationBusinessType = {
+  establishment: 'establishment',
+  limited_liability_company: 'limited_liability_company',
+  joint_stock_company: 'joint_stock_company',
+  professional_company: 'professional_company',
+  non_profit: 'non_profit',
+  other: 'other',
+} as const;
+
 export type OrganizationDefaultLanguage = typeof OrganizationDefaultLanguage[keyof typeof OrganizationDefaultLanguage];
 
 
 export const OrganizationDefaultLanguage = {
   en: 'en',
   ar: 'ar',
+} as const;
+
+export type OrganizationNumberFormat = typeof OrganizationNumberFormat[keyof typeof OrganizationNumberFormat];
+
+
+export const OrganizationNumberFormat = {
+  western: 'western',
+  arabic: 'arabic',
+} as const;
+
+export type OrganizationInvoiceLanguage = typeof OrganizationInvoiceLanguage[keyof typeof OrganizationInvoiceLanguage];
+
+
+export const OrganizationInvoiceLanguage = {
+  en: 'en',
+  ar: 'ar',
+  bilingual: 'bilingual',
 } as const;
 
 export interface Organization {
@@ -33,6 +65,8 @@ export interface Organization {
   /** @nullable */
   tradingNameArabic?: string | null;
   /** @nullable */
+  businessType?: OrganizationBusinessType;
+  /** @nullable */
   vatNumber?: string | null;
   /** @nullable */
   commercialRegistrationNumber?: string | null;
@@ -41,6 +75,8 @@ export interface Organization {
   city?: string | null;
   /** @nullable */
   address?: string | null;
+  /** @nullable */
+  streetName?: string | null;
   /** @nullable */
   postalCode?: string | null;
   /** @nullable */
@@ -62,8 +98,26 @@ export interface Organization {
   defaultLanguage: OrganizationDefaultLanguage;
   timezone: string;
   vatRegistered: boolean;
+  numberFormat?: OrganizationNumberFormat;
+  invoiceLanguage?: OrganizationInvoiceLanguage;
+  onboardingCompleted?: boolean;
   createdAt?: string;
 }
+
+/**
+ * @nullable
+ */
+export type OrganizationInputBusinessType = typeof OrganizationInputBusinessType[keyof typeof OrganizationInputBusinessType] | null;
+
+
+export const OrganizationInputBusinessType = {
+  establishment: 'establishment',
+  limited_liability_company: 'limited_liability_company',
+  joint_stock_company: 'joint_stock_company',
+  professional_company: 'professional_company',
+  non_profit: 'non_profit',
+  other: 'other',
+} as const;
 
 export type OrganizationInputDefaultLanguage = typeof OrganizationInputDefaultLanguage[keyof typeof OrganizationInputDefaultLanguage];
 
@@ -71,6 +125,23 @@ export type OrganizationInputDefaultLanguage = typeof OrganizationInputDefaultLa
 export const OrganizationInputDefaultLanguage = {
   en: 'en',
   ar: 'ar',
+} as const;
+
+export type OrganizationInputNumberFormat = typeof OrganizationInputNumberFormat[keyof typeof OrganizationInputNumberFormat];
+
+
+export const OrganizationInputNumberFormat = {
+  western: 'western',
+  arabic: 'arabic',
+} as const;
+
+export type OrganizationInputInvoiceLanguage = typeof OrganizationInputInvoiceLanguage[keyof typeof OrganizationInputInvoiceLanguage];
+
+
+export const OrganizationInputInvoiceLanguage = {
+  en: 'en',
+  ar: 'ar',
+  bilingual: 'bilingual',
 } as const;
 
 export interface OrganizationInput {
@@ -83,6 +154,8 @@ export interface OrganizationInput {
   /** @nullable */
   tradingNameArabic?: string | null;
   /** @nullable */
+  businessType?: OrganizationInputBusinessType;
+  /** @nullable */
   vatNumber?: string | null;
   /** @nullable */
   commercialRegistrationNumber?: string | null;
@@ -91,6 +164,8 @@ export interface OrganizationInput {
   city?: string | null;
   /** @nullable */
   address?: string | null;
+  /** @nullable */
+  streetName?: string | null;
   /** @nullable */
   postalCode?: string | null;
   /** @nullable */
@@ -110,6 +185,9 @@ export interface OrganizationInput {
   defaultLanguage?: OrganizationInputDefaultLanguage;
   timezone?: string;
   vatRegistered?: boolean;
+  numberFormat?: OrganizationInputNumberFormat;
+  invoiceLanguage?: OrganizationInputInvoiceLanguage;
+  onboardingCompleted?: boolean;
 }
 
 export type OrganizationUpdate = OrganizationInput;
@@ -131,9 +209,78 @@ export interface OrganizationMembership {
   role: OrganizationMembershipRole;
 }
 
+export type UserPreferencesLanguage = typeof UserPreferencesLanguage[keyof typeof UserPreferencesLanguage];
+
+
+export const UserPreferencesLanguage = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type UserPreferencesAppearance = typeof UserPreferencesAppearance[keyof typeof UserPreferencesAppearance];
+
+
+export const UserPreferencesAppearance = {
+  light: 'light',
+  dark: 'dark',
+  system: 'system',
+} as const;
+
+export type UserPreferencesDensity = typeof UserPreferencesDensity[keyof typeof UserPreferencesDensity];
+
+
+export const UserPreferencesDensity = {
+  compact: 'compact',
+  comfortable: 'comfortable',
+} as const;
+
+export interface UserPreferences {
+  language: UserPreferencesLanguage;
+  appearance: UserPreferencesAppearance;
+  density: UserPreferencesDensity;
+  sidebarCollapsed: boolean;
+  /** @nullable */
+  currentOrganizationId?: string | null;
+}
+
 export interface CurrentSession {
   user: User;
   organizations: OrganizationMembership[];
+  preferences: UserPreferences;
+}
+
+export type UserPreferencesInputLanguage = typeof UserPreferencesInputLanguage[keyof typeof UserPreferencesInputLanguage];
+
+
+export const UserPreferencesInputLanguage = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type UserPreferencesInputAppearance = typeof UserPreferencesInputAppearance[keyof typeof UserPreferencesInputAppearance];
+
+
+export const UserPreferencesInputAppearance = {
+  light: 'light',
+  dark: 'dark',
+  system: 'system',
+} as const;
+
+export type UserPreferencesInputDensity = typeof UserPreferencesInputDensity[keyof typeof UserPreferencesInputDensity];
+
+
+export const UserPreferencesInputDensity = {
+  compact: 'compact',
+  comfortable: 'comfortable',
+} as const;
+
+export interface UserPreferencesInput {
+  language?: UserPreferencesInputLanguage;
+  appearance?: UserPreferencesInputAppearance;
+  density?: UserPreferencesInputDensity;
+  sidebarCollapsed?: boolean;
+  /** @nullable */
+  currentOrganizationId?: string | null;
 }
 
 export type DashboardSummaryRecentTransactionsItem = {

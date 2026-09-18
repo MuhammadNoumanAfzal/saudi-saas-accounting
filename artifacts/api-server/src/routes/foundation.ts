@@ -12,6 +12,8 @@ import {
   ListAuditLogsParams,
   ListAuditLogsResponse,
   OrganizationMembership,
+  UpdateUserPreferencesBody,
+  UpdateUserPreferencesResponse,
   UpdateOrganizationBody,
   UpdateOrganizationParams,
   UpdateOrganizationResponse,
@@ -21,6 +23,7 @@ import {
   db,
   organizationMembershipsTable,
   organizationsTable,
+  userPreferencesTable,
   usersTable,
 } from "@workspace/db";
 import {
@@ -36,6 +39,38 @@ function toOrganization(value: typeof organizationsTable.$inferSelect) {
   return {
     ...value,
     createdAt: value.createdAt.toISOString(),
+  };
+}
+
+async function getOrCreatePreferences(userId: string) {
+  const [existing] = await db
+    .select()
+    .from(userPreferencesTable)
+    .where(eq(userPreferencesTable.userId, userId))
+    .limit(1);
+  if (existing) return existing;
+  const [created] = await db
+    .insert(userPreferencesTable)
+    .values({ userId })
+    .onConflictDoNothing({ target: userPreferencesTable.userId })
+    .returning();
+  if (created) return created;
+  const [concurrent] = await db
+    .select()
+    .from(userPreferencesTable)
+    .where(eq(userPreferencesTable.userId, userId))
+    .limit(1);
+  if (!concurrent) throw new Error("Unable to initialize user preferences");
+  return concurrent;
+}
+
+function toPreferences(value: typeof userPreferencesTable.$inferSelect) {
+  return {
+    language: value.language,
+    appearance: value.appearance,
+    density: value.density,
+    sidebarCollapsed: value.sidebarCollapsed,
+    currentOrganizationId: value.currentOrganizationId,
   };
 }
 
@@ -58,6 +93,7 @@ router.get("/me", async (req, res): Promise<void> => {
     )
     .where(eq(organizationMembershipsTable.userId, user.id))
     .orderBy(desc(organizationsTable.createdAt));
+  const preferences = await getOrCreatePreferences(user.id);
 
   res.json(
     GetCurrentSessionResponse.parse({
@@ -70,8 +106,43 @@ router.get("/me", async (req, res): Promise<void> => {
         organization: toOrganization(item.organization),
         role: item.role,
       })),
+      preferences: toPreferences(preferences),
     }),
   );
+});
+
+router.patch("/me/preferences", async (req, res): Promise<void> => {
+  const parsed = UpdateUserPreferencesBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const user = await getOrCreateLocalUser(req);
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  if (parsed.data.currentOrganizationId) {
+    const membership = await getMembership(
+      user.id,
+      parsed.data.currentOrganizationId,
+    );
+    if (!membership) {
+      res.status(403).json({ error: "Organization access denied" });
+      return;
+    }
+  }
+  await getOrCreatePreferences(user.id);
+  const [updated] = await db
+    .update(userPreferencesTable)
+    .set({ ...parsed.data, updatedAt: new Date() })
+    .where(eq(userPreferencesTable.userId, user.id))
+    .returning();
+  if (!updated) {
+    res.status(500).json({ error: "Unable to update preferences" });
+    return;
+  }
+  res.json(UpdateUserPreferencesResponse.parse(toPreferences(updated)));
 });
 
 router.post("/organizations", async (req, res): Promise<void> => {

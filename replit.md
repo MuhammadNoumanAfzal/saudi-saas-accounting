@@ -1,6 +1,6 @@
 # Mizan — Saudi Accounting Foundation
 
-A multi-tenant, Saudi-first accounting SaaS foundation with secure authentication, organization onboarding, settings, audit logging, and an empty-state dashboard.
+A multi-tenant, Saudi-first accounting SaaS workspace with secure authentication, five-step organization onboarding, bilingual RTL/LTR navigation, persisted preferences, settings, audit logging, and an empty-safe dashboard.
 
 ## Run & Operate
 
@@ -37,7 +37,7 @@ A multi-tenant, Saudi-first accounting SaaS foundation with secure authenticatio
 
 ## Product
 
-Public product introduction, secure sign-in/sign-up, organization onboarding, dashboard, organization profile, audit history, foundational settings, and future-module navigation.
+Public product introduction, secure sign-in/sign-up and password recovery through Clerk, five-step organization onboarding, organization switching, bilingual responsive workspace, command search, honest quick-create and notification foundations, dashboard, settings, and audit history.
 
 ## User preferences
 
@@ -48,6 +48,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 - Regenerate API clients after every OpenAPI change.
 - Run `pnpm run typecheck:libs` after changing shared database exports.
 - Do not authorize tenant access from organization IDs supplied by the client alone.
+- Resolve the active organization from a membership plus `currentOrganizationId`; never query tenant data from the preference without checking membership.
 
 ## Pointers
 

@@ -1,10 +1,11 @@
 # Mizan — Saudi Accounting Foundation
 
-Mizan is the Phase 1 foundation for a multi-tenant accounting and e-invoicing
-platform for Saudi SMEs. This phase establishes authentication, organization
-isolation, onboarding, settings, localization-ready UI, audit logging, and an
-empty-state financial dashboard. Accounting transactions and ZATCA operations
-are intentionally deferred.
+Mizan is a multi-tenant accounting and e-invoicing SaaS workspace for Saudi
+SMEs. The current Phase 2 foundation includes authentication, organization
+isolation, a five-step company onboarding flow, organization switching,
+bilingual LTR/RTL workspace navigation, persisted preferences, audit logging,
+settings, and an empty-safe financial dashboard. Accounting transactions and
+ZATCA operations are intentionally deferred.
 
 ## Stack
 
@@ -67,8 +68,9 @@ Apply development schema changes with:
 pnpm --filter @workspace/db run push
 ```
 
-The current schema contains users, organizations, organization memberships, and
-audit logs. No accounting transaction tables exist in Phase 1.
+The current schema contains users, organizations, organization memberships,
+user preferences, and audit logs. No accounting transaction tables exist in
+Phase 2.
 
 ## Validation
 
@@ -89,6 +91,7 @@ pnpm run typecheck
 - Redacted structured request logging
 - Environment-based secrets
 - Auditable organization create/update actions
+- Automated cross-tenant API denial test
 
 ## Current limitations
 
@@ -97,9 +100,10 @@ pnpm run typecheck
   signing, clearance, or credential handling is implemented.
 - Users and branches screens establish the product surface but their CRUD APIs
   are deferred.
-- Full Arabic translation and runtime RTL switching remain a dedicated follow-up
-  phase; the current shell includes bilingual terminology and Arabic-ready
-  typography.
+- Google OAuth availability is controlled by Clerk configuration; the
+  application does not provide a fake OAuth implementation.
+- Team invitation delivery remains unavailable until a secure email-delivery
+  workflow is configured.
 - Docker packaging is not included because this Replit runtime does not support
   Docker-based development. The application remains portable through standard
   Node.js, PostgreSQL, and environment-variable interfaces.

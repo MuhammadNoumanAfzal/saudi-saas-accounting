@@ -1,0 +1,1061 @@
+Continue building the existing Mizan application.
+
+IMPORTANT:
+Do NOT create a new project.
+Do NOT redesign the existing public landing page.
+Do NOT replace the existing Mizan branding.
+Do NOT change the established visual identity.
+
+The current Mizan visual language is now approved:
+
+- warm off-white backgrounds
+- deep Saudi/financial green
+- restrained gold accent
+- clean typography
+- generous whitespace
+- subtle borders
+- minimal iconography
+- premium Saudi fintech/SaaS feeling
+- no generic admin-template appearance
+
+All authenticated application screens must feel like they belong to the same Mizan product.
+
+==================================================
+PHASE 2
+ONBOARDING + AUTHENTICATED APPLICATION EXPERIENCE
+==================================================
+
+The objective of this phase is to take a newly registered user from:
+
+Account Created
+→ Company Setup
+→ Workspace Created
+→ Main Dashboard
+
+Do NOT implement customers, suppliers, invoices, accounting transactions or ZATCA integration yet.
+
+We are establishing the actual SaaS workspace.
+
+==================================================
+1. AUTHENTICATION
+==================================================
+
+Continue using the secure authentication architecture created in Phase 1.
+
+Make sure these flows work:
+
+Sign up
+Sign in
+Sign out
+Forgot password
+Reset password
+
+Do not fake Google authentication.
+
+If Google OAuth is not configured, either:
+
+- clearly mark it as unavailable in development, OR
+- hide it until configured.
+
+Never present a button that appears operational when it is not.
+
+After successful registration:
+
+If user has no organization:
+→ /onboarding
+
+If organization setup is complete:
+→ /dashboard
+
+Users must never manually bypass onboarding into an unconfigured organization.
+
+==================================================
+2. ONBOARDING EXPERIENCE
+==================================================
+
+Create a premium multi-step onboarding experience.
+
+Do NOT make it feel like a long government form.
+
+Use progressive disclosure.
+
+Desktop:
+Centered onboarding workspace with progress indicator.
+
+Mobile:
+Full-width optimized flow.
+
+Show:
+
+Step X of 5
+
+Allow Back and Continue.
+
+Autosave progress where appropriate.
+
+==================================================
+STEP 1 — BUSINESS
+==================================================
+
+Heading:
+
+Tell us about your business
+
+Supporting text:
+
+We'll use this information to prepare your Mizan workspace.
+
+Fields:
+
+Business / Trading Name
+Arabic Business Name
+
+Legal Company Name
+Arabic Legal Company Name
+
+Business Type
+
+Options:
+
+Establishment
+Limited Liability Company
+Joint Stock Company
+Professional Company
+Non-Profit
+Other
+
+Country
+
+Default:
+Saudi Arabia
+
+Currency
+
+Default:
+SAR — Saudi Riyal
+
+Do not require every Arabic field during initial onboarding.
+
+==================================================
+STEP 2 — TAX & REGISTRATION
+==================================================
+
+Heading:
+
+Business registration
+
+Fields:
+
+Commercial Registration Number
+
+VAT Registered?
+Yes / No
+
+If YES:
+
+VAT Registration Number
+
+Validate Saudi VAT number structurally.
+
+Do NOT claim ZATCA verification.
+
+Show explanatory text:
+
+"Your tax information will appear on applicable invoices and tax documents."
+
+==================================================
+STEP 3 — NATIONAL ADDRESS
+==================================================
+
+Heading:
+
+Business address
+
+Fields:
+
+Building Number
+Street Name
+District
+City
+Postal Code
+Additional Number
+Country
+
+Country defaults to Saudi Arabia.
+
+Provide:
+
+"Skip for now"
+
+for optional information where appropriate.
+
+Design these fields so they can later support Saudi invoice requirements.
+
+==================================================
+STEP 4 — ACCOUNTING PREFERENCES
+==================================================
+
+Heading:
+
+Set your financial preferences
+
+Fields:
+
+Fiscal Year Start
+
+Default:
+January 1
+
+Default Language
+
+English
+العربية
+
+Default Currency:
+
+SAR
+
+Number Format
+
+Example:
+1,234,567.89
+
+Invoice language preference:
+
+English
+Arabic
+Bilingual
+
+Default:
+Bilingual
+
+These settings must be persisted at organization level.
+
+==================================================
+STEP 5 — READY
+==================================================
+
+Create a polished completion state.
+
+Heading:
+
+Your Mizan workspace is ready.
+
+Supporting copy:
+
+Your business foundation is set. You can update these details anytime from Settings.
+
+Show summarized information:
+
+Company Name
+CR Number
+VAT Status
+Currency
+Fiscal Year
+Language
+
+Primary CTA:
+
+Go to Dashboard
+
+Do not use confetti.
+
+A subtle completion animation is acceptable.
+
+==================================================
+3. AUTHENTICATED APPLICATION SHELL
+==================================================
+
+Now implement the real authenticated workspace.
+
+The application shell must feel significantly different from the marketing website while retaining the Mizan identity.
+
+Desktop layout:
+
+Collapsible sidebar
+Top navigation
+Main content workspace
+
+Use a compact professional SaaS layout.
+
+Do not make everything oversized.
+
+==================================================
+4. SIDEBAR
+==================================================
+
+Top:
+
+Mizan logo
+
+Below:
+
+Organization Switcher
+
+Then:
+
+OVERVIEW
+
+Dashboard
+
+SALES
+
+Customers
+Quotations
+Invoices
+Credit Notes
+
+PURCHASES
+
+Suppliers
+Purchase Bills
+Expenses
+
+PRODUCTS
+
+Products & Services
+Inventory
+
+ACCOUNTING
+
+Chart of Accounts
+Journal Entries
+General Ledger
+Payments
+
+REPORTS
+
+Financial Reports
+VAT Reports
+
+Bottom:
+
+Settings
+Help
+
+User profile
+
+Only Dashboard and foundational Settings are functional in this phase.
+
+Other items should be visible because they communicate product scope.
+
+When clicked, show a polished "Coming soon" state.
+
+Do not create fake modules.
+
+==================================================
+5. SIDEBAR BEHAVIOR
+==================================================
+
+Expanded state:
+
+Icon + label
+
+Collapsed state:
+
+Icon only
+
+On hover when collapsed:
+
+Tooltip with module name.
+
+Persist sidebar preference.
+
+Arabic mode:
+
+Sidebar moves to RIGHT.
+
+Navigation alignment reverses appropriately.
+
+Do not simply mirror icons that should retain their natural orientation.
+
+==================================================
+6. TOP NAVIGATION
+==================================================
+
+Create:
+
+Global Search
+Quick Create
+Notifications
+Language
+Help
+Organization Switcher where appropriate
+User menu
+
+User menu:
+
+Profile
+Preferences
+Security
+Sign out
+
+==================================================
+7. GLOBAL SEARCH
+==================================================
+
+Implement:
+
+CMD + K
+CTRL + K
+
+Open command palette.
+
+For now search:
+
+Dashboard
+Settings pages
+Navigation
+Organization
+
+Architecture must later accept:
+
+customers
+suppliers
+products
+quotations
+invoices
+transactions
+
+==================================================
+8. QUICK CREATE
+==================================================
+
+Button:
+
++ Create
+
+Click opens:
+
+Customer
+Quotation
+Invoice
+Supplier
+Expense
+Product
+
+These modules do not exist yet.
+
+Selecting one should show:
+
+"This feature is coming in the next setup stage."
+
+Do not create fake records.
+
+==================================================
+9. DASHBOARD
+==================================================
+
+Create a premium financial dashboard.
+
+This is extremely important.
+
+It should feel like a modern accounting SaaS application, NOT an analytics template.
+
+Header:
+
+Dynamic greeting:
+
+Good morning
+Good afternoon
+Good evening
+
+Then organization name.
+
+Example:
+
+Good morning, Demo Company
+
+Below:
+
+short contextual statement such as:
+
+"Here's where your business stands today."
+
+Show current date.
+
+==================================================
+10. PRIMARY KPI AREA
+==================================================
+
+Display four key financial metrics:
+
+Revenue
+
+SAR 0.00
+
+Receivables
+
+SAR 0.00
+
+Expenses
+
+SAR 0.00
+
+Net Profit
+
+SAR 0.00
+
+Because no transactions exist:
+
+DO NOT show fake percentages.
+
+DO NOT show fake trends.
+
+DO NOT show fake charts.
+
+Instead show subtle:
+
+"No activity yet"
+
+where appropriate.
+
+==================================================
+11. CASH FLOW
+==================================================
+
+Create larger dashboard card:
+
+Cash Flow
+
+Tabs:
+
+This Month
+This Quarter
+This Year
+
+When no transactions exist:
+
+Show elegant empty state:
+
+"No financial activity yet"
+
+"Your cash flow will appear here once transactions are recorded."
+
+Do not draw fake chart lines.
+
+==================================================
+12. INVOICE OVERVIEW
+==================================================
+
+Create:
+
+Invoices
+
+Future status categories:
+
+Draft
+Unpaid
+Partially Paid
+Paid
+Overdue
+
+All counts:
+
+0
+
+Provide CTA:
+
+Create Invoice
+
+Since invoice functionality does not exist:
+
+CTA can show coming-soon message.
+
+==================================================
+13. RECEIVABLES
+==================================================
+
+Create card:
+
+Outstanding Receivables
+
+SAR 0.00
+
+Secondary:
+
+Overdue
+SAR 0.00
+
+Customers with outstanding balances:
+0
+
+==================================================
+14. EXPENSE OVERVIEW
+==================================================
+
+Create:
+
+Expenses
+
+This Month:
+
+SAR 0.00
+
+No expenses recorded yet.
+
+Future chart architecture should support expense categories.
+
+==================================================
+15. VAT SUMMARY
+==================================================
+
+Create dashboard component:
+
+VAT Summary
+
+Show:
+
+Output VAT
+SAR 0.00
+
+Input VAT
+SAR 0.00
+
+Net VAT
+SAR 0.00
+
+Clearly state:
+
+"No VAT transactions recorded."
+
+Do NOT imply that these values have been submitted to ZATCA.
+
+==================================================
+16. RECENT ACTIVITY
+==================================================
+
+Create:
+
+Recent Activity
+
+Empty state:
+
+"Nothing here yet."
+
+"Your latest invoices, payments and expenses will appear here."
+
+Architecture should later pull real activity.
+
+==================================================
+17. GETTING STARTED
+==================================================
+
+Because this is a new account, create a useful onboarding checklist on dashboard.
+
+Title:
+
+Get started with Mizan
+
+Items:
+
+✓ Complete company profile
+
+○ Add your first customer
+
+○ Add a product or service
+
+○ Create your first invoice
+
+○ Review tax settings
+
+○ Connect ZATCA
+
+Calculate completion percentage from actual completed items.
+
+Do NOT mark unfinished actions complete.
+
+Allow user to collapse this card.
+
+Persist collapsed state.
+
+==================================================
+18. DASHBOARD CUSTOMIZATION FOUNDATION
+==================================================
+
+Prepare architecture for future dashboard customization.
+
+Eventually users may:
+
+reorder widgets
+hide widgets
+choose reporting period
+
+Do not implement drag/drop unless straightforward.
+
+But keep components modular.
+
+==================================================
+19. ORGANIZATION SWITCHER
+==================================================
+
+Implement organization switcher correctly.
+
+Show:
+
+Organization logo/avatar
+Organization name
+
+Dropdown:
+
+Current organization
+Other organizations user belongs to
+Create organization
+
+"Create organization" should initiate the organization onboarding flow.
+
+Tenant context must switch securely server-side.
+
+Never expose another organization's data.
+
+==================================================
+20. SETTINGS
+==================================================
+
+Implement proper settings interface.
+
+Use settings sidebar/tabs.
+
+Sections:
+
+Organization Profile
+
+Business Registration
+
+Address
+
+Financial Settings
+
+Language & Region
+
+Users & Roles
+
+Branches
+
+Security
+
+Appearance
+
+Audit Log
+
+ZATCA Integration
+
+==================================================
+21. ORGANIZATION PROFILE
+==================================================
+
+Allow editing information captured during onboarding.
+
+Use Save Changes.
+
+Show success toast.
+
+Do not autosave sensitive organization information silently.
+
+==================================================
+22. USERS & ROLES
+==================================================
+
+Create functional foundation.
+
+Display current user.
+
+Show role.
+
+Allow organization Owner/Admin to:
+
+Invite User
+
+Invitation architecture should support:
+
+Email
+Role
+
+Roles:
+
+Owner
+Admin
+Accountant
+Sales
+Purchasing
+Viewer
+
+Do not implement insecure fake invitations.
+
+If email delivery is not configured, clearly indicate development limitation.
+
+==================================================
+23. SECURITY
+==================================================
+
+Create Security settings page.
+
+Include:
+
+Change Password
+
+Active Sessions
+
+Future MFA section
+
+Show:
+
+Two-factor authentication
+Coming soon
+
+Do not fake MFA.
+
+==================================================
+24. APPEARANCE
+==================================================
+
+Allow:
+
+Light
+Dark
+System
+
+If dark mode implementation is already stable, enable it.
+
+Otherwise Light can remain default while architecture supports future dark mode.
+
+Also:
+
+Compact / Comfortable density
+
+Persist user preference.
+
+==================================================
+25. LANGUAGE
+==================================================
+
+Language switch:
+
+English
+العربية
+
+Switching language must change the entire authenticated application.
+
+Arabic mode must provide correct RTL layout.
+
+Translate ALL visible interface labels.
+
+Do not leave English fragments throughout Arabic screens.
+
+Use professional Saudi Arabic terminology.
+
+==================================================
+26. NOTIFICATIONS
+==================================================
+
+Create notification center foundation.
+
+Bell icon.
+
+Empty state:
+
+"You're all caught up."
+
+Future notifications may include:
+
+Overdue invoices
+Payments
+Approvals
+Inventory alerts
+ZATCA status
+User invitations
+
+Do not generate fake notifications.
+
+==================================================
+27. MOBILE EXPERIENCE
+==================================================
+
+Test authenticated dashboard on mobile.
+
+Mobile:
+
+Sidebar becomes drawer.
+
+Top bar remains clean.
+
+KPI cards should be readable.
+
+Dashboard components stack logically.
+
+Quick Create remains accessible.
+
+Do not simply shrink desktop UI.
+
+==================================================
+28. LOADING EXPERIENCE
+==================================================
+
+Use skeleton loaders.
+
+Avoid full-page spinners wherever possible.
+
+Dashboard cards should load independently when architecture permits.
+
+==================================================
+29. EMPTY STATE PHILOSOPHY
+==================================================
+
+A new SaaS account has no data.
+
+This should feel intentional, not broken.
+
+Every empty component should explain:
+
+What belongs here
+Why it matters
+What action creates data
+
+Never fill the interface with fake sample financial data unless the user explicitly activates a demo workspace.
+
+==================================================
+30. DESIGN CONSISTENCY
+==================================================
+
+CRITICAL:
+
+Use the EXISTING Mizan design system.
+
+Do not redesign Mizan.
+
+Authenticated workspace should use:
+
+same deep green
+same gold accent
+same typography personality
+same warm neutral palette
+
+But make dashboard more information-dense than marketing website.
+
+Marketing = spacious.
+
+Application = compact, efficient, professional.
+
+This distinction is important.
+
+==================================================
+31. DATABASE
+==================================================
+
+Persist:
+
+onboarding status
+organization settings
+user preferences
+sidebar state where appropriate
+language
+appearance
+fiscal settings
+organization memberships
+
+Use existing multi-tenant models.
+
+Do not duplicate organization models.
+
+Use migrations properly.
+
+==================================================
+32. SECURITY TEST
+==================================================
+
+Before finishing:
+
+Create two test organizations.
+
+Create users/memberships.
+
+Verify:
+
+Organization A user cannot retrieve Organization B settings.
+
+Attempt direct API access using Organization B identifiers.
+
+Expected:
+
+403/404
+
+This test must run automatically.
+
+==================================================
+33. QUALITY CHECK
+==================================================
+
+Before declaring Phase 2 complete:
+
+Test:
+
+Registration
+Login
+Logout
+Password reset architecture
+Onboarding
+Organization creation
+Dashboard
+Settings
+English
+Arabic RTL
+Desktop
+Tablet
+Mobile
+Organization switching
+RBAC
+Tenant isolation
+Dark mode if enabled
+Command palette
+Quick Create
+Audit logging
+
+Fix:
+
+TypeScript errors
+console errors
+broken navigation
+overflow issues
+RTL issues
+mobile issues
+
+==================================================
+34. DO NOT IMPLEMENT YET
+==================================================
+
+Do NOT build:
+
+Customer CRUD
+Supplier CRUD
+Products
+Quotations
+Invoices
+Purchases
+Expenses
+Journal Entries
+Accounting engine
+Inventory
+Financial reports
+ZATCA API integration
+
+Those are subsequent phases.
+
+==================================================
+35. FINISHING REPORT
+==================================================
+
+After implementation provide:
+
+1. Routes created
+2. Database changes
+3. Components created
+4. Authentication status
+5. Tenant isolation tests
+6. RBAC status
+7. Arabic/RTL status
+8. Responsive testing status
+9. Known limitations
+
+Do not automatically proceed to another phase.
+
+Stop and wait for the next prompt.

@@ -44,6 +44,28 @@ paths:
                 $ref: "#/components/schemas/CurrentSession"
         "401":
           description: Unauthorized
+  /me/preferences:
+    patch:
+      operationId: updateUserPreferences
+      tags: [session]
+      summary: Update the current user's workspace preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserPreferencesInput"
+      responses:
+        "200":
+          description: Updated user preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPreferences"
+        "400":
+          description: Invalid preferences
+        "401":
+          description: Unauthorized
   /organizations:
     post:
       operationId: createOrganization
@@ -195,6 +217,16 @@ components:
           type: ["string", "null"]
         tradingNameArabic:
           type: ["string", "null"]
+        businessType:
+          type: ["string", "null"]
+          enum:
+            - establishment
+            - limited_liability_company
+            - joint_stock_company
+            - professional_company
+            - non_profit
+            - other
+            - null
         vatNumber:
           type: ["string", "null"]
         commercialRegistrationNumber:
@@ -204,6 +236,8 @@ components:
         city:
           type: ["string", "null"]
         address:
+          type: ["string", "null"]
+        streetName:
           type: ["string", "null"]
         postalCode:
           type: ["string", "null"]
@@ -232,6 +266,14 @@ components:
           type: string
         vatRegistered:
           type: boolean
+        numberFormat:
+          type: string
+          enum: [western, arabic]
+        invoiceLanguage:
+          type: string
+          enum: [en, ar, bilingual]
+        onboardingCompleted:
+          type: boolean
         createdAt:
           type: string
           format: date-time
@@ -248,6 +290,16 @@ components:
           type: ["string", "null"]
         tradingNameArabic:
           type: ["string", "null"]
+        businessType:
+          type: ["string", "null"]
+          enum:
+            - establishment
+            - limited_liability_company
+            - joint_stock_company
+            - professional_company
+            - non_profit
+            - other
+            - null
         vatNumber:
           type: ["string", "null"]
         commercialRegistrationNumber:
@@ -258,6 +310,8 @@ components:
         city:
           type: ["string", "null"]
         address:
+          type: ["string", "null"]
+        streetName:
           type: ["string", "null"]
         postalCode:
           type: ["string", "null"]
@@ -289,6 +343,17 @@ components:
         vatRegistered:
           type: boolean
           default: false
+        numberFormat:
+          type: string
+          enum: [western, arabic]
+          default: western
+        invoiceLanguage:
+          type: string
+          enum: [en, ar, bilingual]
+          default: bilingual
+        onboardingCompleted:
+          type: boolean
+          default: false
     OrganizationUpdate:
       allOf:
         - $ref: "#/components/schemas/OrganizationInput"
@@ -303,7 +368,7 @@ components:
           enum: [owner, admin, accountant, sales, purchasing, viewer]
     CurrentSession:
       type: object
-      required: [user, organizations]
+      required: [user, organizations, preferences]
       properties:
         user:
           $ref: "#/components/schemas/User"
@@ -311,6 +376,43 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/OrganizationMembership"
+        preferences:
+          $ref: "#/components/schemas/UserPreferences"
+    UserPreferences:
+      type: object
+      required: [language, appearance, density, sidebarCollapsed]
+      properties:
+        language:
+          type: string
+          enum: [en, ar]
+        appearance:
+          type: string
+          enum: [light, dark, system]
+        density:
+          type: string
+          enum: [compact, comfortable]
+        sidebarCollapsed:
+          type: boolean
+        currentOrganizationId:
+          type: ["string", "null"]
+          format: uuid
+    UserPreferencesInput:
+      type: object
+      properties:
+        language:
+          type: string
+          enum: [en, ar]
+        appearance:
+          type: string
+          enum: [light, dark, system]
+        density:
+          type: string
+          enum: [compact, comfortable]
+        sidebarCollapsed:
+          type: boolean
+        currentOrganizationId:
+          type: ["string", "null"]
+          format: uuid
     DashboardSummary:
       type: object
       required: [currency, revenue, receivables, expenses, netProfit, hasComparativeData, recentTransactions]

@@ -33,11 +33,13 @@ export const GetCurrentSessionResponse = zod.object({
   "legalNameArabic": zod.string().nullish(),
   "tradingNameEnglish": zod.string().nullish(),
   "tradingNameArabic": zod.string().nullish(),
+  "businessType": zod.union([zod.literal('establishment'),zod.literal('limited_liability_company'),zod.literal('joint_stock_company'),zod.literal('professional_company'),zod.literal('non_profit'),zod.literal('other'),zod.literal(null)]).nullish(),
   "vatNumber": zod.string().nullish(),
   "commercialRegistrationNumber": zod.string().nullish(),
   "country": zod.string(),
   "city": zod.string().nullish(),
   "address": zod.string().nullish(),
+  "streetName": zod.string().nullish(),
   "postalCode": zod.string().nullish(),
   "additionalNumber": zod.string().nullish(),
   "buildingNumber": zod.string().nullish(),
@@ -51,10 +53,40 @@ export const GetCurrentSessionResponse = zod.object({
   "defaultLanguage": zod.enum(['en', 'ar']),
   "timezone": zod.string(),
   "vatRegistered": zod.boolean(),
+  "numberFormat": zod.enum(['western', 'arabic']).optional(),
+  "invoiceLanguage": zod.enum(['en', 'ar', 'bilingual']).optional(),
+  "onboardingCompleted": zod.boolean().optional(),
   "createdAt": zod.coerce.date().optional()
 }),
   "role": zod.enum(['owner', 'admin', 'accountant', 'sales', 'purchasing', 'viewer'])
-}))
+})),
+  "preferences": zod.object({
+  "language": zod.enum(['en', 'ar']),
+  "appearance": zod.enum(['light', 'dark', 'system']),
+  "density": zod.enum(['compact', 'comfortable']),
+  "sidebarCollapsed": zod.boolean(),
+  "currentOrganizationId": zod.string().uuid().nullish()
+})
+})
+
+
+/**
+ * @summary Update the current user's workspace preferences
+ */
+export const UpdateUserPreferencesBody = zod.object({
+  "language": zod.enum(['en', 'ar']).optional(),
+  "appearance": zod.enum(['light', 'dark', 'system']).optional(),
+  "density": zod.enum(['compact', 'comfortable']).optional(),
+  "sidebarCollapsed": zod.boolean().optional(),
+  "currentOrganizationId": zod.string().uuid().nullish()
+})
+
+export const UpdateUserPreferencesResponse = zod.object({
+  "language": zod.enum(['en', 'ar']),
+  "appearance": zod.enum(['light', 'dark', 'system']),
+  "density": zod.enum(['compact', 'comfortable']),
+  "sidebarCollapsed": zod.boolean(),
+  "currentOrganizationId": zod.string().uuid().nullish()
 })
 
 
@@ -68,17 +100,22 @@ export const createOrganizationBodyFiscalYearStartDefault = `01-01`;
 export const createOrganizationBodyDefaultLanguageDefault = `en`;
 export const createOrganizationBodyTimezoneDefault = `Asia/Riyadh`;
 export const createOrganizationBodyVatRegisteredDefault = false;
+export const createOrganizationBodyNumberFormatDefault = `western`;
+export const createOrganizationBodyInvoiceLanguageDefault = `bilingual`;
+export const createOrganizationBodyOnboardingCompletedDefault = false;
 
 export const CreateOrganizationBody = zod.object({
   "legalNameEnglish": zod.string().min(1),
   "legalNameArabic": zod.string().nullish(),
   "tradingNameEnglish": zod.string().nullish(),
   "tradingNameArabic": zod.string().nullish(),
+  "businessType": zod.union([zod.literal('establishment'),zod.literal('limited_liability_company'),zod.literal('joint_stock_company'),zod.literal('professional_company'),zod.literal('non_profit'),zod.literal('other'),zod.literal(null)]).nullish(),
   "vatNumber": zod.string().nullish(),
   "commercialRegistrationNumber": zod.string().nullish(),
   "country": zod.string().default(createOrganizationBodyCountryDefault),
   "city": zod.string().nullish(),
   "address": zod.string().nullish(),
+  "streetName": zod.string().nullish(),
   "postalCode": zod.string().nullish(),
   "additionalNumber": zod.string().nullish(),
   "buildingNumber": zod.string().nullish(),
@@ -90,7 +127,10 @@ export const CreateOrganizationBody = zod.object({
   "fiscalYearStart": zod.string().default(createOrganizationBodyFiscalYearStartDefault),
   "defaultLanguage": zod.enum(['en', 'ar']).default(createOrganizationBodyDefaultLanguageDefault),
   "timezone": zod.string().default(createOrganizationBodyTimezoneDefault),
-  "vatRegistered": zod.boolean().default(createOrganizationBodyVatRegisteredDefault)
+  "vatRegistered": zod.boolean().default(createOrganizationBodyVatRegisteredDefault),
+  "numberFormat": zod.enum(['western', 'arabic']).default(createOrganizationBodyNumberFormatDefault),
+  "invoiceLanguage": zod.enum(['en', 'ar', 'bilingual']).default(createOrganizationBodyInvoiceLanguageDefault),
+  "onboardingCompleted": zod.boolean().default(createOrganizationBodyOnboardingCompletedDefault)
 })
 
 export const CreateOrganizationResponse = zod.object({
@@ -99,11 +139,13 @@ export const CreateOrganizationResponse = zod.object({
   "legalNameArabic": zod.string().nullish(),
   "tradingNameEnglish": zod.string().nullish(),
   "tradingNameArabic": zod.string().nullish(),
+  "businessType": zod.union([zod.literal('establishment'),zod.literal('limited_liability_company'),zod.literal('joint_stock_company'),zod.literal('professional_company'),zod.literal('non_profit'),zod.literal('other'),zod.literal(null)]).nullish(),
   "vatNumber": zod.string().nullish(),
   "commercialRegistrationNumber": zod.string().nullish(),
   "country": zod.string(),
   "city": zod.string().nullish(),
   "address": zod.string().nullish(),
+  "streetName": zod.string().nullish(),
   "postalCode": zod.string().nullish(),
   "additionalNumber": zod.string().nullish(),
   "buildingNumber": zod.string().nullish(),
@@ -117,6 +159,9 @@ export const CreateOrganizationResponse = zod.object({
   "defaultLanguage": zod.enum(['en', 'ar']),
   "timezone": zod.string(),
   "vatRegistered": zod.boolean(),
+  "numberFormat": zod.enum(['western', 'arabic']).optional(),
+  "invoiceLanguage": zod.enum(['en', 'ar', 'bilingual']).optional(),
+  "onboardingCompleted": zod.boolean().optional(),
   "createdAt": zod.coerce.date().optional()
 })
 
@@ -134,11 +179,13 @@ export const GetOrganizationResponse = zod.object({
   "legalNameArabic": zod.string().nullish(),
   "tradingNameEnglish": zod.string().nullish(),
   "tradingNameArabic": zod.string().nullish(),
+  "businessType": zod.union([zod.literal('establishment'),zod.literal('limited_liability_company'),zod.literal('joint_stock_company'),zod.literal('professional_company'),zod.literal('non_profit'),zod.literal('other'),zod.literal(null)]).nullish(),
   "vatNumber": zod.string().nullish(),
   "commercialRegistrationNumber": zod.string().nullish(),
   "country": zod.string(),
   "city": zod.string().nullish(),
   "address": zod.string().nullish(),
+  "streetName": zod.string().nullish(),
   "postalCode": zod.string().nullish(),
   "additionalNumber": zod.string().nullish(),
   "buildingNumber": zod.string().nullish(),
@@ -152,6 +199,9 @@ export const GetOrganizationResponse = zod.object({
   "defaultLanguage": zod.enum(['en', 'ar']),
   "timezone": zod.string(),
   "vatRegistered": zod.boolean(),
+  "numberFormat": zod.enum(['western', 'arabic']).optional(),
+  "invoiceLanguage": zod.enum(['en', 'ar', 'bilingual']).optional(),
+  "onboardingCompleted": zod.boolean().optional(),
   "createdAt": zod.coerce.date().optional()
 })
 
@@ -170,17 +220,22 @@ export const updateOrganizationBodyOneFiscalYearStartDefault = `01-01`;
 export const updateOrganizationBodyOneDefaultLanguageDefault = `en`;
 export const updateOrganizationBodyOneTimezoneDefault = `Asia/Riyadh`;
 export const updateOrganizationBodyOneVatRegisteredDefault = false;
+export const updateOrganizationBodyOneNumberFormatDefault = `western`;
+export const updateOrganizationBodyOneInvoiceLanguageDefault = `bilingual`;
+export const updateOrganizationBodyOneOnboardingCompletedDefault = false;
 
 export const UpdateOrganizationBody = zod.object({
   "legalNameEnglish": zod.string().min(1),
   "legalNameArabic": zod.string().nullish(),
   "tradingNameEnglish": zod.string().nullish(),
   "tradingNameArabic": zod.string().nullish(),
+  "businessType": zod.union([zod.literal('establishment'),zod.literal('limited_liability_company'),zod.literal('joint_stock_company'),zod.literal('professional_company'),zod.literal('non_profit'),zod.literal('other'),zod.literal(null)]).nullish(),
   "vatNumber": zod.string().nullish(),
   "commercialRegistrationNumber": zod.string().nullish(),
   "country": zod.string().default(updateOrganizationBodyOneCountryDefault),
   "city": zod.string().nullish(),
   "address": zod.string().nullish(),
+  "streetName": zod.string().nullish(),
   "postalCode": zod.string().nullish(),
   "additionalNumber": zod.string().nullish(),
   "buildingNumber": zod.string().nullish(),
@@ -192,7 +247,10 @@ export const UpdateOrganizationBody = zod.object({
   "fiscalYearStart": zod.string().default(updateOrganizationBodyOneFiscalYearStartDefault),
   "defaultLanguage": zod.enum(['en', 'ar']).default(updateOrganizationBodyOneDefaultLanguageDefault),
   "timezone": zod.string().default(updateOrganizationBodyOneTimezoneDefault),
-  "vatRegistered": zod.boolean().default(updateOrganizationBodyOneVatRegisteredDefault)
+  "vatRegistered": zod.boolean().default(updateOrganizationBodyOneVatRegisteredDefault),
+  "numberFormat": zod.enum(['western', 'arabic']).default(updateOrganizationBodyOneNumberFormatDefault),
+  "invoiceLanguage": zod.enum(['en', 'ar', 'bilingual']).default(updateOrganizationBodyOneInvoiceLanguageDefault),
+  "onboardingCompleted": zod.boolean().default(updateOrganizationBodyOneOnboardingCompletedDefault)
 })
 
 export const UpdateOrganizationResponse = zod.object({
@@ -201,11 +259,13 @@ export const UpdateOrganizationResponse = zod.object({
   "legalNameArabic": zod.string().nullish(),
   "tradingNameEnglish": zod.string().nullish(),
   "tradingNameArabic": zod.string().nullish(),
+  "businessType": zod.union([zod.literal('establishment'),zod.literal('limited_liability_company'),zod.literal('joint_stock_company'),zod.literal('professional_company'),zod.literal('non_profit'),zod.literal('other'),zod.literal(null)]).nullish(),
   "vatNumber": zod.string().nullish(),
   "commercialRegistrationNumber": zod.string().nullish(),
   "country": zod.string(),
   "city": zod.string().nullish(),
   "address": zod.string().nullish(),
+  "streetName": zod.string().nullish(),
   "postalCode": zod.string().nullish(),
   "additionalNumber": zod.string().nullish(),
   "buildingNumber": zod.string().nullish(),
@@ -219,6 +279,9 @@ export const UpdateOrganizationResponse = zod.object({
   "defaultLanguage": zod.enum(['en', 'ar']),
   "timezone": zod.string(),
   "vatRegistered": zod.boolean(),
+  "numberFormat": zod.enum(['western', 'arabic']).optional(),
+  "invoiceLanguage": zod.enum(['en', 'ar', 'bilingual']).optional(),
+  "onboardingCompleted": zod.boolean().optional(),
   "createdAt": zod.coerce.date().optional()
 })
 
