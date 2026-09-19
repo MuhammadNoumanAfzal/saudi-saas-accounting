@@ -20,6 +20,7 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet';
 import { Plus, Trash2, Receipt, Calculator, User, Calendar, Tag, Percent, ShieldCheck } from 'lucide-react';
+import { showAlert } from '@/lib/alerts';
 import type { InvoiceInput, InvoiceItemInput } from '@workspace/api-client-react';
 
 export interface InvoiceCreateSheetProps {
@@ -209,6 +210,10 @@ export function InvoiceCreateSheet({
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey(orgId) });
             queryClient.invalidateQueries({ queryKey: getGetInvoiceQueryKey(orgId, invoiceId) });
+            showAlert.success(
+              isRtl ? 'تم تحديث الفاتورة الضريبية!' : 'Invoice Updated Successfully!',
+              isRtl ? 'تم تحديث بيانات الفاتورة وإعادة حساب الضريبة.' : 'Invoice tax details and line items updated.'
+            );
             handleOpenChange(false);
             if (onSuccess) onSuccess();
           },
@@ -220,6 +225,10 @@ export function InvoiceCreateSheet({
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey(orgId) });
+            showAlert.success(
+              isRtl ? 'تم إصدار الفاتورة الضريبية ZATCA!' : 'ZATCA Tax Invoice Issued!',
+              isRtl ? 'تم توليد رمز الاستجابة السريعة (QR Code) وحساب 15% ضريبة.' : 'Generated with ZATCA Phase 2 QR Code & 15% Output VAT.'
+            );
             handleOpenChange(false);
             if (onSuccess) onSuccess();
           },

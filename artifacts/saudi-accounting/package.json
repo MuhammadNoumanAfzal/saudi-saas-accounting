@@ -78,6 +78,7 @@
   "dependencies": {
     "@clerk/react": "^6.16.1",
     "@clerk/themes": "^2.4.57",
-    "qrcode.react": "^4.2.0"
+    "qrcode.react": "^4.2.0",
+    "sweetalert2": "^11.26.25"
   }
 }

@@ -8,6 +8,8 @@ import {
 } from '@workspace/api-client-react';
 import { X, Plus, Trash2, FileSpreadsheet, Calculator, CheckCircle2, AlertCircle } from 'lucide-react';
 
+import { showAlert } from '@/lib/alerts';
+
 interface JournalEntryCreateSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -114,6 +116,10 @@ export function JournalEntryCreateSheet({ open, onOpenChange, onSuccess }: Journ
         }
       });
 
+      showAlert.success(
+        isRtl ? 'تم تسجيل القيد المحاسبي بنجاح!' : 'Journal Voucher Posted Successfully!',
+        isRtl ? 'تم إضافة قيد اليومية المزدوج إلى سجل الحسابات.' : 'Double-entry journal voucher recorded to General Ledger.'
+      );
       onSuccess();
     } catch (err: any) {
       console.error(err);

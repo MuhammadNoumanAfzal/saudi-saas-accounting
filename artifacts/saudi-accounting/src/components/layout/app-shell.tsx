@@ -217,32 +217,42 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {!isHome && (
           <div>
             {!collapsed && (
-              <div className="mb-2 px-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-primary-foreground/50">
+              <div className="mb-2 px-2 flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider" style={{ color: '#a7f3d0' }}>
                 <span>{t('Finance', 'المالية')}</span>
-                <Link href="/home" className="text-primary-foreground/60 hover:text-primary-foreground flex items-center gap-1 transition-colors" title={t('Back to Home', 'العودة للرئيسية')}>
+                <Link href="/home" className="flex items-center gap-1 transition-colors hover:opacity-100" style={{ color: '#ffffff' }} title={t('Back to Home', 'العودة للرئيسية')}>
                   {isRtl ? <ArrowRight size={12} /> : <ArrowLeft size={12} />}
                   <span>{t('Home', 'الرئيسية')}</span>
                 </Link>
               </div>
             )}
-            <nav className="space-y-0.5">
+            <nav className="space-y-1">
               {navPrimary.map((item, idx) => {
                 const Icon = item.icon;
                 if ('children' in item && item.children) {
                   return (
-                    <div key={idx} className="mb-2">
-                      <div className={`flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium text-primary-foreground/90`} title={collapsed ? item.label : undefined}>
-                        <Icon size={18} className="shrink-0" />
-                        {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+                    <div key={idx} className="mb-3">
+                      <div className={`flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-bold uppercase tracking-wide`} style={{ color: '#ffffff' }} title={collapsed ? item.label : undefined}>
+                        <Icon size={18} className="shrink-0" style={{ color: '#6ee7b7' }} />
+                        {!collapsed && <span className="flex-1 truncate" style={{ color: '#ffffff' }}>{item.label}</span>}
                       </div>
                       {!collapsed && (
-                        <div className="mt-1 space-y-0.5 border-l border-white/10 ml-4 pl-2 rtl:border-l-0 rtl:border-r rtl:ml-0 rtl:mr-4 rtl:pr-2">
+                        <div className="mt-1 space-y-1 border-l-2 ml-4 pl-2.5 rtl:border-l-0 rtl:border-r-2 rtl:ml-0 rtl:mr-4 rtl:pr-2.5" style={{ borderColor: 'rgba(255, 255, 255, 0.3)' }}>
                           {item.children.map(child => {
                             const active = location.startsWith(child.href);
                             return (
-                              <Link key={child.href} href={child.href} onClick={() => setMobileOpen(false)} className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${active ? 'bg-accent/10 text-accent' : 'text-primary-foreground/60 hover:text-primary-foreground hover:bg-white/5'}`}>
-                                <span className="flex-1 truncate">{child.label}</span>
-                                {(child as any).soon && <span className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-primary-foreground/60">{t('Soon', 'قريباً')}</span>}
+                              <Link
+                                key={child.href}
+                                href={child.href}
+                                onClick={() => setMobileOpen(false)}
+                                className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                                  active
+                                    ? 'bg-white/25 font-bold shadow-sm ring-1 ring-white/40 translate-x-0.5 rtl:-translate-x-0.5'
+                                    : 'hover:bg-white/10'
+                                }`}
+                                style={{ color: '#ffffff' }}
+                              >
+                                <span className="flex-1 truncate" style={{ color: '#ffffff', fontWeight: active ? 700 : 500 }}>{child.label}</span>
+                                {(child as any).soon && <span className="rounded bg-white/20 px-1.5 py-0.5 text-[9px] uppercase tracking-wide" style={{ color: '#ffffff' }}>{t('Soon', 'قريباً')}</span>}
                               </Link>
                             );
                           })}
@@ -254,12 +264,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
                 const active = location === item.href;
                 return (
-                  <Link key={item.href || idx} href={item.href!} onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors ${active ? 'bg-accent/10 text-accent' : 'text-primary-foreground/70 hover:bg-white/5 hover:text-primary-foreground'}`} title={collapsed ? item.label : undefined}>
-                    <Icon size={18} className="shrink-0" />
+                  <Link
+                    key={item.href || idx}
+                    href={item.href!}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-semibold transition-all ${
+                      active
+                        ? 'bg-white/25 font-bold shadow-sm ring-1 ring-white/40'
+                        : 'hover:bg-white/10'
+                    }`}
+                    style={{ color: '#ffffff' }}
+                    title={collapsed ? item.label : undefined}
+                  >
+                    <Icon size={18} className="shrink-0" style={{ color: '#6ee7b7' }} />
                     {!collapsed && (
                       <>
-                        <span className="flex-1 truncate">{item.label}</span>
-                        {item.soon && <span className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-primary-foreground/60">{t('Soon', 'قريباً')}</span>}
+                        <span className="flex-1 truncate" style={{ color: '#ffffff', fontWeight: active ? 700 : 500 }}>{item.label}</span>
+                        {item.soon && <span className="rounded bg-white/20 px-1.5 py-0.5 text-[9px] uppercase tracking-wide" style={{ color: '#ffffff' }}>{t('Soon', 'قريباً')}</span>}
                       </>
                     )}
                   </Link>
@@ -270,15 +291,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
 
         <div>
-          {!collapsed && <div className="mb-2 px-2 text-[10px] font-bold uppercase tracking-wider text-primary-foreground/50">{t('Platform Settings', 'إعدادات المنصة')}</div>}
-          <nav className="space-y-0.5">
+          {!collapsed && <div className="mb-2 px-2 text-[11px] font-extrabold uppercase tracking-wider" style={{ color: '#a7f3d0' }}>{t('Platform Settings', 'إعدادات المنصة')}</div>}
+          <nav className="space-y-1">
             {navSettings.map(item => {
               const active = location === item.href;
               const Icon = item.icon;
               return (
-                <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors ${active ? 'bg-accent/10 text-accent' : 'text-primary-foreground/70 hover:bg-white/5 hover:text-primary-foreground'}`} title={collapsed ? item.label : undefined}>
-                  <Icon size={18} className="shrink-0" />
-                  {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-semibold transition-all ${
+                    active
+                      ? 'bg-white/25 font-bold shadow-sm ring-1 ring-white/40'
+                      : 'hover:bg-white/10'
+                  }`}
+                  style={{ color: '#ffffff' }}
+                  title={collapsed ? item.label : undefined}
+                >
+                  <Icon size={18} className="shrink-0" style={{ color: '#6ee7b7' }} />
+                  {!collapsed && <span className="flex-1 truncate" style={{ color: '#ffffff', fontWeight: active ? 700 : 500 }}>{item.label}</span>}
                 </Link>
               );
             })}
@@ -286,15 +318,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      <div className="p-3 border-t border-white/10 shrink-0">
-         <button className="flex w-full items-center gap-3 rounded-lg p-2 text-left text-sm text-primary-foreground/70 transition-colors hover:bg-white/5" onClick={() => setOverlay('user')}>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-primary-foreground shrink-0">
+      <div className="p-3 border-t border-white/15 shrink-0">
+        <button className="flex w-full items-center gap-3 rounded-lg p-2 text-left text-sm text-white/90 transition-colors hover:bg-white/10" onClick={() => setOverlay('user')}>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-xs font-bold text-white shrink-0 ring-1 ring-white/30">
             {(user?.firstName?.[0] || user?.emailAddresses?.[0]?.emailAddress?.[0] || 'M').toUpperCase()}
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <div className="truncate font-semibold text-primary-foreground text-xs">{user?.fullName || user?.firstName || session?.user.displayName || user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || t('User', 'المستخدم')}</div>
-              <div className="truncate text-[10px] text-primary-foreground/50">{user?.emailAddresses?.[0]?.emailAddress || session?.user.email}</div>
+              <div className="truncate font-bold text-white text-xs">{user?.fullName || user?.firstName || session?.user.displayName || user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || t('User', 'المستخدم')}</div>
+              <div className="truncate text-[10px] text-white/70">{user?.emailAddresses?.[0]?.emailAddress || session?.user.email}</div>
             </div>
           )}
         </button>
