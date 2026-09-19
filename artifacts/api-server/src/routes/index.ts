@@ -10,6 +10,7 @@ import purchasesRouter from "./purchases";
 import accountingRouter from "./accounting";
 import reportsRouter from "./reports";
 import dashboardRouter from "./dashboard";
+import auditLogsRouter from "./auditLogs";
 
 const router: IRouter = Router();
 
@@ -23,6 +24,7 @@ router.use(purchasesRouter);
 router.use(accountingRouter);
 router.use(reportsRouter);
 router.use(dashboardRouter);
+router.use(auditLogsRouter);
 router.use(storageRouter);
 
 

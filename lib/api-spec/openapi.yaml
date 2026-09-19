@@ -36,6 +36,8 @@ tags:
     description: Financial Statements and ZATCA VAT Return Reports
   - name: dashboard
     description: Realtime Executive Dashboard Analytics
+  - name: audit-logs
+    description: System Audit Log Trail and Activity Governance
 
 paths:
   /healthz:
