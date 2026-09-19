@@ -31,6 +31,7 @@ export const businessPartiesTable = pgTable(
     vatNumber: text("vat_number"),
     primaryEmail: text("primary_email"),
     primaryPhone: text("primary_phone"),
+    city: text("city"),
     website: text("website"),
     defaultCurrency: text("default_currency").notNull().default("SAR"),
     defaultLanguage: text("default_language").notNull().default("en"),

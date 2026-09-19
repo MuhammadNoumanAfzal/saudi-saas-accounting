@@ -206,8 +206,11 @@ async function exportParties(req: any, res: any) {
     partyNumber: partyRolesTable.partyNumber,
     partyType: businessPartiesTable.partyType,
     displayName: businessPartiesTable.displayName,
+    businessNameEnglish: businessPartiesTable.businessNameEnglish,
+    businessNameArabic: businessPartiesTable.businessNameArabic,
     vatNumber: businessPartiesTable.vatNumber,
     commercialRegistrationNumber: businessPartiesTable.commercialRegistrationNumber,
+    city: businessPartiesTable.city,
     primaryEmail: businessPartiesTable.primaryEmail,
     primaryPhone: businessPartiesTable.primaryPhone,
     status: businessPartiesTable.status,
@@ -221,7 +224,7 @@ async function exportParties(req: any, res: any) {
       eq(partyRolesTable.organizationId, org(req)),
       eq(partyRolesTable.role, role),
     ));
-  const headers = ["partyNumber", "partyType", "displayName", "vatNumber", "commercialRegistrationNumber", "primaryEmail", "primaryPhone", "status"] as const;
+  const headers = ["partyNumber", "partyType", "displayName", "businessNameEnglish", "businessNameArabic", "vatNumber", "commercialRegistrationNumber", "city", "primaryEmail", "primaryPhone", "status"] as const;
   const quote = (x: unknown) => `"${String(x ?? "").replace(/"/g, '""')}"`;
   return res.type("text/csv").send([
     headers.join(","),

@@ -76,7 +76,13 @@ if (!clerkPubKey) throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env fi
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useAuth();
   
-  if (!isLoaded) return <div className="min-h-screen bg-background" />;
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
   if (!isSignedIn) return <Redirect to="/" />;
   
   return <SessionGuard>{children}</SessionGuard>;
@@ -86,7 +92,13 @@ function SessionGuard({ children }: { children: React.ReactNode }) {
   const { data: session, isLoading } = useGetCurrentSession();
   const [path] = useLocation();
   
-  if (isLoading) return <div className="min-h-screen bg-background" />;
+  if (isLoading && !session) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
   
   const org =
     session?.organizations?.find(
@@ -127,7 +139,7 @@ function ModuleGuard({
       },
     });
 
-  if (sessionLoading || modulesLoading) {
+  if ((sessionLoading && !session) || (modulesLoading && !modules)) {
     return <div className="min-h-[40vh] rounded-2xl bg-muted/30 animate-pulse" />;
   }
 
@@ -138,19 +150,106 @@ function ModuleGuard({
   return enabled ? <>{children}</> : <Redirect to="/home" />;
 }
 
-function SignInPage() {
+import { ShieldCheck, Landmark, Zap } from 'lucide-react';
+import { useTranslation } from './lib/utils';
+
+function AuthLayout({ children, title, subtitle }: { children: React.ReactNode; title: string; subtitle: string }) {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
-      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+    <div className="flex min-h-[100dvh] w-full bg-background text-foreground">
+      {/* Left Column: Premium Branding & Saudi Enterprise Showcase */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between sidebar-bg p-12 relative overflow-hidden">
+        {/* Decorative background glow */}
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-accent/15 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex items-center gap-3">
+          <img src={`${basePath}/logo.svg`} className="h-10 w-10 rounded-xl shadow-md" alt="NEXUS" />
+          <div>
+            <div className="text-xl font-bold tracking-tight text-white">KHANBAS NEXUS</div>
+            <div className="text-xs text-emerald-300 font-semibold uppercase tracking-wider">Saudi SaaS ERP & SOCPA Accounting</div>
+          </div>
+        </div>
+
+        <div className="relative z-10 space-y-6 max-w-lg my-auto">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 text-emerald-300 text-xs font-bold uppercase tracking-wider border border-white/15 backdrop-blur-sm">
+            <Zap size={14} className="text-amber-400" />
+            <span>ZATCA Phase 2 Compliant</span>
+          </div>
+
+          <h1 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight">
+            {title}
+          </h1>
+          <p className="text-sm text-emerald-100/80 leading-relaxed">
+            {subtitle}
+          </p>
+
+          <div className="grid grid-cols-1 gap-3 pt-4 border-t border-white/15">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+              <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-300 shrink-0">
+                <ShieldCheck size={18} />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-white">ZATCA Cryptographic E-Invoicing</div>
+                <div className="text-[11px] text-emerald-200/70">ECDSA secp256k1 stamps & real-time B2B/B2C QR codes</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+              <div className="p-2 rounded-lg bg-amber-500/20 text-amber-300 shrink-0">
+                <Landmark size={18} />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-white">SOCPA Double-Entry General Ledger</div>
+                <div className="text-[11px] text-emerald-200/70">Automated trial balance, Profit & Loss, and VAT Return Form 21</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative z-10 text-xs text-white/60 flex items-center justify-between border-t border-white/10 pt-4">
+          <span>© 2026 KHANBAS NEXUS. All rights reserved.</span>
+          <span>Kingdom of Saudi Arabia</span>
+        </div>
+      </div>
+
+      {/* Right Column: Clean Clerk Auth Form Card */}
+      <div className="flex-1 flex flex-col justify-center items-center p-6 md:p-12 relative bg-card/30">
+        <div className="w-full max-w-md flex flex-col items-center">
+          <div className="lg:hidden flex items-center gap-2 mb-6">
+            <img src={`${basePath}/logo.svg`} className="h-9 w-9 rounded-lg" alt="NEXUS" />
+            <span className="text-lg font-bold text-foreground">NEXUS ERP</span>
+          </div>
+
+          <div className="w-full flex justify-center">
+            {children}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-function SignUpPage() {
+function SignInPage() {
+  const { t } = useTranslation();
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
+    <AuthLayout
+      title={t('Empowering Saudi Enterprises with Smart Accounting', 'تمكين المنشآت السعودية بنظام إداري متكامل')}
+      subtitle={t('Access your consolidated financial ledger, ZATCA tax invoices, and real-time executive analytics.', 'الوصول إلى دفتر الاستاد المحاسبي والفواتير الضريبية والتحليلات المباشرة.')}
+    >
+      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+    </AuthLayout>
+  );
+}
+
+function SignUpPage() {
+  const { t } = useTranslation();
+  return (
+    <AuthLayout
+      title={t('Start Your ZATCA Compliant Workspace Today', 'ابدأ مساحة عملك المتوافقة مع هيئة الزكاة والضريبة اليوم')}
+      subtitle={t('Join thousands of Saudi enterprises managing SOCPA accounts, purchase bills, and VAT return reporting.', 'انضم إلى آلاف المنشآت السعودية في إدارة الحسابات، فواتير المشتريات، وإقرارات الضريبة.')}
+    >
       <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
-    </div>
+    </AuthLayout>
   );
 }
 
@@ -163,25 +262,32 @@ const clerkAppearance = {
     logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
   },
   variables: {
-    colorPrimary: "hsl(165 61% 28%)", // Deep green
-    colorBackground: "hsl(42 40% 99%)",
-    colorForeground: "hsl(205 42% 17%)",
-    colorInput: "hsl(42 40% 99%)",
-    colorInputForeground: "hsl(205 42% 17%)",
+    colorPrimary: "hsl(165 61% 28%)",
+    colorBackground: "hsl(var(--card))",
+    colorForeground: "hsl(var(--foreground))",
+    colorInput: "hsl(var(--background))",
+    colorInputForeground: "hsl(var(--foreground))",
     fontFamily: "var(--app-font-sans)",
   },
   elements: {
     rootBox: "w-full flex justify-center",
-    cardBox: "bg-[hsl(42_40%_99%)] rounded-[20px] shadow-xl w-[440px] max-w-full overflow-hidden border border-[hsl(37_25%_87%)]",
-    card: "!shadow-none !border-0 !bg-transparent !rounded-none",
-    footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
-    headerTitle: "text-foreground font-bold tracking-tight",
-    headerSubtitle: "text-muted-foreground",
-    socialButtonsBlockButtonText: "text-foreground font-medium",
-    formFieldLabel: "text-muted-foreground font-bold text-xs uppercase tracking-wide",
-    footerActionLink: "text-primary font-bold hover:text-primary/80",
-    footerActionText: "text-muted-foreground",
-    formButtonPrimary: "bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-sm rounded-xl py-2.5",
+    cardBox: "bg-card rounded-[22px] shadow-2xl w-[440px] max-w-full overflow-hidden border border-border/80 p-1",
+    card: "!shadow-none !border-0 !bg-transparent !rounded-none p-6",
+    footer: "!hidden",
+    footerAction: "!hidden",
+    devModeBadge: "!hidden",
+    internalB3fy6s: "!hidden",
+    headerTitle: "text-foreground font-bold tracking-tight text-xl text-center",
+    headerSubtitle: "text-muted-foreground text-xs text-center mt-1",
+    socialButtonsBlockButton: "border-border hover:bg-muted font-semibold rounded-xl text-xs py-2.5 transition-all",
+    socialButtonsBlockButtonText: "text-foreground font-semibold text-xs",
+    dividerRow: "my-4",
+    dividerText: "text-xs text-muted-foreground uppercase font-bold tracking-wider",
+    formFieldLabel: "text-foreground font-bold text-xs uppercase tracking-wide mb-1.5",
+    formFieldInput: "field rounded-xl text-sm py-2.5",
+    footerActionLink: "text-primary font-bold hover:text-primary/80 transition-colors",
+    footerActionText: "text-muted-foreground text-xs",
+    formButtonPrimary: "bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md rounded-xl py-3 text-sm transition-all mt-2",
   }
 };
 

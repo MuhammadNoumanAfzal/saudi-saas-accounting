@@ -1,23 +1,28 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useTranslation, Button } from '@/lib/utils';
+import { showAlert } from '@/lib/alerts';
 import { 
   useGetCurrentSession, 
   useGetCustomer, 
   useGetSupplier,
   useAddPartyRole,
+  useUpdatePartyStatus,
   getGetCustomerQueryKey,
-  getGetSupplierQueryKey
+  getGetSupplierQueryKey,
+  getGetCustomersQueryKey,
+  getGetSuppliersQueryKey
 } from '@workspace/api-client-react';
 import { queryClient } from '@/lib/queryClient';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ArrowLeft, ArrowRight, Building2, User, MoreVertical, Edit, Phone, Mail, MapPin } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Building2, User, MoreVertical, Edit, Phone, Mail, MapPin, Power } from 'lucide-react';
 import { OverviewTab } from './tabs/overview-tab';
 import { ContactsTab } from './tabs/contacts-tab';
 import { AddressesTab } from './tabs/addresses-tab';
 import { ActivityTab } from './tabs/activity-tab';
 import { DocumentsTab } from './tabs/documents-tab';
+import { PartyEditSheet } from './party-edit-sheet';
 
 export function PartyProfile({ role, id }: { role: 'customer' | 'supplier'; id: string }) {
   const { t, isRtl } = useTranslation();
@@ -25,6 +30,8 @@ export function PartyProfile({ role, id }: { role: 'customer' | 'supplier'; id: 
   const { data: session } = useGetCurrentSession();
   const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization.id || '';
   
+  const [editOpen, setEditOpen] = useState(false);
+
   const isCustomer = role === 'customer';
   
   const { data: customerData, isLoading: custLoading } = useGetCustomer(orgId, id, {
@@ -36,6 +43,7 @@ export function PartyProfile({ role, id }: { role: 'customer' | 'supplier'; id: 
   });
 
   const addRole = useAddPartyRole();
+  const updateStatus = useUpdatePartyStatus();
 
   const data = isCustomer ? customerData : supplierData;
   const isLoading = isCustomer ? custLoading : suppLoading;
@@ -78,10 +86,48 @@ export function PartyProfile({ role, id }: { role: 'customer' | 'supplier'; id: 
       }
     }, {
       onSuccess: () => {
+        showAlert.success(
+          isCustomer ? t('Added as Supplier!', 'تمت الإضافة كمورد!') : t('Added as Customer!', 'تمت الإضافة كعميل!'),
+          t('Profile now has dual Customer and Supplier roles.', 'الطرف الآن يملك صفة عميل ومورد معاً.')
+        );
         queryClient.invalidateQueries({ queryKey: getGetCustomerQueryKey(orgId, id) });
         queryClient.invalidateQueries({ queryKey: getGetSupplierQueryKey(orgId, id) });
         const oppositeRoute = isCustomer ? 'suppliers' : 'customers';
         setLocation(`/finance/${oppositeRoute}/${id}`);
+      }
+    });
+  };
+
+  const handleToggleStatus = async () => {
+    const isCurrentlyActive = data.status === 'active';
+    const nextStatus = isCurrentlyActive ? 'inactive' : 'active';
+    const actionText = isCurrentlyActive ? t('Deactivate', 'إلغاء تنشيط') : t('Activate', 'تنشيط');
+
+    const confirmed = await showAlert.confirm(
+      t(`${actionText} ${data.displayName}?`, `هل تريد ${actionText} ${data.displayName}؟`),
+      isCurrentlyActive 
+        ? t('Deactivating will hide this profile from active select lists.', 'إلغاء التنشيط سيخفي هذا السجل من القوائم النشطة.')
+        : t('Activating will restore this profile to active lists.', 'تنشيط الملف سيعيده إلى القوائم النشطة.'),
+      t(`Yes, ${actionText}`, `نعم، ${actionText}`),
+      t('Cancel', 'إلغاء')
+    );
+
+    if (!confirmed) return;
+
+    updateStatus.mutate({
+      organizationId: orgId,
+      partyId: id,
+      data: { status: nextStatus }
+    }, {
+      onSuccess: () => {
+        showAlert.success(
+          t('Status Updated!', 'تم تحديث الحالة!'),
+          t(`Profile is now ${nextStatus}.`, `حالة السجل الآن: ${nextStatus}.`)
+        );
+        queryClient.invalidateQueries({ queryKey: getGetCustomerQueryKey(orgId, id) });
+        queryClient.invalidateQueries({ queryKey: getGetSupplierQueryKey(orgId, id) });
+        queryClient.invalidateQueries({ queryKey: getGetCustomersQueryKey(orgId) });
+        queryClient.invalidateQueries({ queryKey: getGetSuppliersQueryKey(orgId) });
       }
     });
   };
@@ -120,7 +166,7 @@ export function PartyProfile({ role, id }: { role: 'customer' | 'supplier'; id: 
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="secondary" onClick={() => alert('Edit not implemented yet')}>
+          <Button variant="secondary" onClick={() => setEditOpen(true)}>
             <Edit size={16} />
             <span className="hidden sm:inline">{t('Edit', 'تعديل')}</span>
           </Button>
@@ -139,8 +185,11 @@ export function PartyProfile({ role, id }: { role: 'customer' | 'supplier'; id: 
                   {isCustomer ? t('View Supplier Profile', 'عرض ملف المورد') : t('View Customer Profile', 'عرض ملف العميل')}
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
-                {t('Deactivate', 'إلغاء التنشيط')}
+              <DropdownMenuItem 
+                onClick={handleToggleStatus}
+                className={data.status === 'active' ? "text-destructive focus:text-destructive focus:bg-destructive/10" : "text-emerald-600 focus:text-emerald-600 focus:bg-emerald-500/10"}
+              >
+                {data.status === 'active' ? t('Deactivate', 'إلغاء التنشيط') : t('Activate', 'تنشيط')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -212,6 +261,15 @@ export function PartyProfile({ role, id }: { role: 'customer' | 'supplier'; id: 
           <ActivityTab partyId={id} orgId={orgId} />
         </TabsContent>
       </Tabs>
+
+      {/* Edit Party Sheet */}
+      <PartyEditSheet
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        role={role}
+        orgId={orgId}
+        partyData={data}
+      />
     </div>
   );
 }

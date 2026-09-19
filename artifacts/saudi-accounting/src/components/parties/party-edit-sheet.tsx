@@ -3,37 +3,34 @@ import { useTranslation, Button } from '@/lib/utils';
 import { showAlert } from '@/lib/alerts';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { 
-  useCreateCustomer, 
-  useCreateSupplier,
-  useCheckPartyDuplicates,
+  useUpdateCustomer, 
+  useUpdateSupplier,
+  getGetCustomerQueryKey,
+  getGetSupplierQueryKey,
   getGetCustomersQueryKey,
-  getGetSuppliersQueryKey,
-  getGetDashboardSummaryQueryKey
+  getGetSuppliersQueryKey
 } from '@workspace/api-client-react';
-import { useDebounce } from '@/hooks/use-debounce';
 import { queryClient } from '@/lib/queryClient';
-import { X, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
-import * as z from 'zod';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
-export function PartyCreateSheet({ 
+export function PartyEditSheet({ 
   open, 
   onOpenChange, 
   role, 
   orgId, 
-  onSuccess 
+  partyData 
 }: { 
   open: boolean; 
   onOpenChange: (open: boolean) => void; 
   role: 'customer' | 'supplier';
   orgId: string;
-  onSuccess: (id: string) => void;
+  partyData: any;
 }) {
   const { t, isRtl } = useTranslation();
   const isCustomer = role === 'customer';
 
-  const createCustomer = useCreateCustomer();
-  const createSupplier = useCreateSupplier();
-  const checkDuplicates = useCheckPartyDuplicates();
+  const updateCustomer = useUpdateCustomer();
+  const updateSupplier = useUpdateSupplier();
 
   const [type, setType] = useState<'organization' | 'individual'>('organization');
   const [nameEn, setNameEn] = useState('');
@@ -56,72 +53,33 @@ export function PartyCreateSheet({
   const [notes, setNotes] = useState('');
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
 
-  const debouncedNameEn = useDebounce(nameEn, 500);
-  const debouncedVat = useDebounce(vatNumber, 500);
-  const debouncedCr = useDebounce(crNumber, 500);
-
-  // Check duplicates
+  // Pre-fill form when partyData changes
   useEffect(() => {
-    if (!open || !orgId) return;
-    
-    if (debouncedNameEn.length > 3 || debouncedVat.length > 5 || debouncedCr.length > 5) {
-      checkDuplicates.mutate({
-        organizationId: orgId,
-        partyId: 'new',
-        data: {
-          businessNameEnglish: debouncedNameEn || undefined,
-          vatNumber: debouncedVat || undefined,
-          commercialRegistrationNumber: debouncedCr || undefined
-        }
-      }, {
-        onSuccess: (res) => {
-          if (res && res.length > 0) {
-            const exact = res.find(r => r.strength === 'exact');
-            if (exact) {
-              setDuplicateWarning(t(`Exact match found: ${exact.displayName} (${exact.reason})`, `تم العثور على تطابق تام: ${exact.displayName} (${exact.reason})`));
-            } else {
-              setDuplicateWarning(t(`Possible duplicate: ${res[0].displayName}`, `تكرار محتمل: ${res[0].displayName}`));
-            }
-          } else {
-            setDuplicateWarning(null);
-          }
-        },
-        onError: () => setDuplicateWarning(null)
-      });
-    }
-  }, [debouncedNameEn, debouncedVat, debouncedCr, open, orgId]);
-
-  // Reset form when opened
-  useEffect(() => {
-    if (open) {
-      setType('organization');
-      setNameEn('');
-      setNameAr('');
-      setFirstName('');
-      setLastName('');
-      setArabicName('');
-      setVatRegistered(false);
-      setVatNumber('');
-      setCrNumber('');
-      setEmail('');
-      setPhone('');
-      setCity('');
-      setShowMore(false);
-      setLegalEn('');
-      setLegalAr('');
-      setWebsite('');
-      setNotes('');
+    if (open && partyData) {
+      setType(partyData.partyType || 'organization');
+      setNameEn(partyData.businessNameEnglish || partyData.displayName || '');
+      setNameAr(partyData.businessNameArabic || '');
+      setFirstName(partyData.firstName || '');
+      setLastName(partyData.lastName || '');
+      setArabicName(partyData.arabicName || '');
+      setVatRegistered(Boolean(partyData.vatRegistered || partyData.vatNumber));
+      setVatNumber(partyData.vatNumber || '');
+      setCrNumber(partyData.commercialRegistrationNumber || '');
+      setEmail(partyData.primaryEmail || '');
+      setPhone(partyData.primaryPhone || '');
+      setCity(partyData.city || '');
+      setLegalEn(partyData.legalNameEnglish || partyData.displayName || '');
+      setLegalAr(partyData.legalNameArabic || partyData.businessNameArabic || '');
+      setWebsite(partyData.website || '');
+      setNotes(partyData.notes || '');
       setErrors({});
-      setDuplicateWarning(null);
     }
-  }, [open]);
+  }, [open, partyData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Auto-fallback: if Business Name En/Ar is empty, use Legal Name En/Ar if provided
     const finalNameEn = nameEn.trim() || legalEn.trim();
     const finalNameAr = nameAr.trim() || legalAr.trim();
 
@@ -139,8 +97,7 @@ export function PartyCreateSheet({
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      // Auto-scroll container to top to reveal error fields
-      const container = document.getElementById('party-form-container');
+      const container = document.getElementById('edit-party-form-container');
       if (container) container.scrollTop = 0;
       return;
     }
@@ -164,28 +121,30 @@ export function PartyCreateSheet({
       notes: notes || null
     };
 
-    const mutation = isCustomer ? createCustomer : createSupplier;
+    const mutation = isCustomer ? updateCustomer : updateSupplier;
     
     mutation.mutate({
       organizationId: orgId,
+      partyId: partyData.id,
       data: payload as any
     }, {
-      onSuccess: (data) => {
+      onSuccess: () => {
         if (isCustomer) {
+          queryClient.invalidateQueries({ queryKey: getGetCustomerQueryKey(orgId, partyData.id) });
           queryClient.invalidateQueries({ queryKey: getGetCustomersQueryKey(orgId) });
         } else {
+          queryClient.invalidateQueries({ queryKey: getGetSupplierQueryKey(orgId, partyData.id) });
           queryClient.invalidateQueries({ queryKey: getGetSuppliersQueryKey(orgId) });
         }
-        queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey(orgId) });
         showAlert.success(
-          isCustomer ? t('Customer Created!', 'تم إضافة العميل!') : t('Supplier Created!', 'تم إضافة المورد!'),
-          t('Profile has been saved successfully.', 'تم حفظ الملف بنجاح.')
+          isCustomer ? t('Customer Updated!', 'تم تحديث العميل!') : t('Supplier Updated!', 'تم تحديث المورد!'),
+          t('Profile details updated successfully.', 'تم تحديث تفاصيل الملف بنجاح.')
         );
-        onSuccess(data.id);
+        onOpenChange(false);
       },
       onError: (err: any) => {
         setErrors({ submit: err?.message || t('Something went wrong', 'حدث خطأ ما') });
-        const container = document.getElementById('party-form-container');
+        const container = document.getElementById('edit-party-form-container');
         if (container) container.scrollTop = 0;
       }
     });
@@ -196,27 +155,18 @@ export function PartyCreateSheet({
       <SheetContent side={isRtl ? 'left' : 'right'} className="w-full sm:max-w-md md:max-w-lg p-0 flex flex-col bg-background">
         <SheetHeader className="p-6 border-b border-border bg-card/50">
           <SheetTitle className="text-xl font-bold">
-            {isCustomer ? t('New Customer', 'عميل جديد') : t('New Supplier', 'مورد جديد')}
+            {isCustomer ? t('Edit Customer', 'تعديل العميل') : t('Edit Supplier', 'تعديل المورد')}
           </SheetTitle>
           <SheetDescription>
-            {isCustomer 
-              ? t('Create a new customer profile.', 'إنشاء ملف عميل جديد.') 
-              : t('Create a new supplier profile.', 'إنشاء ملف مورد جديد.')}
+            {t('Update profile details and commercial terms.', 'تحديث معلومات السجل الشروحات التجارية.')}
           </SheetDescription>
         </SheetHeader>
 
-        <div id="party-form-container" className="flex-1 overflow-y-auto p-6 scrollbar-hide">
-          <form id="party-form" onSubmit={handleSubmit} className="space-y-5">
+        <div id="edit-party-form-container" className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+          <form id="edit-party-form" onSubmit={handleSubmit} className="space-y-5">
             {errors.submit && (
               <div className="p-3 bg-destructive/10 text-destructive rounded-lg text-sm border border-destructive/20 font-medium">
                 {errors.submit}
-              </div>
-            )}
-
-            {duplicateWarning && (
-              <div className="p-3 bg-amber-500/10 text-amber-600 dark:text-amber-500 rounded-lg text-sm border border-amber-500/20 font-medium flex gap-2 items-start">
-                <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-                <span>{duplicateWarning}</span>
               </div>
             )}
 
@@ -347,8 +297,8 @@ export function PartyCreateSheet({
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} className="flex-1">
               {t('Cancel', 'إلغاء')}
             </Button>
-            <Button type="submit" form="party-form" variant="primary" className="flex-1" disabled={createCustomer.isPending || createSupplier.isPending}>
-              {(createCustomer.isPending || createSupplier.isPending) ? t('Saving...', 'جاري الحفظ...') : t('Save', 'حفظ')}
+            <Button type="submit" form="edit-party-form" variant="primary" className="flex-1" disabled={updateCustomer.isPending || updateSupplier.isPending}>
+              {(updateCustomer.isPending || updateSupplier.isPending) ? t('Saving...', 'جاري الحفظ...') : t('Save Changes', 'حفظ التعديلات')}
             </Button>
           </div>
         </div>
