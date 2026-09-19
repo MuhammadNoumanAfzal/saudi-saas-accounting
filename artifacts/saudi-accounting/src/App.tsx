@@ -5,8 +5,23 @@ import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient';
-import { getListOrganizationModulesQueryKey, useGetCurrentSession, useListOrganizationModules } from '@workspace/api-client-react';
+import { getListOrganizationModulesQueryKey, setAuthTokenGetter, useGetCurrentSession, useListOrganizationModules } from '@workspace/api-client-react';
 import type { ModuleKey } from '@workspace/platform-core';
+
+function ClerkTokenInitializer({ children }: { children: React.ReactNode }) {
+  const { getToken } = useAuth();
+  useEffect(() => {
+    setAuthTokenGetter(async () => {
+      try {
+        return await getToken();
+      } catch {
+        return null;
+      }
+    });
+  }, [getToken]);
+
+  return <>{children}</>;
+}
 
 import { AppShell } from './components/layout/app-shell';
 import { Onboarding } from './pages/onboarding';
@@ -34,8 +49,9 @@ import { CatalogItems } from './pages/catalog-items';
 import { CatalogItemDetail } from './pages/catalog-item-detail';
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
-const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+const rawPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+const clerkPubKey = clerkProxyUrl ? publishableKeyFromHost(window.location.hostname, rawPubKey) : rawPubKey;
 
 if (!clerkPubKey) throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
 
@@ -161,7 +177,8 @@ export default function App() {
         signInUrl={`${basePath}/sign-in`}
         signUpUrl={`${basePath}/sign-up`}
       >
-        <QueryClientProvider client={queryClient}>
+        <ClerkTokenInitializer>
+          <QueryClientProvider client={queryClient}>
           <Switch>
             <Route path="/" component={PublicHome} />
             <Route path="/sign-in/*?" component={SignInPage} />
@@ -284,7 +301,8 @@ export default function App() {
             </Route>
           </Switch>
         </QueryClientProvider>
-      </ClerkProvider>
+      </ClerkTokenInitializer>
+    </ClerkProvider>
     </ErrorBoundary>
   );
 }

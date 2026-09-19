@@ -46,6 +46,15 @@ app.use(
   })),
 );
 
+app.get("/", (_req, res) => {
+  res.json({
+    name: "KHANBAS NEXUS API Server",
+    status: "online",
+    frontendUrl: "http://localhost:5173",
+    apiPrefix: "/api"
+  });
+});
+
 app.use("/api", router);
 
 export default app;
