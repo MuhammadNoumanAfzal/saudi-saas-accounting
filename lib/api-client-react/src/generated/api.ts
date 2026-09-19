@@ -38,6 +38,7 @@ import type {
   CurrentSession,
   DashboardSummary,
   DuplicateWarning,
+  ExecutiveDashboardAnalytics,
   Expense,
   ExpenseInput,
   ExpenseListResponse,
@@ -7224,6 +7225,77 @@ export function useGetAccountLedger<TData = Awaited<ReturnType<typeof getAccount
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetAccountLedgerQueryOptions(organizationId,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetDashboardAnalyticsUrl = (organizationId: string,) => {
+
+
+
+
+  return `/api/organizations/${organizationId}/dashboard/analytics`
+}
+
+export const getDashboardAnalytics = async (organizationId: string, options?: Parameters<typeof customFetch>[1]): Promise<ExecutiveDashboardAnalytics> => {
+
+  return customFetch<ExecutiveDashboardAnalytics>(getGetDashboardAnalyticsUrl(organizationId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDashboardAnalyticsQueryKey = (organizationId: string,) => {
+    return [
+    `/api/organizations/${organizationId}/dashboard/analytics`
+    ] as const;
+    }
+
+
+export const getGetDashboardAnalyticsQueryOptions = <TData = Awaited<ReturnType<typeof getDashboardAnalytics>>, TError = ErrorType<unknown>>(organizationId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDashboardAnalytics>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDashboardAnalyticsQueryKey(organizationId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDashboardAnalytics>>> = ({ signal }) => getDashboardAnalytics(organizationId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: organizationId !== null && organizationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDashboardAnalytics>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDashboardAnalyticsQueryResult = NonNullable<Awaited<ReturnType<typeof getDashboardAnalytics>>>
+export type GetDashboardAnalyticsQueryError = ErrorType<unknown>
+
+
+
+export function useGetDashboardAnalytics<TData = Awaited<ReturnType<typeof getDashboardAnalytics>>, TError = ErrorType<unknown>>(
+ organizationId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDashboardAnalytics>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDashboardAnalyticsQueryOptions(organizationId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

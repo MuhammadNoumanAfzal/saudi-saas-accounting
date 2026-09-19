@@ -3665,3 +3665,43 @@ export const GetAccountLedgerResponse = zod.object({
 })
 
 
+export const GetDashboardAnalyticsParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const GetDashboardAnalyticsResponse = zod.object({
+  "currency": zod.string(),
+  "totalRevenueYtd": zod.string(),
+  "totalExpensesYtd": zod.string(),
+  "netProfitYtd": zod.string(),
+  "netMarginPercentage": zod.number(),
+  "totalReceivables": zod.string(),
+  "totalPayables": zod.string(),
+  "netVatLiability": zod.string(),
+  "arAging": zod.array(zod.object({
+  "range": zod.string(),
+  "labelEn": zod.string(),
+  "labelAr": zod.string(),
+  "amount": zod.string(),
+  "percentage": zod.number(),
+  "count": zod.number().int()
+})),
+  "apAging": zod.array(zod.object({
+  "range": zod.string(),
+  "labelEn": zod.string(),
+  "labelAr": zod.string(),
+  "amount": zod.string(),
+  "percentage": zod.number(),
+  "count": zod.number().int()
+})),
+  "monthlyTrends": zod.array(zod.object({
+  "monthKey": zod.string(),
+  "monthNameEn": zod.string(),
+  "monthNameAr": zod.string(),
+  "revenue": zod.string(),
+  "expenses": zod.string(),
+  "netProfit": zod.string()
+}))
+})
+
+

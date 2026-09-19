@@ -3,6 +3,7 @@ import { useTranslation } from '@/lib/utils';
 import { Link } from 'wouter';
 import { MODULE_REGISTRY } from '@workspace/platform-core';
 import { Building2, ArrowRight, ArrowLeft, WalletCards, Truck, BriefcaseBusiness, Boxes, BrainCircuit, Workflow, LockKeyhole } from 'lucide-react';
+import { ExecutiveDashboard } from '@/components/dashboard/executive-dashboard';
 
 const ICON_MAP: Record<string, React.ElementType> = {
   "wallet-cards": WalletCards,
@@ -123,6 +124,10 @@ export function NexusHome() {
             </div>
           );
         })}
+      </div>
+
+      <div className="pt-6 border-t">
+        <ExecutiveDashboard />
       </div>
     </div>
   );

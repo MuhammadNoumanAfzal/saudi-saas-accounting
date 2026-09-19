@@ -1654,6 +1654,38 @@ export interface AccountLedgerReport {
   entries: AccountLedgerEntry[];
 }
 
+export interface AgingBucket {
+  range: string;
+  labelEn: string;
+  labelAr: string;
+  amount: string;
+  percentage: number;
+  count: number;
+}
+
+export interface MonthlyTrendPoint {
+  monthKey: string;
+  monthNameEn: string;
+  monthNameAr: string;
+  revenue: string;
+  expenses: string;
+  netProfit: string;
+}
+
+export interface ExecutiveDashboardAnalytics {
+  currency: string;
+  totalRevenueYtd: string;
+  totalExpensesYtd: string;
+  netProfitYtd: string;
+  netMarginPercentage: number;
+  totalReceivables: string;
+  totalPayables: string;
+  netVatLiability: string;
+  arAging: AgingBucket[];
+  apAging: AgingBucket[];
+  monthlyTrends: MonthlyTrendPoint[];
+}
+
 export type PartySearchParameter = string;
 
 export type PartyPageParameter = number;

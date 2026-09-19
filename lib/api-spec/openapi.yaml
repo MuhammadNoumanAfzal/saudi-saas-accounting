@@ -34,6 +34,8 @@ tags:
     description: Manual Double-Entry Journal Vouchers
   - name: reports
     description: Financial Statements and ZATCA VAT Return Reports
+  - name: dashboard
+    description: Realtime Executive Dashboard Analytics
 
 paths:
   /healthz:
@@ -1170,6 +1172,14 @@ paths:
         - { name: endDate, in: query, schema: { type: string, format: date-time } }
       responses:
         "200": { description: Account Ledger Statement, content: { application/json: { schema: { $ref: "#/components/schemas/AccountLedgerReport" } } } }
+  /organizations/{organizationId}/dashboard/analytics:
+    get:
+      operationId: getDashboardAnalytics
+      tags: [dashboard]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      responses:
+        "200": { description: Executive Dashboard Analytics, content: { application/json: { schema: { $ref: "#/components/schemas/ExecutiveDashboardAnalytics" } } } }
 
 components:
   parameters:
@@ -2601,6 +2611,47 @@ components:
         entries:
           type: array
           items: { $ref: "#/components/schemas/AccountLedgerEntry" }
+    AgingBucket:
+      type: object
+      required: [range, labelEn, labelAr, amount, percentage, count]
+      properties:
+        range: { type: string }
+        labelEn: { type: string }
+        labelAr: { type: string }
+        amount: { type: string }
+        percentage: { type: number }
+        count: { type: integer }
+    MonthlyTrendPoint:
+      type: object
+      required: [monthKey, monthNameEn, monthNameAr, revenue, expenses, netProfit]
+      properties:
+        monthKey: { type: string }
+        monthNameEn: { type: string }
+        monthNameAr: { type: string }
+        revenue: { type: string }
+        expenses: { type: string }
+        netProfit: { type: string }
+    ExecutiveDashboardAnalytics:
+      type: object
+      required: [currency, totalRevenueYtd, totalExpensesYtd, netProfitYtd, netMarginPercentage, totalReceivables, totalPayables, netVatLiability, arAging, apAging, monthlyTrends]
+      properties:
+        currency: { type: string }
+        totalRevenueYtd: { type: string }
+        totalExpensesYtd: { type: string }
+        netProfitYtd: { type: string }
+        netMarginPercentage: { type: number }
+        totalReceivables: { type: string }
+        totalPayables: { type: string }
+        netVatLiability: { type: string }
+        arAging:
+          type: array
+          items: { $ref: "#/components/schemas/AgingBucket" }
+        apAging:
+          type: array
+          items: { $ref: "#/components/schemas/AgingBucket" }
+        monthlyTrends:
+          type: array
+          items: { $ref: "#/components/schemas/MonthlyTrendPoint" }
 
 
 
