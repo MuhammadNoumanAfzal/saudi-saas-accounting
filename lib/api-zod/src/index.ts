@@ -56,4 +56,15 @@ export * from "./generated/types/invoiceItemInput";
 export * from "./generated/types/invoiceListResponse";
 export * from "./generated/types/invoiceStatusUpdateInput";
 export * from "./generated/types/invoiceUpdateInput";
+export * from "./generated/types/purchaseBill";
+export * from "./generated/types/purchaseBillInput";
+export * from "./generated/types/purchaseBillItem";
+export * from "./generated/types/purchaseBillItemInput";
+export * from "./generated/types/purchaseBillListResponse";
+export * from "./generated/types/purchaseBillStatusUpdateInput";
+export * from "./generated/types/purchaseBillUpdateInput";
+export * from "./generated/types/expense";
+export * from "./generated/types/expenseInput";
+export * from "./generated/types/expenseListResponse";
+export * from "./generated/types/expenseUpdateInput";
 

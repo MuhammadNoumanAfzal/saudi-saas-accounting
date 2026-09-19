@@ -1177,6 +1177,233 @@ export interface InvoiceListResponse {
   pageSize: number;
 }
 
+export type PurchaseBillItemInputTaxCategory = typeof PurchaseBillItemInputTaxCategory[keyof typeof PurchaseBillItemInputTaxCategory];
+
+
+export const PurchaseBillItemInputTaxCategory = {
+  STANDARD: 'STANDARD',
+  ZERO: 'ZERO',
+  EXEMPT: 'EXEMPT',
+  OUT_OF_SCOPE: 'OUT_OF_SCOPE',
+} as const;
+
+export interface PurchaseBillItemInput {
+  /** @nullable */
+  catalogItemId?: string | null;
+  /** @nullable */
+  itemCode?: string | null;
+  /** @minLength 1 */
+  description: string;
+  /** @nullable */
+  descriptionAr?: string | null;
+  /** @nullable */
+  unitId?: string | null;
+  quantity: string;
+  unitPrice: string;
+  discountAmount?: string;
+  taxCategory?: PurchaseBillItemInputTaxCategory;
+  taxRate?: string;
+}
+
+export interface PurchaseBillItem {
+  id: string;
+  billId: string;
+  /** @nullable */
+  catalogItemId?: string | null;
+  /** @nullable */
+  itemCode?: string | null;
+  description: string;
+  /** @nullable */
+  descriptionAr?: string | null;
+  /** @nullable */
+  unitId?: string | null;
+  quantity: string;
+  unitPrice: string;
+  discountAmount: string;
+  taxCategory: string;
+  taxRate: string;
+  taxAmount: string;
+  lineTotal: string;
+  sortOrder: number;
+}
+
+export interface PurchaseBillInput {
+  supplierId: string;
+  /** @nullable */
+  supplierBillNumber?: string | null;
+  /** @nullable */
+  issueDate?: string | null;
+  /** @nullable */
+  dueDate?: string | null;
+  currency?: string;
+  /** @nullable */
+  notes?: string | null;
+  /** @minItems 1 */
+  items: PurchaseBillItemInput[];
+}
+
+export interface PurchaseBillUpdateInput {
+  /** @nullable */
+  supplierId?: string | null;
+  /** @nullable */
+  supplierBillNumber?: string | null;
+  /** @nullable */
+  issueDate?: string | null;
+  /** @nullable */
+  dueDate?: string | null;
+  /** @nullable */
+  currency?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  items?: PurchaseBillItemInput[];
+}
+
+export type PurchaseBillStatusUpdateInputStatus = typeof PurchaseBillStatusUpdateInputStatus[keyof typeof PurchaseBillStatusUpdateInputStatus];
+
+
+export const PurchaseBillStatusUpdateInputStatus = {
+  DRAFT: 'DRAFT',
+  RECEIVED: 'RECEIVED',
+  PAID: 'PAID',
+  PARTIALLY_PAID: 'PARTIALLY_PAID',
+  OVERDUE: 'OVERDUE',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export interface PurchaseBillStatusUpdateInput {
+  status: PurchaseBillStatusUpdateInputStatus;
+}
+
+export type PurchaseBillStatus = typeof PurchaseBillStatus[keyof typeof PurchaseBillStatus];
+
+
+export const PurchaseBillStatus = {
+  DRAFT: 'DRAFT',
+  RECEIVED: 'RECEIVED',
+  PAID: 'PAID',
+  PARTIALLY_PAID: 'PARTIALLY_PAID',
+  OVERDUE: 'OVERDUE',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export interface PurchaseBill {
+  id: string;
+  organizationId: string;
+  billNumber: string;
+  supplierId: string;
+  /** @nullable */
+  supplierName?: string | null;
+  /** @nullable */
+  supplierVatNumber?: string | null;
+  /** @nullable */
+  supplierBillNumber?: string | null;
+  issueDate: string;
+  /** @nullable */
+  dueDate?: string | null;
+  currency: string;
+  subtotal: string;
+  discountAmount: string;
+  taxAmount: string;
+  totalAmount: string;
+  status: PurchaseBillStatus;
+  /** @nullable */
+  notes?: string | null;
+  items: PurchaseBillItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PurchaseBillListResponse {
+  items: PurchaseBill[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface ExpenseInput {
+  /** @minLength 1 */
+  category: string;
+  /** @minLength 1 */
+  description: string;
+  amount: string;
+  taxAmount?: string;
+  paymentMethod?: string;
+  /** @nullable */
+  expenseDate?: string | null;
+  /** @nullable */
+  supplierId?: string | null;
+  /** @nullable */
+  referenceNumber?: string | null;
+  /** @nullable */
+  receiptUrl?: string | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface ExpenseUpdateInput {
+  /** @nullable */
+  category?: string | null;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  amount?: string | null;
+  /** @nullable */
+  taxAmount?: string | null;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  expenseDate?: string | null;
+  /** @nullable */
+  supplierId?: string | null;
+  /** @nullable */
+  referenceNumber?: string | null;
+  /** @nullable */
+  receiptUrl?: string | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export type ExpenseStatus = typeof ExpenseStatus[keyof typeof ExpenseStatus];
+
+
+export const ExpenseStatus = {
+  PAID: 'PAID',
+  PENDING: 'PENDING',
+  REJECTED: 'REJECTED',
+} as const;
+
+export interface Expense {
+  id: string;
+  organizationId: string;
+  expenseNumber: string;
+  category: string;
+  description: string;
+  amount: string;
+  taxAmount: string;
+  paymentMethod: string;
+  expenseDate: string;
+  /** @nullable */
+  supplierId?: string | null;
+  /** @nullable */
+  supplierName?: string | null;
+  /** @nullable */
+  referenceNumber?: string | null;
+  /** @nullable */
+  receiptUrl?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  status: ExpenseStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExpenseListResponse {
+  items: Expense[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export type PartySearchParameter = string;
 
 export type PartyPageParameter = number;
@@ -1361,4 +1588,45 @@ export const ListInvoicesInvoiceType = {
   STANDARD: 'STANDARD',
   SIMPLIFIED: 'SIMPLIFIED',
 } as const;
+
+export type ListPurchaseBillsParams = {
+search?: string;
+status?: ListPurchaseBillsStatus;
+supplierId?: string;
+/**
+ * @minimum 1
+ */
+page?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: number;
+};
+
+export type ListPurchaseBillsStatus = typeof ListPurchaseBillsStatus[keyof typeof ListPurchaseBillsStatus];
+
+
+export const ListPurchaseBillsStatus = {
+  DRAFT: 'DRAFT',
+  RECEIVED: 'RECEIVED',
+  PAID: 'PAID',
+  PARTIALLY_PAID: 'PARTIALLY_PAID',
+  OVERDUE: 'OVERDUE',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export type ListExpensesParams = {
+search?: string;
+category?: string;
+/**
+ * @minimum 1
+ */
+page?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: number;
+};
 

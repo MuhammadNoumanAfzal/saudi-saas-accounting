@@ -86,9 +86,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       icon: ShoppingBag,
       children: [
         { href: '/finance/suppliers', label: t('Suppliers', 'الموردون') },
-        { href: '/finance/bills', label: t('Purchase Bills', 'فواتير المشتريات'), soon: true },
-        { href: '/finance/expenses', label: t('Expenses', 'المصروفات'), soon: true },
+        { href: '/finance/bills', label: t('Purchase Bills', 'فواتير المشتريات') },
+        { href: '/finance/expenses', label: t('Expenses', 'المصروفات') },
       ]
+
     },
     { href: '/finance/items', label: t('Catalog', 'الكتالوج'), icon: Package },
     { href: '/accounting', label: t('Accounting', 'المحاسبة'), icon: Landmark, soon: true },
@@ -224,7 +225,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             return (
                               <Link key={child.href} href={child.href} onClick={() => setMobileOpen(false)} className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${active ? 'bg-accent/10 text-accent' : 'text-primary-foreground/60 hover:text-primary-foreground hover:bg-white/5'}`}>
                                 <span className="flex-1 truncate">{child.label}</span>
-                                {child.soon && <span className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-primary-foreground/60">{t('Soon', 'قريباً')}</span>}
+                                {(child as any).soon && <span className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-primary-foreground/60">{t('Soon', 'قريباً')}</span>}
                               </Link>
                             );
                           })}

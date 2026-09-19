@@ -51,6 +51,10 @@ import { QuotationsPage } from './pages/quotations';
 import { QuotationDetailPage } from './pages/quotation-detail';
 import { InvoicesPage } from './pages/invoices';
 import { InvoiceDetailPage } from './pages/invoice-detail';
+import { BillsPage } from './pages/bills';
+import { BillDetailPage } from './pages/bill-detail';
+import { ExpensesPage } from './pages/expenses';
+
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
@@ -320,6 +324,31 @@ export default function App() {
                 </ModuleGuard>
               </AuthGuard>
             </Route>
+
+            <Route path="/finance/bills">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <BillsPage />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
+            <Route path="/finance/bills/:billId">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <BillDetailPage />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
+            <Route path="/finance/expenses">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <ExpensesPage />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
 
             {/* Placeholders for coming soon routes */}
             <Route path="/:rest*">
