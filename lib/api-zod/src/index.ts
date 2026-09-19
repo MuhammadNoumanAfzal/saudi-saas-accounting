@@ -67,4 +67,14 @@ export * from "./generated/types/expense";
 export * from "./generated/types/expenseInput";
 export * from "./generated/types/expenseListResponse";
 export * from "./generated/types/expenseUpdateInput";
+export * from "./generated/types/account";
+export * from "./generated/types/accountInput";
+export * from "./generated/types/accountListResponse";
+export * from "./generated/types/journalEntry";
+export * from "./generated/types/journalEntryInput";
+export * from "./generated/types/journalEntryLine";
+export * from "./generated/types/journalEntryLineInput";
+export * from "./generated/types/journalEntryListResponse";
+export * from "./generated/types/trialBalanceItem";
+export * from "./generated/types/trialBalanceResponse";
 

@@ -54,6 +54,11 @@ import { InvoiceDetailPage } from './pages/invoice-detail';
 import { BillsPage } from './pages/bills';
 import { BillDetailPage } from './pages/bill-detail';
 import { ExpensesPage } from './pages/expenses';
+import { ChartOfAccountsPage } from './pages/chart-of-accounts';
+import { JournalEntriesPage } from './pages/journal-entries';
+import { JournalEntryDetailPage } from './pages/journal-entry-detail';
+import { TrialBalancePage } from './pages/trial-balance-page';
+
 
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -348,6 +353,47 @@ export default function App() {
                 </ModuleGuard>
               </AuthGuard>
             </Route>
+
+            <Route path="/accounting">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <Redirect to="/accounting/accounts" />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
+            <Route path="/accounting/accounts">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <ChartOfAccountsPage />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
+            <Route path="/accounting/journal-entries">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <JournalEntriesPage />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
+            <Route path="/accounting/journal-entries/:entryId">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <JournalEntryDetailPage />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
+            <Route path="/accounting/trial-balance">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <TrialBalancePage />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
 
 
             {/* Placeholders for coming soon routes */}

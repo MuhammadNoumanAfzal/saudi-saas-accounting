@@ -92,7 +92,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
     },
     { href: '/finance/items', label: t('Catalog', 'الكتالوج'), icon: Package },
-    { href: '/accounting', label: t('Accounting', 'المحاسبة'), icon: Landmark, soon: true },
+    {
+      label: t('Accounting', 'المحاسبة'),
+      icon: Landmark,
+      children: [
+        { href: '/accounting/accounts', label: t('Chart of Accounts', 'شجرة الحسابات') },
+        { href: '/accounting/journal-entries', label: t('Journal Entries', 'القيود اليومية') },
+        { href: '/accounting/trial-balance', label: t('Trial Balance', 'ميزان المراجعة') },
+      ]
+    },
     { href: '/reports', label: t('Reports', 'التقارير'), icon: BarChart3, soon: true },
   ];
 

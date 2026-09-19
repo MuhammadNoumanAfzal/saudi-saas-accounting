@@ -28,6 +28,11 @@ tags:
     description: Vendor purchase bills and supplier invoices
   - name: expenses
     description: Daily business operational expenses
+  - name: accounting
+    description: Chart of Accounts and Trial Balance
+  - name: journal-entries
+    description: Manual Double-Entry Journal Vouchers
+
 paths:
   /healthz:
     get:
@@ -1071,9 +1076,72 @@ paths:
       parameters: [{ $ref: "#/components/parameters/OrganizationId" }, { $ref: "#/components/parameters/ExpenseId" }]
       responses:
         "204": { description: Deleted expense }
+  /organizations/{organizationId}/accounting/accounts:
+    get:
+      operationId: listAccounts
+      tags: [accounting]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - { name: search, in: query, schema: { type: string } }
+        - { name: type, in: query, schema: { type: string, enum: [ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE] } }
+      responses:
+        "200": { description: Chart of Accounts list, content: { application/json: { schema: { $ref: "#/components/schemas/AccountListResponse" } } } }
+    post:
+      operationId: createAccount
+      tags: [accounting]
+      parameters: [{ $ref: "#/components/parameters/OrganizationId" }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/AccountInput" } } } }
+      responses:
+        "201": { description: Created account, content: { application/json: { schema: { $ref: "#/components/schemas/Account" } } } }
+  /organizations/{organizationId}/accounting/trial-balance:
+    get:
+      operationId: getTrialBalance
+      tags: [accounting]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - { name: asOfDate, in: query, schema: { type: string, format: date-time } }
+      responses:
+        "200": { description: Trial Balance, content: { application/json: { schema: { $ref: "#/components/schemas/TrialBalanceResponse" } } } }
+  /organizations/{organizationId}/accounting/journal-entries:
+    get:
+      operationId: listJournalEntries
+      tags: [journal-entries]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - { name: search, in: query, schema: { type: string } }
+        - { name: sourceDocumentType, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
+      responses:
+        "200": { description: Journal entries list, content: { application/json: { schema: { $ref: "#/components/schemas/JournalEntryListResponse" } } } }
+    post:
+      operationId: createJournalEntry
+      tags: [journal-entries]
+      parameters: [{ $ref: "#/components/parameters/OrganizationId" }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/JournalEntryInput" } } } }
+      responses:
+        "201": { description: Created journal entry, content: { application/json: { schema: { $ref: "#/components/schemas/JournalEntry" } } } }
+  /organizations/{organizationId}/accounting/journal-entries/{entryId}:
+    get:
+      operationId: getJournalEntry
+      tags: [journal-entries]
+      parameters: [{ $ref: "#/components/parameters/OrganizationId" }, { $ref: "#/components/parameters/JournalEntryId" }]
+      responses:
+        "200": { description: Journal Entry, content: { application/json: { schema: { $ref: "#/components/schemas/JournalEntry" } } } }
 
 components:
   parameters:
+    AccountId:
+      name: accountId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    JournalEntryId:
+      name: entryId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
     BillId:
       name: billId
       in: path
@@ -2230,5 +2298,130 @@ components:
         total: { type: integer }
         page: { type: integer }
         pageSize: { type: integer }
+    AccountInput:
+      type: object
+      required: [code, nameEnglish, nameArabic, type]
+      properties:
+        code: { type: string, minLength: 1 }
+        nameEnglish: { type: string, minLength: 1 }
+        nameArabic: { type: string, minLength: 1 }
+        type: { type: string, enum: [ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE] }
+        subtype: { type: string, default: "OTHER" }
+        parentAccountId: { type: [string, "null"], format: uuid }
+    Account:
+      type: object
+      required: [id, organizationId, code, nameEnglish, nameArabic, type, subtype, isSystemAccount, isControlAccount, status, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        organizationId: { type: string, format: uuid }
+        code: { type: string }
+        nameEnglish: { type: string }
+        nameArabic: { type: string }
+        type: { type: string, enum: [ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE] }
+        subtype: { type: string }
+        parentAccountId: { type: [string, "null"], format: uuid }
+        isSystemAccount: { type: boolean }
+        isControlAccount: { type: boolean }
+        status: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    AccountListResponse:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Account" }
+        total: { type: integer }
+    JournalEntryLineInput:
+      type: object
+      required: [accountId]
+      properties:
+        accountId: { type: string, format: uuid }
+        description: { type: [string, "null"] }
+        debit: { type: string, default: "0.00" }
+        credit: { type: string, default: "0.00" }
+    JournalEntryLine:
+      type: object
+      required: [id, journalEntryId, accountId, debit, credit, sortOrder]
+      properties:
+        id: { type: string, format: uuid }
+        journalEntryId: { type: string, format: uuid }
+        accountId: { type: string, format: uuid }
+        accountCode: { type: [string, "null"] }
+        accountName: { type: [string, "null"] }
+        description: { type: [string, "null"] }
+        debit: { type: string }
+        credit: { type: string }
+        sortOrder: { type: integer }
+    JournalEntryInput:
+      type: object
+      required: [description, lines]
+      properties:
+        entryDate: { type: [string, "null"], format: date-time }
+        postingDate: { type: [string, "null"], format: date-time }
+        referenceNumber: { type: [string, "null"] }
+        description: { type: string, minLength: 1 }
+        descriptionAr: { type: [string, "null"] }
+        lines:
+          type: array
+          minItems: 2
+          items: { $ref: "#/components/schemas/JournalEntryLineInput" }
+    JournalEntry:
+      type: object
+      required: [id, organizationId, entryNumber, entryDate, postingDate, sourceDocumentType, description, status, totalDebit, totalCredit, lines, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        organizationId: { type: string, format: uuid }
+        entryNumber: { type: string }
+        entryDate: { type: string, format: date-time }
+        postingDate: { type: string, format: date-time }
+        referenceNumber: { type: [string, "null"] }
+        sourceDocumentType: { type: string }
+        sourceDocumentId: { type: [string, "null"], format: uuid }
+        description: { type: string }
+        descriptionAr: { type: [string, "null"] }
+        status: { type: string }
+        totalDebit: { type: string }
+        totalCredit: { type: string }
+        lines:
+          type: array
+          items: { $ref: "#/components/schemas/JournalEntryLine" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    JournalEntryListResponse:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/JournalEntry" }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+    TrialBalanceItem:
+      type: object
+      required: [accountId, code, nameEnglish, nameArabic, type, debit, credit, netBalance]
+      properties:
+        accountId: { type: string, format: uuid }
+        code: { type: string }
+        nameEnglish: { type: string }
+        nameArabic: { type: string }
+        type: { type: string }
+        debit: { type: string }
+        credit: { type: string }
+        netBalance: { type: string }
+    TrialBalanceResponse:
+      type: object
+      required: [items, totalDebit, totalCredit, isBalanced, asOfDate]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/TrialBalanceItem" }
+        totalDebit: { type: string }
+        totalCredit: { type: string }
+        isBalanced: { type: boolean }
+        asOfDate: { type: string, format: date-time }
+
 
 

@@ -7,6 +7,7 @@ import catalogRouter from "./catalog";
 import quotationsRouter from "./quotations";
 import invoicesRouter from "./invoices";
 import purchasesRouter from "./purchases";
+import accountingRouter from "./accounting";
 
 const router: IRouter = Router();
 
@@ -17,7 +18,9 @@ router.use(partiesRouter);
 router.use(quotationsRouter);
 router.use(invoicesRouter);
 router.use(purchasesRouter);
+router.use(accountingRouter);
 router.use(storageRouter);
+
 
 
 export default router;

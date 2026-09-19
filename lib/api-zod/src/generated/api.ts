@@ -3255,3 +3255,236 @@ export const DeleteExpenseParams = zod.object({
 export const DeleteExpenseResponse = zod.void()
 
 
+export const ListAccountsParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const ListAccountsQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "type": zod.enum(['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE']).optional()
+})
+
+export const ListAccountsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "organizationId": zod.string().uuid(),
+  "code": zod.string(),
+  "nameEnglish": zod.string(),
+  "nameArabic": zod.string(),
+  "type": zod.enum(['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE']),
+  "subtype": zod.string(),
+  "parentAccountId": zod.string().uuid().nullish(),
+  "isSystemAccount": zod.boolean(),
+  "isControlAccount": zod.boolean(),
+  "status": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "total": zod.number().int()
+})
+
+
+export const CreateAccountParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+
+
+
+export const createAccountBodySubtypeDefault = `OTHER`;
+
+export const CreateAccountBody = zod.object({
+  "code": zod.string().min(1),
+  "nameEnglish": zod.string().min(1),
+  "nameArabic": zod.string().min(1),
+  "type": zod.enum(['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE']),
+  "subtype": zod.string().default(createAccountBodySubtypeDefault),
+  "parentAccountId": zod.string().uuid().nullish()
+})
+
+export const CreateAccountResponse = zod.object({
+  "id": zod.string().uuid(),
+  "organizationId": zod.string().uuid(),
+  "code": zod.string(),
+  "nameEnglish": zod.string(),
+  "nameArabic": zod.string(),
+  "type": zod.enum(['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE']),
+  "subtype": zod.string(),
+  "parentAccountId": zod.string().uuid().nullish(),
+  "isSystemAccount": zod.boolean(),
+  "isControlAccount": zod.boolean(),
+  "status": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const GetTrialBalanceParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const GetTrialBalanceQueryParams = zod.object({
+  "asOfDate": zod.date().optional()
+})
+
+export const GetTrialBalanceResponse = zod.object({
+  "items": zod.array(zod.object({
+  "accountId": zod.string().uuid(),
+  "code": zod.string(),
+  "nameEnglish": zod.string(),
+  "nameArabic": zod.string(),
+  "type": zod.string(),
+  "debit": zod.string(),
+  "credit": zod.string(),
+  "netBalance": zod.string()
+})),
+  "totalDebit": zod.string(),
+  "totalCredit": zod.string(),
+  "isBalanced": zod.boolean(),
+  "asOfDate": zod.coerce.date()
+})
+
+
+export const ListJournalEntriesParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const listJournalEntriesQueryPageDefault = 1;
+
+export const listJournalEntriesQueryPageSizeDefault = 25;
+export const listJournalEntriesQueryPageSizeMax = 100;
+
+
+
+export const ListJournalEntriesQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "sourceDocumentType": zod.coerce.string().optional(),
+  "page": zod.coerce.number().int().min(1).default(listJournalEntriesQueryPageDefault),
+  "pageSize": zod.coerce.number().int().min(1).max(listJournalEntriesQueryPageSizeMax).default(listJournalEntriesQueryPageSizeDefault)
+})
+
+export const ListJournalEntriesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "organizationId": zod.string().uuid(),
+  "entryNumber": zod.string(),
+  "entryDate": zod.coerce.date(),
+  "postingDate": zod.coerce.date(),
+  "referenceNumber": zod.string().nullish(),
+  "sourceDocumentType": zod.string(),
+  "sourceDocumentId": zod.string().uuid().nullish(),
+  "description": zod.string(),
+  "descriptionAr": zod.string().nullish(),
+  "status": zod.string(),
+  "totalDebit": zod.string(),
+  "totalCredit": zod.string(),
+  "lines": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "journalEntryId": zod.string().uuid(),
+  "accountId": zod.string().uuid(),
+  "accountCode": zod.string().nullish(),
+  "accountName": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "debit": zod.string(),
+  "credit": zod.string(),
+  "sortOrder": zod.number().int()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "total": zod.number().int(),
+  "page": zod.number().int(),
+  "pageSize": zod.number().int()
+})
+
+
+export const CreateJournalEntryParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+
+export const createJournalEntryBodyLinesItemDebitDefault = `0.00`;
+export const createJournalEntryBodyLinesItemCreditDefault = `0.00`;
+export const createJournalEntryBodyLinesMin = 2;
+
+
+
+export const CreateJournalEntryBody = zod.object({
+  "entryDate": zod.coerce.date().nullish(),
+  "postingDate": zod.coerce.date().nullish(),
+  "referenceNumber": zod.string().nullish(),
+  "description": zod.string().min(1),
+  "descriptionAr": zod.string().nullish(),
+  "lines": zod.array(zod.object({
+  "accountId": zod.string().uuid(),
+  "description": zod.string().nullish(),
+  "debit": zod.string().default(createJournalEntryBodyLinesItemDebitDefault),
+  "credit": zod.string().default(createJournalEntryBodyLinesItemCreditDefault)
+})).min(createJournalEntryBodyLinesMin)
+})
+
+export const CreateJournalEntryResponse = zod.object({
+  "id": zod.string().uuid(),
+  "organizationId": zod.string().uuid(),
+  "entryNumber": zod.string(),
+  "entryDate": zod.coerce.date(),
+  "postingDate": zod.coerce.date(),
+  "referenceNumber": zod.string().nullish(),
+  "sourceDocumentType": zod.string(),
+  "sourceDocumentId": zod.string().uuid().nullish(),
+  "description": zod.string(),
+  "descriptionAr": zod.string().nullish(),
+  "status": zod.string(),
+  "totalDebit": zod.string(),
+  "totalCredit": zod.string(),
+  "lines": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "journalEntryId": zod.string().uuid(),
+  "accountId": zod.string().uuid(),
+  "accountCode": zod.string().nullish(),
+  "accountName": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "debit": zod.string(),
+  "credit": zod.string(),
+  "sortOrder": zod.number().int()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const GetJournalEntryParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "entryId": zod.coerce.string().uuid()
+})
+
+export const GetJournalEntryResponse = zod.object({
+  "id": zod.string().uuid(),
+  "organizationId": zod.string().uuid(),
+  "entryNumber": zod.string(),
+  "entryDate": zod.coerce.date(),
+  "postingDate": zod.coerce.date(),
+  "referenceNumber": zod.string().nullish(),
+  "sourceDocumentType": zod.string(),
+  "sourceDocumentId": zod.string().uuid().nullish(),
+  "description": zod.string(),
+  "descriptionAr": zod.string().nullish(),
+  "status": zod.string(),
+  "totalDebit": zod.string(),
+  "totalCredit": zod.string(),
+  "lines": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "journalEntryId": zod.string().uuid(),
+  "accountId": zod.string().uuid(),
+  "accountCode": zod.string().nullish(),
+  "accountName": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "debit": zod.string(),
+  "credit": zod.string(),
+  "sortOrder": zod.number().int()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+

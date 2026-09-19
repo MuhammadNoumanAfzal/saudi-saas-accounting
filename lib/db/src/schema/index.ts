@@ -24,3 +24,4 @@ export * from "./catalog";
 export * from "./quotations";
 export * from "./invoices";
 export * from "./purchases";
+export * from "./accounting";

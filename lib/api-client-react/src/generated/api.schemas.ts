@@ -1404,6 +1404,149 @@ export interface ExpenseListResponse {
   pageSize: number;
 }
 
+export type AccountInputType = typeof AccountInputType[keyof typeof AccountInputType];
+
+
+export const AccountInputType = {
+  ASSET: 'ASSET',
+  LIABILITY: 'LIABILITY',
+  EQUITY: 'EQUITY',
+  REVENUE: 'REVENUE',
+  EXPENSE: 'EXPENSE',
+} as const;
+
+export interface AccountInput {
+  /** @minLength 1 */
+  code: string;
+  /** @minLength 1 */
+  nameEnglish: string;
+  /** @minLength 1 */
+  nameArabic: string;
+  type: AccountInputType;
+  subtype?: string;
+  /** @nullable */
+  parentAccountId?: string | null;
+}
+
+export type AccountType = typeof AccountType[keyof typeof AccountType];
+
+
+export const AccountType = {
+  ASSET: 'ASSET',
+  LIABILITY: 'LIABILITY',
+  EQUITY: 'EQUITY',
+  REVENUE: 'REVENUE',
+  EXPENSE: 'EXPENSE',
+} as const;
+
+export interface Account {
+  id: string;
+  organizationId: string;
+  code: string;
+  nameEnglish: string;
+  nameArabic: string;
+  type: AccountType;
+  subtype: string;
+  /** @nullable */
+  parentAccountId?: string | null;
+  isSystemAccount: boolean;
+  isControlAccount: boolean;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AccountListResponse {
+  items: Account[];
+  total: number;
+}
+
+export interface JournalEntryLineInput {
+  accountId: string;
+  /** @nullable */
+  description?: string | null;
+  debit?: string;
+  credit?: string;
+}
+
+export interface JournalEntryLine {
+  id: string;
+  journalEntryId: string;
+  accountId: string;
+  /** @nullable */
+  accountCode?: string | null;
+  /** @nullable */
+  accountName?: string | null;
+  /** @nullable */
+  description?: string | null;
+  debit: string;
+  credit: string;
+  sortOrder: number;
+}
+
+export interface JournalEntryInput {
+  /** @nullable */
+  entryDate?: string | null;
+  /** @nullable */
+  postingDate?: string | null;
+  /** @nullable */
+  referenceNumber?: string | null;
+  /** @minLength 1 */
+  description: string;
+  /** @nullable */
+  descriptionAr?: string | null;
+  /** @minItems 2 */
+  lines: JournalEntryLineInput[];
+}
+
+export interface JournalEntry {
+  id: string;
+  organizationId: string;
+  entryNumber: string;
+  entryDate: string;
+  postingDate: string;
+  /** @nullable */
+  referenceNumber?: string | null;
+  sourceDocumentType: string;
+  /** @nullable */
+  sourceDocumentId?: string | null;
+  description: string;
+  /** @nullable */
+  descriptionAr?: string | null;
+  status: string;
+  totalDebit: string;
+  totalCredit: string;
+  lines: JournalEntryLine[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JournalEntryListResponse {
+  items: JournalEntry[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface TrialBalanceItem {
+  accountId: string;
+  code: string;
+  nameEnglish: string;
+  nameArabic: string;
+  type: string;
+  debit: string;
+  credit: string;
+  netBalance: string;
+}
+
+export interface TrialBalanceResponse {
+  items: TrialBalanceItem[];
+  totalDebit: string;
+  totalCredit: string;
+  isBalanced: boolean;
+  asOfDate: string;
+}
+
 export type PartySearchParameter = string;
 
 export type PartyPageParameter = number;
@@ -1619,6 +1762,40 @@ export const ListPurchaseBillsStatus = {
 export type ListExpensesParams = {
 search?: string;
 category?: string;
+/**
+ * @minimum 1
+ */
+page?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: number;
+};
+
+export type ListAccountsParams = {
+search?: string;
+type?: ListAccountsType;
+};
+
+export type ListAccountsType = typeof ListAccountsType[keyof typeof ListAccountsType];
+
+
+export const ListAccountsType = {
+  ASSET: 'ASSET',
+  LIABILITY: 'LIABILITY',
+  EQUITY: 'EQUITY',
+  REVENUE: 'REVENUE',
+  EXPENSE: 'EXPENSE',
+} as const;
+
+export type GetTrialBalanceParams = {
+asOfDate?: string;
+};
+
+export type ListJournalEntriesParams = {
+search?: string;
+sourceDocumentType?: string;
 /**
  * @minimum 1
  */
