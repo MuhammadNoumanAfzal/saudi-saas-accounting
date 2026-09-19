@@ -78,7 +78,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       children: [
         { href: '/finance/customers', label: t('Customers', 'العملاء') },
         { href: '/finance/quotations', label: t('Quotations', 'عروض الأسعار') },
-        { href: '/finance/invoices', label: t('Invoices', 'الفواتير'), soon: true },
+        { href: '/finance/invoices', label: t('Invoices', 'الفواتير') },
       ]
     },
     {

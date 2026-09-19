@@ -2458,26 +2458,355 @@ export const UpdateQuotationStatusBody = zod.object({
   "status": zod.enum(['DRAFT', 'SENT', 'ACCEPTED', 'DECLINED', 'EXPIRED', 'CONVERTED'])
 })
 
-export const UpdateQuotationStatusResponse = zod.object({
+export const UpdateQuotationStatusResponse = zod.void()
+
+
+export const ConvertQuotationToInvoiceParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "quotationId": zod.coerce.string().uuid()
+})
+
+export const ConvertQuotationToInvoiceResponse = zod.object({
   "id": zod.string().uuid(),
   "organizationId": zod.string().uuid(),
-  "quotationNumber": zod.string(),
+  "invoiceNumber": zod.string(),
+  "invoiceType": zod.enum(['STANDARD', 'SIMPLIFIED']),
+  "quotationId": zod.string().uuid().nullish(),
   "customerId": zod.string().uuid(),
   "customerName": zod.string().nullish(),
+  "customerVatNumber": zod.string().nullish(),
   "issueDate": zod.coerce.date(),
-  "validUntilDate": zod.coerce.date().nullish(),
+  "dueDate": zod.coerce.date().nullish(),
   "currency": zod.string(),
   "subtotal": zod.string(),
   "discountAmount": zod.string(),
   "taxAmount": zod.string(),
   "totalAmount": zod.string(),
-  "status": zod.enum(['DRAFT', 'SENT', 'ACCEPTED', 'DECLINED', 'EXPIRED', 'CONVERTED']),
+  "status": zod.enum(['DRAFT', 'ISSUED', 'PAID', 'PARTIALLY_PAID', 'OVERDUE', 'CANCELLED']),
+  "zatcaQrCode": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "terms": zod.string().nullish(),
-  "convertedInvoiceId": zod.string().uuid().nullish(),
   "items": zod.array(zod.object({
   "id": zod.string().uuid(),
-  "quotationId": zod.string().uuid(),
+  "invoiceId": zod.string().uuid(),
+  "catalogItemId": zod.string().uuid().nullish(),
+  "itemCode": zod.string().nullish(),
+  "description": zod.string(),
+  "descriptionAr": zod.string().nullish(),
+  "unitId": zod.string().uuid().nullish(),
+  "quantity": zod.string(),
+  "unitPrice": zod.string(),
+  "discountAmount": zod.string(),
+  "taxCategory": zod.string(),
+  "taxRate": zod.string(),
+  "taxAmount": zod.string(),
+  "lineTotal": zod.string(),
+  "sortOrder": zod.number().int()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const ListInvoicesParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const listInvoicesQueryPageDefault = 1;
+
+export const listInvoicesQueryPageSizeDefault = 25;
+export const listInvoicesQueryPageSizeMax = 100;
+
+
+
+export const ListInvoicesQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "status": zod.enum(['DRAFT', 'ISSUED', 'PAID', 'PARTIALLY_PAID', 'OVERDUE', 'CANCELLED']).optional(),
+  "invoiceType": zod.enum(['STANDARD', 'SIMPLIFIED']).optional(),
+  "customerId": zod.coerce.string().uuid().optional(),
+  "page": zod.coerce.number().int().min(1).default(listInvoicesQueryPageDefault),
+  "pageSize": zod.coerce.number().int().min(1).max(listInvoicesQueryPageSizeMax).default(listInvoicesQueryPageSizeDefault)
+})
+
+export const ListInvoicesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "organizationId": zod.string().uuid(),
+  "invoiceNumber": zod.string(),
+  "invoiceType": zod.enum(['STANDARD', 'SIMPLIFIED']),
+  "quotationId": zod.string().uuid().nullish(),
+  "customerId": zod.string().uuid(),
+  "customerName": zod.string().nullish(),
+  "customerVatNumber": zod.string().nullish(),
+  "issueDate": zod.coerce.date(),
+  "dueDate": zod.coerce.date().nullish(),
+  "currency": zod.string(),
+  "subtotal": zod.string(),
+  "discountAmount": zod.string(),
+  "taxAmount": zod.string(),
+  "totalAmount": zod.string(),
+  "status": zod.enum(['DRAFT', 'ISSUED', 'PAID', 'PARTIALLY_PAID', 'OVERDUE', 'CANCELLED']),
+  "zatcaQrCode": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "terms": zod.string().nullish(),
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "invoiceId": zod.string().uuid(),
+  "catalogItemId": zod.string().uuid().nullish(),
+  "itemCode": zod.string().nullish(),
+  "description": zod.string(),
+  "descriptionAr": zod.string().nullish(),
+  "unitId": zod.string().uuid().nullish(),
+  "quantity": zod.string(),
+  "unitPrice": zod.string(),
+  "discountAmount": zod.string(),
+  "taxCategory": zod.string(),
+  "taxRate": zod.string(),
+  "taxAmount": zod.string(),
+  "lineTotal": zod.string(),
+  "sortOrder": zod.number().int()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "total": zod.number().int(),
+  "page": zod.number().int(),
+  "pageSize": zod.number().int()
+})
+
+
+export const CreateInvoiceParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const createInvoiceBodyInvoiceTypeDefault = `STANDARD`;
+export const createInvoiceBodyCurrencyDefault = `SAR`;
+export const createInvoiceBodyItemsItemQuantityDefault = `1.0000`;
+export const createInvoiceBodyItemsItemUnitPriceDefault = `0.00`;
+export const createInvoiceBodyItemsItemDiscountAmountDefault = `0.00`;
+export const createInvoiceBodyItemsItemTaxCategoryDefault = `STANDARD`;
+export const createInvoiceBodyItemsItemTaxRateDefault = `15.00`;
+
+
+export const CreateInvoiceBody = zod.object({
+  "invoiceType": zod.enum(['STANDARD', 'SIMPLIFIED']).default(createInvoiceBodyInvoiceTypeDefault),
+  "customerId": zod.string().uuid(),
+  "issueDate": zod.coerce.date().nullish(),
+  "dueDate": zod.coerce.date().nullish(),
+  "currency": zod.string().default(createInvoiceBodyCurrencyDefault),
+  "notes": zod.string().nullish(),
+  "terms": zod.string().nullish(),
+  "items": zod.array(zod.object({
+  "catalogItemId": zod.string().uuid().nullish(),
+  "itemCode": zod.string().nullish(),
+  "description": zod.string().min(1),
+  "descriptionAr": zod.string().nullish(),
+  "unitId": zod.string().uuid().nullish(),
+  "quantity": zod.string().default(createInvoiceBodyItemsItemQuantityDefault),
+  "unitPrice": zod.string().default(createInvoiceBodyItemsItemUnitPriceDefault),
+  "discountAmount": zod.string().default(createInvoiceBodyItemsItemDiscountAmountDefault),
+  "taxCategory": zod.enum(['STANDARD', 'ZERO', 'EXEMPT', 'OUT_OF_SCOPE']).default(createInvoiceBodyItemsItemTaxCategoryDefault),
+  "taxRate": zod.string().default(createInvoiceBodyItemsItemTaxRateDefault)
+})).min(1)
+})
+
+export const CreateInvoiceResponse = zod.object({
+  "id": zod.string().uuid(),
+  "organizationId": zod.string().uuid(),
+  "invoiceNumber": zod.string(),
+  "invoiceType": zod.enum(['STANDARD', 'SIMPLIFIED']),
+  "quotationId": zod.string().uuid().nullish(),
+  "customerId": zod.string().uuid(),
+  "customerName": zod.string().nullish(),
+  "customerVatNumber": zod.string().nullish(),
+  "issueDate": zod.coerce.date(),
+  "dueDate": zod.coerce.date().nullish(),
+  "currency": zod.string(),
+  "subtotal": zod.string(),
+  "discountAmount": zod.string(),
+  "taxAmount": zod.string(),
+  "totalAmount": zod.string(),
+  "status": zod.enum(['DRAFT', 'ISSUED', 'PAID', 'PARTIALLY_PAID', 'OVERDUE', 'CANCELLED']),
+  "zatcaQrCode": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "terms": zod.string().nullish(),
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "invoiceId": zod.string().uuid(),
+  "catalogItemId": zod.string().uuid().nullish(),
+  "itemCode": zod.string().nullish(),
+  "description": zod.string(),
+  "descriptionAr": zod.string().nullish(),
+  "unitId": zod.string().uuid().nullish(),
+  "quantity": zod.string(),
+  "unitPrice": zod.string(),
+  "discountAmount": zod.string(),
+  "taxCategory": zod.string(),
+  "taxRate": zod.string(),
+  "taxAmount": zod.string(),
+  "lineTotal": zod.string(),
+  "sortOrder": zod.number().int()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const GetInvoiceParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "invoiceId": zod.coerce.string().uuid()
+})
+
+export const GetInvoiceResponse = zod.object({
+  "id": zod.string().uuid(),
+  "organizationId": zod.string().uuid(),
+  "invoiceNumber": zod.string(),
+  "invoiceType": zod.enum(['STANDARD', 'SIMPLIFIED']),
+  "quotationId": zod.string().uuid().nullish(),
+  "customerId": zod.string().uuid(),
+  "customerName": zod.string().nullish(),
+  "customerVatNumber": zod.string().nullish(),
+  "issueDate": zod.coerce.date(),
+  "dueDate": zod.coerce.date().nullish(),
+  "currency": zod.string(),
+  "subtotal": zod.string(),
+  "discountAmount": zod.string(),
+  "taxAmount": zod.string(),
+  "totalAmount": zod.string(),
+  "status": zod.enum(['DRAFT', 'ISSUED', 'PAID', 'PARTIALLY_PAID', 'OVERDUE', 'CANCELLED']),
+  "zatcaQrCode": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "terms": zod.string().nullish(),
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "invoiceId": zod.string().uuid(),
+  "catalogItemId": zod.string().uuid().nullish(),
+  "itemCode": zod.string().nullish(),
+  "description": zod.string(),
+  "descriptionAr": zod.string().nullish(),
+  "unitId": zod.string().uuid().nullish(),
+  "quantity": zod.string(),
+  "unitPrice": zod.string(),
+  "discountAmount": zod.string(),
+  "taxCategory": zod.string(),
+  "taxRate": zod.string(),
+  "taxAmount": zod.string(),
+  "lineTotal": zod.string(),
+  "sortOrder": zod.number().int()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const UpdateInvoiceParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "invoiceId": zod.coerce.string().uuid()
+})
+
+
+export const updateInvoiceBodyItemsItemQuantityDefault = `1.0000`;
+export const updateInvoiceBodyItemsItemUnitPriceDefault = `0.00`;
+export const updateInvoiceBodyItemsItemDiscountAmountDefault = `0.00`;
+export const updateInvoiceBodyItemsItemTaxCategoryDefault = `STANDARD`;
+export const updateInvoiceBodyItemsItemTaxRateDefault = `15.00`;
+
+export const UpdateInvoiceBody = zod.object({
+  "invoiceType": zod.string().nullish(),
+  "customerId": zod.string().uuid().nullish(),
+  "issueDate": zod.coerce.date().nullish(),
+  "dueDate": zod.coerce.date().nullish(),
+  "currency": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "terms": zod.string().nullish(),
+  "items": zod.array(zod.object({
+  "catalogItemId": zod.string().uuid().nullish(),
+  "itemCode": zod.string().nullish(),
+  "description": zod.string().min(1),
+  "descriptionAr": zod.string().nullish(),
+  "unitId": zod.string().uuid().nullish(),
+  "quantity": zod.string().default(updateInvoiceBodyItemsItemQuantityDefault),
+  "unitPrice": zod.string().default(updateInvoiceBodyItemsItemUnitPriceDefault),
+  "discountAmount": zod.string().default(updateInvoiceBodyItemsItemDiscountAmountDefault),
+  "taxCategory": zod.enum(['STANDARD', 'ZERO', 'EXEMPT', 'OUT_OF_SCOPE']).default(updateInvoiceBodyItemsItemTaxCategoryDefault),
+  "taxRate": zod.string().default(updateInvoiceBodyItemsItemTaxRateDefault)
+})).optional()
+})
+
+export const UpdateInvoiceResponse = zod.object({
+  "id": zod.string().uuid(),
+  "organizationId": zod.string().uuid(),
+  "invoiceNumber": zod.string(),
+  "invoiceType": zod.enum(['STANDARD', 'SIMPLIFIED']),
+  "quotationId": zod.string().uuid().nullish(),
+  "customerId": zod.string().uuid(),
+  "customerName": zod.string().nullish(),
+  "customerVatNumber": zod.string().nullish(),
+  "issueDate": zod.coerce.date(),
+  "dueDate": zod.coerce.date().nullish(),
+  "currency": zod.string(),
+  "subtotal": zod.string(),
+  "discountAmount": zod.string(),
+  "taxAmount": zod.string(),
+  "totalAmount": zod.string(),
+  "status": zod.enum(['DRAFT', 'ISSUED', 'PAID', 'PARTIALLY_PAID', 'OVERDUE', 'CANCELLED']),
+  "zatcaQrCode": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "terms": zod.string().nullish(),
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "invoiceId": zod.string().uuid(),
+  "catalogItemId": zod.string().uuid().nullish(),
+  "itemCode": zod.string().nullish(),
+  "description": zod.string(),
+  "descriptionAr": zod.string().nullish(),
+  "unitId": zod.string().uuid().nullish(),
+  "quantity": zod.string(),
+  "unitPrice": zod.string(),
+  "discountAmount": zod.string(),
+  "taxCategory": zod.string(),
+  "taxRate": zod.string(),
+  "taxAmount": zod.string(),
+  "lineTotal": zod.string(),
+  "sortOrder": zod.number().int()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const UpdateInvoiceStatusParams = zod.object({
+  "organizationId": zod.coerce.string().uuid(),
+  "invoiceId": zod.coerce.string().uuid()
+})
+
+export const UpdateInvoiceStatusBody = zod.object({
+  "status": zod.enum(['DRAFT', 'ISSUED', 'PAID', 'PARTIALLY_PAID', 'OVERDUE', 'CANCELLED'])
+})
+
+export const UpdateInvoiceStatusResponse = zod.object({
+  "id": zod.string().uuid(),
+  "organizationId": zod.string().uuid(),
+  "invoiceNumber": zod.string(),
+  "invoiceType": zod.enum(['STANDARD', 'SIMPLIFIED']),
+  "quotationId": zod.string().uuid().nullish(),
+  "customerId": zod.string().uuid(),
+  "customerName": zod.string().nullish(),
+  "customerVatNumber": zod.string().nullish(),
+  "issueDate": zod.coerce.date(),
+  "dueDate": zod.coerce.date().nullish(),
+  "currency": zod.string(),
+  "subtotal": zod.string(),
+  "discountAmount": zod.string(),
+  "taxAmount": zod.string(),
+  "totalAmount": zod.string(),
+  "status": zod.enum(['DRAFT', 'ISSUED', 'PAID', 'PARTIALLY_PAID', 'OVERDUE', 'CANCELLED']),
+  "zatcaQrCode": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "terms": zod.string().nullish(),
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "invoiceId": zod.string().uuid(),
   "catalogItemId": zod.string().uuid().nullish(),
   "itemCode": zod.string().nullish(),
   "description": zod.string(),

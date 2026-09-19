@@ -22,3 +22,5 @@ export * from "./module-entitlements";
 export * from "./parties";
 export * from "./catalog";
 export * from "./quotations";
+export * from "./invoices";
+export * from "./purchases";

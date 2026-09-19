@@ -1010,6 +1010,173 @@ export interface QuotationListResponse {
   pageSize: number;
 }
 
+export type InvoiceItemInputTaxCategory = typeof InvoiceItemInputTaxCategory[keyof typeof InvoiceItemInputTaxCategory];
+
+
+export const InvoiceItemInputTaxCategory = {
+  STANDARD: 'STANDARD',
+  ZERO: 'ZERO',
+  EXEMPT: 'EXEMPT',
+  OUT_OF_SCOPE: 'OUT_OF_SCOPE',
+} as const;
+
+export interface InvoiceItemInput {
+  /** @nullable */
+  catalogItemId?: string | null;
+  /** @nullable */
+  itemCode?: string | null;
+  /** @minLength 1 */
+  description: string;
+  /** @nullable */
+  descriptionAr?: string | null;
+  /** @nullable */
+  unitId?: string | null;
+  quantity: string;
+  unitPrice: string;
+  discountAmount?: string;
+  taxCategory?: InvoiceItemInputTaxCategory;
+  taxRate?: string;
+}
+
+export interface InvoiceItem {
+  id: string;
+  invoiceId: string;
+  /** @nullable */
+  catalogItemId?: string | null;
+  /** @nullable */
+  itemCode?: string | null;
+  description: string;
+  /** @nullable */
+  descriptionAr?: string | null;
+  /** @nullable */
+  unitId?: string | null;
+  quantity: string;
+  unitPrice: string;
+  discountAmount: string;
+  taxCategory: string;
+  taxRate: string;
+  taxAmount: string;
+  lineTotal: string;
+  sortOrder: number;
+}
+
+export type InvoiceInputInvoiceType = typeof InvoiceInputInvoiceType[keyof typeof InvoiceInputInvoiceType];
+
+
+export const InvoiceInputInvoiceType = {
+  STANDARD: 'STANDARD',
+  SIMPLIFIED: 'SIMPLIFIED',
+} as const;
+
+export interface InvoiceInput {
+  invoiceType?: InvoiceInputInvoiceType;
+  customerId: string;
+  /** @nullable */
+  issueDate?: string | null;
+  /** @nullable */
+  dueDate?: string | null;
+  currency?: string;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  terms?: string | null;
+  /** @minItems 1 */
+  items: InvoiceItemInput[];
+}
+
+export interface InvoiceUpdateInput {
+  /** @nullable */
+  invoiceType?: string | null;
+  /** @nullable */
+  customerId?: string | null;
+  /** @nullable */
+  issueDate?: string | null;
+  /** @nullable */
+  dueDate?: string | null;
+  /** @nullable */
+  currency?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  terms?: string | null;
+  items?: InvoiceItemInput[];
+}
+
+export type InvoiceStatusUpdateInputStatus = typeof InvoiceStatusUpdateInputStatus[keyof typeof InvoiceStatusUpdateInputStatus];
+
+
+export const InvoiceStatusUpdateInputStatus = {
+  DRAFT: 'DRAFT',
+  ISSUED: 'ISSUED',
+  PAID: 'PAID',
+  PARTIALLY_PAID: 'PARTIALLY_PAID',
+  OVERDUE: 'OVERDUE',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export interface InvoiceStatusUpdateInput {
+  status: InvoiceStatusUpdateInputStatus;
+}
+
+export type InvoiceInvoiceType = typeof InvoiceInvoiceType[keyof typeof InvoiceInvoiceType];
+
+
+export const InvoiceInvoiceType = {
+  STANDARD: 'STANDARD',
+  SIMPLIFIED: 'SIMPLIFIED',
+} as const;
+
+export type InvoiceStatus = typeof InvoiceStatus[keyof typeof InvoiceStatus];
+
+
+export const InvoiceStatus = {
+  DRAFT: 'DRAFT',
+  ISSUED: 'ISSUED',
+  PAID: 'PAID',
+  PARTIALLY_PAID: 'PARTIALLY_PAID',
+  OVERDUE: 'OVERDUE',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export interface Invoice {
+  id: string;
+  organizationId: string;
+  invoiceNumber: string;
+  invoiceType: InvoiceInvoiceType;
+  /** @nullable */
+  quotationId?: string | null;
+  customerId: string;
+  /** @nullable */
+  customerName?: string | null;
+  /** @nullable */
+  customerVatNumber?: string | null;
+  issueDate: string;
+  /** @nullable */
+  dueDate?: string | null;
+  currency: string;
+  subtotal: string;
+  discountAmount: string;
+  taxAmount: string;
+  totalAmount: string;
+  status: InvoiceStatus;
+  /** @nullable */
+  zatcaQrCode?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  terms?: string | null;
+  items: InvoiceItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InvoiceListResponse {
+  items: Invoice[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export type PartySearchParameter = string;
 
 export type PartyPageParameter = number;
@@ -1157,5 +1324,41 @@ export const ListQuotationsStatus = {
   DECLINED: 'DECLINED',
   EXPIRED: 'EXPIRED',
   CONVERTED: 'CONVERTED',
+} as const;
+
+export type ListInvoicesParams = {
+search?: string;
+status?: ListInvoicesStatus;
+invoiceType?: ListInvoicesInvoiceType;
+customerId?: string;
+/**
+ * @minimum 1
+ */
+page?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: number;
+};
+
+export type ListInvoicesStatus = typeof ListInvoicesStatus[keyof typeof ListInvoicesStatus];
+
+
+export const ListInvoicesStatus = {
+  DRAFT: 'DRAFT',
+  ISSUED: 'ISSUED',
+  PAID: 'PAID',
+  PARTIALLY_PAID: 'PARTIALLY_PAID',
+  OVERDUE: 'OVERDUE',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export type ListInvoicesInvoiceType = typeof ListInvoicesInvoiceType[keyof typeof ListInvoicesInvoiceType];
+
+
+export const ListInvoicesInvoiceType = {
+  STANDARD: 'STANDARD',
+  SIMPLIFIED: 'SIMPLIFIED',
 } as const;
 

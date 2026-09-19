@@ -22,6 +22,8 @@ tags:
     description: Products and services catalog
   - name: quotations
     description: Sales quotations and price estimates
+  - name: invoices
+    description: Sales invoices and ZATCA Phase 1 E-Invoicing
 paths:
   /healthz:
     get:
@@ -930,10 +932,63 @@ paths:
       tags: [quotations]
       parameters: [{ $ref: "#/components/parameters/OrganizationId" }, { $ref: "#/components/parameters/QuotationId" }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/QuotationStatusUpdateInput" } } } }
+  /organizations/{organizationId}/quotations/{quotationId}/convert:
+    post:
+      operationId: convertQuotationToInvoice
+      tags: [quotations]
+      parameters: [{ $ref: "#/components/parameters/OrganizationId" }, { $ref: "#/components/parameters/QuotationId" }]
       responses:
-        "200": { description: Updated status, content: { application/json: { schema: { $ref: "#/components/schemas/Quotation" } } } }
+        "201": { description: Converted tax invoice, content: { application/json: { schema: { $ref: "#/components/schemas/Invoice" } } } }
+  /organizations/{organizationId}/invoices:
+    get:
+      operationId: listInvoices
+      tags: [invoices]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - { name: search, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string, enum: [DRAFT, ISSUED, PAID, PARTIALLY_PAID, OVERDUE, CANCELLED] } }
+        - { name: invoiceType, in: query, schema: { type: string, enum: [STANDARD, SIMPLIFIED] } }
+        - { name: customerId, in: query, schema: { type: string, format: uuid } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
+      responses:
+        "200": { description: Invoices list, content: { application/json: { schema: { $ref: "#/components/schemas/InvoiceListResponse" } } } }
+    post:
+      operationId: createInvoice
+      tags: [invoices]
+      parameters: [{ $ref: "#/components/parameters/OrganizationId" }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/InvoiceInput" } } } }
+      responses:
+        "201": { description: Created invoice, content: { application/json: { schema: { $ref: "#/components/schemas/Invoice" } } } }
+  /organizations/{organizationId}/invoices/{invoiceId}:
+    get:
+      operationId: getInvoice
+      tags: [invoices]
+      parameters: [{ $ref: "#/components/parameters/OrganizationId" }, { $ref: "#/components/parameters/InvoiceId" }]
+      responses:
+        "200": { description: Invoice, content: { application/json: { schema: { $ref: "#/components/schemas/Invoice" } } } }
+    patch:
+      operationId: updateInvoice
+      tags: [invoices]
+      parameters: [{ $ref: "#/components/parameters/OrganizationId" }, { $ref: "#/components/parameters/InvoiceId" }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/InvoiceUpdateInput" } } } }
+      responses:
+        "200": { description: Updated invoice, content: { application/json: { schema: { $ref: "#/components/schemas/Invoice" } } } }
+  /organizations/{organizationId}/invoices/{invoiceId}/status:
+    post:
+      operationId: updateInvoiceStatus
+      tags: [invoices]
+      parameters: [{ $ref: "#/components/parameters/OrganizationId" }, { $ref: "#/components/parameters/InvoiceId" }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/InvoiceStatusUpdateInput" } } } }
+      responses:
+        "200": { description: Updated status, content: { application/json: { schema: { $ref: "#/components/schemas/Invoice" } } } }
 components:
   parameters:
+    InvoiceId:
+      name: invoiceId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     QuotationId:
       name: quotationId
       in: path
@@ -1811,6 +1866,110 @@ components:
         items:
           type: array
           items: { $ref: "#/components/schemas/Quotation" }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+    InvoiceItemInput:
+      type: object
+      required: [description, quantity, unitPrice]
+      properties:
+        catalogItemId: { type: [string, "null"], format: uuid }
+        itemCode: { type: [string, "null"] }
+        description: { type: string, minLength: 1 }
+        descriptionAr: { type: [string, "null"] }
+        unitId: { type: [string, "null"], format: uuid }
+        quantity: { type: string, default: "1.0000" }
+        unitPrice: { type: string, default: "0.00" }
+        discountAmount: { type: string, default: "0.00" }
+        taxCategory: { type: string, enum: [STANDARD, ZERO, EXEMPT, OUT_OF_SCOPE], default: "STANDARD" }
+        taxRate: { type: string, default: "15.00" }
+    InvoiceItem:
+      type: object
+      required: [id, invoiceId, description, quantity, unitPrice, discountAmount, taxCategory, taxRate, taxAmount, lineTotal, sortOrder]
+      properties:
+        id: { type: string, format: uuid }
+        invoiceId: { type: string, format: uuid }
+        catalogItemId: { type: [string, "null"], format: uuid }
+        itemCode: { type: [string, "null"] }
+        description: { type: string }
+        descriptionAr: { type: [string, "null"] }
+        unitId: { type: [string, "null"], format: uuid }
+        quantity: { type: string }
+        unitPrice: { type: string }
+        discountAmount: { type: string }
+        taxCategory: { type: string }
+        taxRate: { type: string }
+        taxAmount: { type: string }
+        lineTotal: { type: string }
+        sortOrder: { type: integer }
+    InvoiceInput:
+      type: object
+      required: [customerId, items]
+      properties:
+        invoiceType: { type: string, enum: [STANDARD, SIMPLIFIED], default: "STANDARD" }
+        customerId: { type: string, format: uuid }
+        issueDate: { type: [string, "null"], format: date-time }
+        dueDate: { type: [string, "null"], format: date-time }
+        currency: { type: string, default: "SAR" }
+        notes: { type: [string, "null"] }
+        terms: { type: [string, "null"] }
+        items:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/InvoiceItemInput" }
+    InvoiceUpdateInput:
+      type: object
+      properties:
+        invoiceType: { type: [string, "null"] }
+        customerId: { type: [string, "null"], format: uuid }
+        issueDate: { type: [string, "null"], format: date-time }
+        dueDate: { type: [string, "null"], format: date-time }
+        currency: { type: [string, "null"] }
+        notes: { type: [string, "null"] }
+        terms: { type: [string, "null"] }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/InvoiceItemInput" }
+    InvoiceStatusUpdateInput:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [DRAFT, ISSUED, PAID, PARTIALLY_PAID, OVERDUE, CANCELLED] }
+    Invoice:
+      type: object
+      required: [id, organizationId, invoiceNumber, invoiceType, customerId, issueDate, currency, subtotal, discountAmount, taxAmount, totalAmount, status, items, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        organizationId: { type: string, format: uuid }
+        invoiceNumber: { type: string }
+        invoiceType: { type: string, enum: [STANDARD, SIMPLIFIED] }
+        quotationId: { type: [string, "null"], format: uuid }
+        customerId: { type: string, format: uuid }
+        customerName: { type: [string, "null"] }
+        customerVatNumber: { type: [string, "null"] }
+        issueDate: { type: string, format: date-time }
+        dueDate: { type: [string, "null"], format: date-time }
+        currency: { type: string }
+        subtotal: { type: string }
+        discountAmount: { type: string }
+        taxAmount: { type: string }
+        totalAmount: { type: string }
+        status: { type: string, enum: [DRAFT, ISSUED, PAID, PARTIALLY_PAID, OVERDUE, CANCELLED] }
+        zatcaQrCode: { type: [string, "null"] }
+        notes: { type: [string, "null"] }
+        terms: { type: [string, "null"] }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/InvoiceItem" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    InvoiceListResponse:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Invoice" }
         total: { type: integer }
         page: { type: integer }
         pageSize: { type: integer }
