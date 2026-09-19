@@ -51,21 +51,31 @@
 }
 
 .dark {
-  --background: 173 44% 11%;
-  --foreground: 42 33% 96%;
-  --card: 173 44% 13%;
-  --card-foreground: 42 33% 96%;
-  --border: 173 30% 20%;
-  --input: 173 30% 20%;
-  --ring: 43 89% 51%;
-  --primary: 43 89% 51%;
-  --primary-foreground: 173 44% 11%;
-  --secondary: 173 30% 18%;
-  --secondary-foreground: 42 33% 96%;
-  --muted: 173 30% 16%;
-  --muted-foreground: 165 20% 60%;
-  --accent: 43 89% 51%;
-  --accent-foreground: 173 44% 11%;
+  --background: 168 45% 8%;       /* Deep Dark Emerald Slate #0a1513 */
+  --foreground: 160 20% 96%;       /* High-contrast crisp white #f1f5f9 */
+  --card: 168 35% 12%;             /* Soft dark card #11201d */
+  --card-foreground: 160 20% 96%;
+  --border: 168 25% 18%;           /* Elegant dark border #192f2a */
+  --input: 168 25% 18%;
+  --ring: 160 84% 39%;             /* Glowing emerald accent #10b981 */
+  --primary: 160 84% 39%;          /* Vibrant Emerald #10b981 */
+  --primary-foreground: 168 45% 8%;
+  --secondary: 168 30% 15%;        /* Muted secondary #162824 */
+  --secondary-foreground: 160 20% 96%;
+  --muted: 168 30% 14%;
+  --muted-foreground: 160 15% 68%; /* Clear readable muted text #94a3b8 */
+  --accent: 43 96% 56%;            /* Warm Saudi Gold #fbbf24 */
+  --accent-foreground: 168 45% 8%;
+  --destructive: 3 75% 55%;
+  --destructive-foreground: 160 20% 96%;
+}
+
+.sidebar-bg {
+  background-color: hsl(165 61% 22%);
+}
+.dark .sidebar-bg {
+  background-color: hsl(168 64% 9%);
+  border-right: 1px solid hsl(168 25% 16%);
 }
 
 * { box-sizing: border-box; }

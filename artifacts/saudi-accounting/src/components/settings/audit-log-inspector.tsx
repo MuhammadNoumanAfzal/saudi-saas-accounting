@@ -172,71 +172,71 @@ export function AuditLogInspector() {
 
       {/* Audit Log Payload Inspection Drawer */}
       <Sheet open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
-        <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
-          <SheetHeader className="pb-4 border-b">
-            <SheetTitle className="flex items-center gap-2 font-mono text-base">
-              <Activity className="w-5 h-5 text-primary" />
-              <span>{selectedLog?.action}</span>
+        <SheetContent side={isRtl ? 'left' : 'right'} className="w-full sm:max-w-xl md:max-w-2xl max-w-full overflow-y-auto p-6">
+          <SheetHeader className="pb-4 border-b border-border pe-8">
+            <SheetTitle className="flex items-center gap-2 font-mono text-base text-foreground">
+              <Activity className="w-5 h-5 text-primary shrink-0" />
+              <span className="break-all">{selectedLog?.action}</span>
             </SheetTitle>
-            <SheetDescription className="text-xs font-mono">
+            <SheetDescription className="text-xs font-mono break-all mt-1">
               Event ID: {selectedLog?.id}
             </SheetDescription>
           </SheetHeader>
 
           {selectedLog && (
-            <div className="space-y-6 pt-6 text-sm">
+            <div className="space-y-6 pt-6 text-sm min-w-0 max-w-full overflow-hidden">
               {/* Event Metadata Card */}
-              <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-muted/40 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-muted/40 border border-border/60 text-xs">
                 <div>
                   <span className="text-muted-foreground block">{t('Timestamp:', 'التاريخ والوقت:')}</span>
-                  <span className="font-mono font-semibold">
-                    {new Date(selectedLog.createdAt).toLocaleString()}
+                  <span className="font-mono font-semibold text-foreground">
+                    {new Date(selectedLog.createdAt).toLocaleString(isRtl ? 'ar-SA' : 'en-US')}
                   </span>
                 </div>
                 <div>
                   <span className="text-muted-foreground block">{t('IP Address:', 'عنوان IP:')}</span>
-                  <span className="font-mono font-semibold">{selectedLog.ipAddress || 'Internal'}</span>
+                  <span className="font-mono font-semibold text-foreground">{selectedLog.ipAddress || 'Internal'}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground block">{t('Entity Type:', 'الوحدة:')}</span>
-                  <span className="font-mono font-semibold">{selectedLog.entityType}</span>
+                  <span className="font-mono font-semibold uppercase text-primary">{selectedLog.entityType}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground block">{t('Entity ID:', 'معرف المعاملة:')}</span>
-                  <span className="font-mono font-semibold truncate block">{selectedLog.entityId || 'N/A'}</span>
+                  <span className="font-mono font-semibold truncate block break-all text-foreground">{selectedLog.entityId || 'N/A'}</span>
                 </div>
               </div>
 
               {/* Payload Diff Section */}
-              <div className="space-y-4">
+              <div className="space-y-4 min-w-0 max-w-full">
                 <h4 className="font-bold text-xs uppercase tracking-wider text-muted-foreground">
                   {t('Payload & Audit Metadata (JSON Diff)', 'تفاصيل البيانات المحفوظة')}
                 </h4>
 
                 {selectedLog.newValues && (
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 min-w-0 max-w-full">
                     <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                       {t('New Values / Operation Payload:', 'القيم المسجلة الجديدة:')}
                     </div>
-                    <pre className="p-4 rounded-xl bg-muted font-mono text-xs overflow-x-auto border text-foreground">
+                    <pre className="p-4 rounded-xl bg-muted font-mono text-xs overflow-x-auto border border-border text-foreground whitespace-pre-wrap break-all max-w-full min-w-0">
                       {JSON.stringify(selectedLog.newValues, null, 2)}
                     </pre>
                   </div>
                 )}
 
                 {selectedLog.previousValues && (
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 min-w-0 max-w-full">
                     <div className="text-xs font-semibold text-amber-600 dark:text-amber-400">
                       {t('Previous State Values:', 'القيم السابقة (قبل التعديل):')}
                     </div>
-                    <pre className="p-4 rounded-xl bg-muted font-mono text-xs overflow-x-auto border text-foreground">
+                    <pre className="p-4 rounded-xl bg-muted font-mono text-xs overflow-x-auto border border-border text-foreground whitespace-pre-wrap break-all max-w-full min-w-0">
                       {JSON.stringify(selectedLog.previousValues, null, 2)}
                     </pre>
                   </div>
                 )}
 
                 {!selectedLog.newValues && !selectedLog.previousValues && (
-                  <div className="p-6 text-center text-muted-foreground text-xs bg-muted/20 rounded-xl border">
+                  <div className="p-6 text-center text-muted-foreground text-xs bg-muted/20 rounded-xl border border-border">
                     {t('No state mutations recorded for this event.', 'لم تُسجل تغييرات في القيم لهذا الحدث.')}
                   </div>
                 )}

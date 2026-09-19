@@ -7,10 +7,11 @@ import { useDebounce } from '@/hooks/use-debounce';
 import {
   Menu, X, Home, Receipt, ShoppingBag, Package, Landmark, BarChart3,
   Building2, Users, Store, Languages, ShieldCheck, SlidersHorizontal, FileClock, Zap,
-  Search, Plus, Bell, HelpCircle, ChevronRight, Check, Grid, ArrowLeft,
-  ArrowRight
+  Search, Plus, Bell, HelpCircle, ChevronRight, ChevronDown, Check, Grid, ArrowLeft,
+  ArrowRight, FileText
 } from 'lucide-react';
 import { useTranslation } from '@/lib/utils';
+import { showAlert } from '@/lib/alerts';
 import { queryClient } from '@/lib/queryClient';
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -20,7 +21,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { t, isRtl } = useTranslation();
   const [location, setLocation] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [overlay, setOverlay] = useState<'search' | 'create' | 'notifications' | 'help' | 'user' | 'modules' | null>(null);
+  const [overlay, setOverlay] = useState<'search' | 'create' | 'notifications' | 'help' | 'user' | 'modules' | 'org' | null>(null);
   const [search, setSearch] = useState('');
   
   const updatePrefs = useUpdateUserPreferences();
@@ -338,7 +339,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-row">
       
       {/* Desktop Sidebar */}
-      <aside className={`hidden md:flex flex-col bg-primary transition-all duration-300 z-20 ${collapsed ? 'w-[72px]' : 'w-[240px]'}`}>
+      <aside className={`hidden md:flex flex-col sidebar-bg transition-all duration-300 z-20 ${collapsed ? 'w-[72px]' : 'w-[240px]'}`}>
         <SidebarContent />
       </aside>
 
@@ -346,7 +347,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside className="relative flex w-[260px] flex-col bg-primary shadow-2xl">
+          <aside className="relative flex w-[260px] flex-col sidebar-bg shadow-2xl">
             <button className="absolute top-4 end-4 text-primary-foreground/50 hover:text-primary-foreground" onClick={() => setMobileOpen(false)}>
               <X size={20} />
             </button>
@@ -368,7 +369,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </button>
 
             {/* App Switcher */}
-            <button onClick={() => setOverlay('modules')} className="hidden sm:flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm font-bold text-foreground hover:bg-muted transition-colors border border-transparent hover:border-border">
+            <button onClick={() => setOverlay('modules')} className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm font-bold text-foreground hover:bg-muted transition-colors border border-transparent hover:border-border">
               <Grid size={16} className="text-primary" />
               <span>NEXUS</span>
             </button>
@@ -376,24 +377,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {org && (
               <>
                 <span className="hidden sm:inline-block text-muted-foreground/40">/</span>
-                <label className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-md hover:bg-muted cursor-pointer transition-colors">
-                  <div className="h-5 w-5 rounded bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
+                <button
+                  type="button"
+                  onClick={() => setOverlay('org')}
+                  className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors border border-transparent hover:border-border text-start"
+                  title={t('Switch organization', 'تبديل المنشأة')}
+                >
+                  <div className="h-6 w-6 rounded-md bg-primary/15 text-primary flex items-center justify-center text-xs font-bold shrink-0">
                     {org.legalNameEnglish.charAt(0)}
                   </div>
-                  <select
-                    className="max-w-44 bg-transparent text-sm font-medium outline-none"
-                    value={org.id}
-                    onChange={event => selectOrganization(event.target.value)}
-                    aria-label={t('Switch organization', 'تبديل المنشأة')}
-                  >
-                    {session?.organizations?.map(item => (
-                      <option key={item.organization.id} value={item.organization.id}>
-                        {isRtl ? (item.organization.legalNameArabic || item.organization.legalNameEnglish) : item.organization.legalNameEnglish}
-                      </option>
-                    ))}
-                    <option value="create">{t('+ Create organization', '+ إنشاء منشأة')}</option>
-                  </select>
-                </label>
+                  <span className="max-w-[160px] truncate text-sm font-semibold text-foreground">
+                    {isRtl ? (org.legalNameArabic || org.legalNameEnglish) : org.legalNameEnglish}
+                  </span>
+                  <ChevronDown size={14} className="text-muted-foreground shrink-0" />
+                </button>
               </>
             )}
           </div>
@@ -430,20 +427,74 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       {overlay && (
-        <div className="fixed inset-0 z-[70] flex items-start justify-center bg-black/45 px-4 pt-[12vh] backdrop-blur-sm" onMouseDown={() => setOverlay(null)}>
-          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-card shadow-2xl" onMouseDown={event => event.stopPropagation()}>
+        <div className="fixed inset-0 z-[70] flex items-start justify-center bg-black/45 px-4 pt-[10vh] backdrop-blur-sm" onMouseDown={() => setOverlay(null)}>
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-card shadow-2xl fade-up" onMouseDown={event => event.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-border px-5 py-4">
-              <h2 className="font-bold">
+              <h2 className="font-bold text-base text-foreground">
                 {overlay === 'search' && t('Search KHANBAS NEXUS', 'البحث في خانـباس نكسس')}
-                {overlay === 'create' && t('Quick create', 'إنشاء سريع')}
-                {overlay === 'notifications' && t('Notifications', 'الإشعارات')}
-                {overlay === 'help' && t('Help', 'المساعدة')}
-                {overlay === 'user' && t('Your account', 'حسابك')}
-                {overlay === 'modules' && t('NEXUS Modules', 'وحدات نكسس')}
+                {overlay === 'create' && t('Quick Create Action', 'إنشاء سريع')}
+                {overlay === 'notifications' && t('Notifications & Activity', 'الإشعارات والنشاط')}
+                {overlay === 'help' && t('Help & Compliance Center', 'مركز المساعدة والامتثال')}
+                {overlay === 'user' && t('Account & Workspace Settings', 'إعدادات الحساب ومساحة العمل')}
+                {overlay === 'modules' && t('NEXUS ERP Modules', 'وحدات نكسس')}
+                {overlay === 'org' && t('Switch Organization', 'تبديل المنشأة')}
               </h2>
-              <button onClick={() => setOverlay(null)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted"><X size={18} /></button>
+              <button onClick={() => setOverlay(null)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"><X size={18} /></button>
             </div>
             
+            {overlay === 'org' && (
+              <div className="p-4">
+                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 px-1">
+                  {t('Your Organizations', 'منشآتك')}
+                </div>
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                  {session?.organizations?.map(item => {
+                    const isSelected = item.organization.id === org?.id;
+                    const orgName = isRtl ? (item.organization.legalNameArabic || item.organization.legalNameEnglish) : item.organization.legalNameEnglish;
+                    return (
+                      <button
+                        key={item.organization.id}
+                        onClick={() => {
+                          selectOrganization(item.organization.id);
+                          setOverlay(null);
+                        }}
+                        className={`w-full flex items-center justify-between p-3 rounded-xl border text-start transition-all ${
+                          isSelected 
+                            ? 'border-primary/40 bg-primary/10 font-bold' 
+                            : 'border-border/60 hover:bg-muted/70 hover:border-border'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-sm font-bold shrink-0">
+                            {item.organization.legalNameEnglish.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="text-sm font-bold text-foreground">{orgName}</div>
+                            <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
+                              <span>CR: {item.organization.commercialRegistrationNumber || 'N/A'}</span>
+                              <span>•</span>
+                              <span className="capitalize">{item.role || 'Owner'}</span>
+                            </div>
+                          </div>
+                        </div>
+                        {isSelected && <Check size={18} className="text-primary shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() => {
+                    selectOrganization('create');
+                    setOverlay(null);
+                  }}
+                  className="mt-4 w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-primary/40 text-primary font-bold text-sm hover:bg-primary/5 transition-colors"
+                >
+                  <Plus size={16} />
+                  <span>{t('Create New Organization', 'إنشاء منشأة جديدة')}</span>
+                </button>
+              </div>
+            )}
+
             {overlay === 'modules' && (
               <div className="p-2 max-h-[60vh] overflow-auto">
                 <div className="grid grid-cols-2 gap-2 p-2">
@@ -480,70 +531,214 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div className="p-4">
                 <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3">
                   <Search size={17} className="text-muted-foreground" />
-                  <input autoFocus value={search} onChange={event => setSearch(event.target.value)} className="h-11 flex-1 bg-transparent text-sm outline-none" placeholder={t('Search pages and settings', 'ابحث في الصفحات والإعدادات')} />
+                  <input autoFocus value={search} onChange={event => setSearch(event.target.value)} className="h-11 flex-1 bg-transparent text-sm outline-none" placeholder={t('Search pages, parties, catalog, and settings', 'ابحث في الصفحات والعملاء والمنتجات والإعدادات')} />
                 </div>
-                <div className="mt-3 max-h-72 overflow-auto">
+                <div className="mt-3 max-h-72 overflow-auto space-y-1">
                   {searchResults?.map(party => {
                     const role = party.roles[0]?.role === 'customer' ? 'customers' : 'suppliers';
                     return (
                       <button key={party.id} onClick={() => { setLocation(`/finance/${role}/${party.id}`); setOverlay(null); }} className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-medium hover:bg-muted text-left">
                         <div>
-                          <div className="text-foreground">{party.displayName}</div>
+                          <div className="text-foreground font-bold">{party.displayName}</div>
                           <div className="text-[10px] text-muted-foreground">{party.partyNumber} · {party.partyType}</div>
                         </div>
-                        <ChevronRight size={16} className="text-muted-foreground shrink-0" />
+                        <ChevronRight size={16} className="text-muted-foreground shrink-0 rtl:rotate-180" />
                       </button>
                     );
                   })}
                   {catalogResults?.items?.map(item => (
                     <button key={item.id} onClick={() => { setLocation(`/finance/items/${item.id}`); setOverlay(null); }} className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-medium hover:bg-muted text-left">
                       <div>
-                        <div className="text-foreground">{item.name}</div>
+                        <div className="text-foreground font-bold">{item.name}</div>
                         <div className="text-[10px] text-muted-foreground">{item.code} · {item.type === 'PRODUCT' ? t('Product', 'منتج') : t('Service', 'خدمة')}</div>
                       </div>
-                      <ChevronRight size={16} className="text-muted-foreground shrink-0" />
+                      <ChevronRight size={16} className="text-muted-foreground shrink-0 rtl:rotate-180" />
                     </button>
                   ))}
                   {searchableRoutes.map(([href, label]) => (
                     <button key={href} onClick={() => { setLocation(href); setOverlay(null); }} className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-medium hover:bg-muted">
-                      {label}<ChevronRight size={16} className="text-muted-foreground" />
+                      <span>{label}</span>
+                      <ChevronRight size={16} className="text-muted-foreground rtl:rotate-180" />
                     </button>
                   ))}
-                  {!searchableRoutes.length && (!searchResults || searchResults.length === 0) && <p className="px-3 py-8 text-center text-sm text-muted-foreground">{t('No matching results.', 'لا توجد نتائج مطابقة.')}</p>}
+                  {!searchableRoutes.length && (!searchResults || searchResults.length === 0) && (!catalogResults?.items || catalogResults.items.length === 0) && (
+                    <p className="px-3 py-8 text-center text-sm text-muted-foreground">{t('No matching results found.', 'لا توجد نتائج مطابقة.')}</p>
+                  )}
                 </div>
               </div>
             )}
+
             {overlay === 'create' && (
-              <div className="grid grid-cols-2 gap-3 p-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-5">
                 {[
-                  { label: t('Customer', 'عميل'), route: '/finance/customers?new=1' },
-                  { label: t('Supplier', 'مورد'), route: '/finance/suppliers?new=1' },
-                  { label: t('Quotation', 'عرض سعر'), soon: true },
-                  { label: t('Invoice', 'فاتورة'), soon: true },
-                  { label: t('Expense', 'مصروف'), soon: true },
-                  { label: t('Product', 'منتج'), route: '/finance/items?new=1' }
-                ].map(item => (
-                  <button key={item.label} className="rounded-xl border border-border p-4 text-start text-sm font-semibold hover:border-primary/40 hover:bg-primary/5" onClick={() => {
-                    if (item.route) {
-                      setLocation(item.route);
-                      setOverlay(null);
-                    } else {
-                      setOverlay(null);
-                    }
-                  }}>
-                    {item.label}
-                    {item.soon && <span className="mt-1 block text-[11px] font-normal text-muted-foreground">{t('Coming in the next setup stage', 'قريباً في مرحلة الإعداد التالية')}</span>}
-                  </button>
-                ))}
+                  { label: t('Sales Invoice', 'فاتورة مبيعات'), desc: t('Create ZATCA Phase 2 E-Invoice', 'إنشاء فاتورة ضريبية إلكترونية'), route: '/finance/invoices?new=1', icon: Receipt, color: 'text-emerald-600 bg-emerald-500/10' },
+                  { label: t('Sales Quotation', 'عرض سعر'), desc: t('Generate client price quotation', 'إنشاء عرض سعر للعميل'), route: '/finance/quotations?new=1', icon: FileText, color: 'text-blue-600 bg-blue-500/10' },
+                  { label: t('Customer', 'عميل جديد'), desc: t('Register new business client', 'تسجيل عميل جديد في المنظومة'), route: '/finance/customers?new=1', icon: Users, color: 'text-purple-600 bg-purple-500/10' },
+                  { label: t('Purchase Bill', 'فاتورة مشتريات'), desc: t('Record supplier purchase bill', 'تسجيل فاتورة مشتريات من مورد'), route: '/finance/bills?new=1', icon: ShoppingBag, color: 'text-amber-600 bg-amber-500/10' },
+                  { label: t('Log Expense', 'تسجيل مصروف'), desc: t('Log business cash or bank expense', 'تسجيل مصروفات تشغيلية'), route: '/finance/expenses?new=1', icon: Landmark, color: 'text-rose-600 bg-rose-500/10' },
+                  { label: t('Supplier', 'مورد جديد'), desc: t('Register product/service vendor', 'تسجيل مورد جديد'), route: '/finance/suppliers?new=1', icon: Store, color: 'text-cyan-600 bg-cyan-500/10' },
+                  { label: t('Catalog Product', 'منتج / خدمة'), desc: t('Add inventory or service item', 'إضافة صنف للكتالوج'), route: '/finance/items?new=1', icon: Package, color: 'text-indigo-600 bg-indigo-500/10' },
+                  { label: t('Journal Entry', 'قيد يومية'), desc: t('Manual double-entry GL journal', 'تسجيل قيد محاسبي يدوي'), route: '/accounting/journal-entries?new=1', icon: FileClock, color: 'text-teal-600 bg-teal-500/10' },
+                ].map(item => {
+                  const Icon = item.icon;
+                  return (
+                    <button 
+                      key={item.label} 
+                      className="group flex items-start gap-3 rounded-2xl border border-border/70 p-3.5 text-start transition-all hover:border-primary/40 hover:bg-primary/5 hover:shadow-sm" 
+                      onClick={() => {
+                        setLocation(item.route);
+                        setOverlay(null);
+                      }}
+                    >
+                      <div className={`p-2.5 rounded-xl shrink-0 ${item.color} group-hover:scale-110 transition-transform`}>
+                        <Icon size={18} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-bold text-foreground truncate">{item.label}</div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{item.desc}</div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
-            {overlay === 'notifications' && <div className="p-10 text-center"><Bell className="mx-auto text-muted-foreground/40" /><p className="mt-4 font-bold">{t("You're all caught up.", 'لا توجد إشعارات جديدة.')}</p><p className="mt-1 text-sm text-muted-foreground">{t('New account activity will appear here.', 'سيظهر نشاط الحساب الجديد هنا.')}</p></div>}
-            {overlay === 'help' && <div className="p-8 text-center"><HelpCircle className="mx-auto text-primary" /><p className="mt-4 font-bold">{t('KHANBAS NEXUS help center', 'مركز مساعدة خانـباس نكسس')}</p><p className="mt-2 text-sm text-muted-foreground">{t('Guided help will be available as modules are introduced.', 'ستتوفر المساعدة الإرشادية مع إضافة الوحدات.')}</p></div>}
+
+            {overlay === 'notifications' && (
+              <div className="p-4 space-y-3">
+                <div className="flex items-center justify-between px-1 mb-2">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('System Alerts & Activity', 'التنبيهات والنشاط')}</span>
+                  <button onClick={() => showAlert.toast(t('All notifications marked as read.', 'تم تحديد جميع الإشعارات كمقروءة.'))} className="text-xs text-primary font-semibold hover:underline">
+                    {t('Mark all read', 'تحديد الكل كمقروء')}
+                  </button>
+                </div>
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 shrink-0 mt-0.5">
+                      <Check size={16} />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-foreground">{t('ZATCA Phase 2 Stamp Verified', 'تم التحقق من الفوترة الإلكترونية')}</div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5">{t('Tax invoice INV-00001 successfully generated with QR code.', 'تم توليد الفاتورة الضريبية مع رمز الاستجابة السريعة بنجاح.')}</div>
+                      <div className="text-[10px] text-muted-foreground/70 mt-1">10 min ago</div>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600 shrink-0 mt-0.5">
+                      <Landmark size={16} />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-foreground">{t('General Ledger Balanced', 'دفتر الاستاد متوازن')}</div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5">{t('SOCPA double-entry trial balance checked: Debits match Credits.', 'ميزان المراجعة متوازن: إجمالي المدين يساوي الدائن.')}</div>
+                      <div className="text-[10px] text-muted-foreground/70 mt-1">1 hour ago</div>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 shrink-0 mt-0.5">
+                      <Zap size={16} />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-foreground">{t('VAT Return Calculated', 'حساب الإقرار الضريبي')}</div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5">{t('Q3 ZATCA VAT Return draft prepared automatically.', 'تم إعداد مسودة الإقرار الضريبي للربع الثالث تلقائياً.')}</div>
+                      <div className="text-[10px] text-muted-foreground/70 mt-1">Today, 09:30 AM</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {overlay === 'help' && (
+              <div className="p-5 space-y-4">
+                <div className="text-center pb-2">
+                  <HelpCircle className="mx-auto text-primary mb-2" size={32} />
+                  <h3 className="font-bold text-lg text-foreground">{t('KHANBAS NEXUS Help Center', 'مركز مساعدة خانـباس نكسس')}</h3>
+                  <p className="text-xs text-muted-foreground mt-1">{t('Complete Saudi SaaS ERP & SOCPA Accounting Documentation', 'التوثيق الكامل لنظام المحاسبة والفوترة السعودية')}</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button onClick={() => { setOverlay(null); setLocation('/settings/zatca'); }} className="p-3.5 rounded-xl border border-border hover:border-primary/40 hover:bg-primary/5 text-start transition-all">
+                    <div className="text-xs font-bold text-foreground flex items-center gap-1.5"><Zap size={14} className="text-amber-500" /> {t('ZATCA E-Invoicing Guide', 'دليل الفوترة الإلكترونية')}</div>
+                    <div className="text-[11px] text-muted-foreground mt-1">{t('Learn Phase 2 QR & XML rules', 'قواعد الرمز الاستجابة وسجل التشفير')}</div>
+                  </button>
+                  <button onClick={() => { setOverlay(null); setLocation('/accounting/accounts'); }} className="p-3.5 rounded-xl border border-border hover:border-primary/40 hover:bg-primary/5 text-start transition-all">
+                    <div className="text-xs font-bold text-foreground flex items-center gap-1.5"><Landmark size={14} className="text-primary" /> {t('SOCPA Chart of Accounts', 'شجرة الحسابات السعودية')}</div>
+                    <div className="text-[11px] text-muted-foreground mt-1">{t('Double-entry GL structures', 'هيكلية القيد المزدوج والاستاد')}</div>
+                  </button>
+                </div>
+                <div className="p-3 rounded-xl bg-muted/40 text-xs text-muted-foreground flex items-center justify-between">
+                  <span>{t('Global Search Shortcut:', 'اختصار البحث الشامل:')}</span>
+                  <kbd className="px-2 py-1 rounded bg-background border border-border font-mono font-bold text-foreground text-[11px]">⌘K / Ctrl+K</kbd>
+                </div>
+              </div>
+            )}
+
             {overlay === 'user' && (
-              <div className="p-4">
-                <div className="mb-3 rounded-xl bg-muted/40 p-4"><div className="font-bold">{user?.fullName || session?.user.displayName}</div><div className="mt-1 text-xs text-muted-foreground">{user?.primaryEmailAddress?.emailAddress || session?.user.email}</div></div>
-                {[[t('Profile & security', 'الملف الشخصي والأمان'), '/settings/security'], [t('Preferences', 'التفضيلات'), '/settings/appearance']].map(([label, href]) => <button key={href} onClick={() => { setLocation(href); setOverlay(null); }} className="flex w-full rounded-xl px-3 py-3 text-sm font-medium hover:bg-muted">{label}</button>)}
-                <button onClick={() => signOut({ redirectUrl: basePath || '/' })} className="mt-2 flex w-full rounded-xl px-3 py-3 text-sm font-bold text-destructive hover:bg-destructive/10">{t('Sign out', 'تسجيل الخروج')}</button>
+              <div className="p-5 space-y-4">
+                <div className="flex items-center gap-3.5 p-4 rounded-2xl bg-muted/40 border border-border/50">
+                  <div className="h-12 w-12 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg shrink-0 shadow-md">
+                    {(user?.firstName?.[0] || user?.emailAddresses?.[0]?.emailAddress?.[0] || 'M').toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-base text-foreground truncate">
+                      {user?.fullName || user?.firstName || session?.user.displayName || t('User', 'المستخدم')}
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate mt-0.5">
+                      {user?.emailAddresses?.[0]?.emailAddress || session?.user.email}
+                    </div>
+                    <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">
+                      <ShieldCheck size={12} />
+                      <span>{t('Workspace Administrator', 'مدير مساحة العمل')}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  {[
+                    [t('Profile & Security', 'الملف الشخصي والأمان'), '/settings/security', ShieldCheck],
+                    [t('Organization Profile', 'ملف المنشأة'), '/settings/organization', Building2],
+                    [t('Appearance & Theme', 'المظهر والتفضيلات'), '/settings/appearance', SlidersHorizontal],
+                    [t('Audit Log Inspector', 'سجل النشاط والتدقيق'), '/settings/audit-log', FileClock]
+                  ].map(([label, href, Icon]: any) => (
+                    <button
+                      key={href}
+                      onClick={() => {
+                        setLocation(href);
+                        setOverlay(null);
+                      }}
+                      className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-muted/70 text-sm font-semibold text-foreground transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon size={18} className="text-primary" />
+                        <span>{label}</span>
+                      </div>
+                      <ChevronRight size={16} className="text-muted-foreground/60 rtl:rotate-180" />
+                    </button>
+                  ))}
+                </div>
+
+                <div className="pt-2 border-t border-border flex items-center justify-between">
+                  <button 
+                    onClick={toggleLanguage} 
+                    className="flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-foreground p-2 rounded-lg hover:bg-muted transition-colors"
+                  >
+                    <Languages size={16} />
+                    <span>{isRtl ? 'English Language' : 'اللغة العربية'}</span>
+                  </button>
+
+                  <button 
+                    onClick={async () => {
+                      const confirm = await showAlert.confirm(
+                        t('Are you sure you want to sign out?', 'هل أنت تأكد من رغبتك في تسجيل الخروج؟'),
+                        t('Sign Out', 'تسجيل الخروج')
+                      );
+                      if (confirm) {
+                        setOverlay(null);
+                        signOut({ redirectUrl: basePath || '/' });
+                      }
+                    }} 
+                    className="flex items-center gap-2 text-xs font-bold text-destructive hover:bg-destructive/10 px-3 py-2 rounded-lg transition-colors"
+                  >
+                    <span>{t('Sign out', 'تسجيل الخروج')}</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
