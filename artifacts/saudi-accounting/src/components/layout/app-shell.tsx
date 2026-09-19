@@ -339,7 +339,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-row">
       
       {/* Desktop Sidebar */}
-      <aside className={`hidden md:flex flex-col sidebar-bg transition-all duration-300 z-20 ${collapsed ? 'w-[72px]' : 'w-[240px]'}`}>
+      <aside className={`hidden md:flex flex-col sidebar-bg sticky top-0 h-screen shrink-0 transition-all duration-300 z-20 ${collapsed ? 'w-[72px]' : 'w-[240px]'}`}>
         <SidebarContent />
       </aside>
 
@@ -422,7 +422,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-4 md:p-8 lg:px-10 max-w-[1200px] w-full mx-auto">
+        <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8 w-full">
           {children}
         </main>
       </div>

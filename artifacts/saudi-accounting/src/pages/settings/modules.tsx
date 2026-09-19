@@ -25,7 +25,7 @@ export function ModulesSettings() {
   const activeModuleKeys = new Set(orgModules?.filter(m => m.enabled).map(m => m.module.key) || []);
 
   return (
-    <div className="max-w-[800px] space-y-8 fade-up">
+    <div className="max-w-[1000px] space-y-8 fade-up pb-12">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('Modules', 'الوحدات')}</h1>
         <p className="mt-2 text-sm text-muted-foreground">

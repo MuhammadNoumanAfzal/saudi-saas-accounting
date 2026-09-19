@@ -13,7 +13,7 @@ export function UsersSettings() {
     )?.role ?? session?.organizations?.[0]?.role;
 
   return (
-    <div className="max-w-[800px] space-y-8 fade-up">
+    <div className="max-w-[1000px] space-y-8 fade-up pb-12">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('Users & Roles', 'المستخدمون والأدوار')}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{t('Manage team access and permissions.', 'إدارة وصول الفريق والصلاحيات.')}</p>

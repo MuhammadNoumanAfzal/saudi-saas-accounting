@@ -79,7 +79,7 @@ export function OrganizationProfile() {
   ];
 
   return (
-    <div className="max-w-[800px] space-y-8 pb-12 fade-up">
+    <div className="max-w-[1000px] space-y-8 pb-12 fade-up">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('Organization Profile', 'ملف المنشأة')}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{t('Manage the legal and commercial identity of your business.', 'إدارة الهوية القانونية والتجارية لمنشأتك.')}</p>
