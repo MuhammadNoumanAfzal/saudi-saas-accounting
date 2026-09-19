@@ -48,7 +48,9 @@ async function validUnit(organizationId: string, id: string) {
   return unit;
 }
 function validTax(category: string, rate: string) {
-  return (category === "STANDARD" && rate === "15") || (category === "ZERO_RATED" && rate === "0") || (category === "EXEMPT" && rate === "0") || (category === "OUT_OF_SCOPE" && rate === "0");
+  const r = Number(rate);
+  return (category === "STANDARD" && (r === 15 || rate === "15" || rate === "15.00")) || 
+         (["ZERO_RATED", "EXEMPT", "OUT_OF_SCOPE"].includes(category) && (r === 0 || rate === "0" || rate === "0.00"));
 }
 router.get("/organizations/:organizationId/catalog/items", requireCatalogPermission("products.view"), async (req, res) => {
   const query = parse(ListCatalogItemsQueryParams, req.query, res); if (!query) return;

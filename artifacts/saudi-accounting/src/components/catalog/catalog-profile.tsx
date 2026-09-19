@@ -1,18 +1,22 @@
+import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useTranslation, Button } from '@/lib/utils';
+import { showAlert } from '@/lib/alerts';
 import { 
   useGetCurrentSession, 
   useGetCatalogItem,
   useUpdateCatalogItemStatus,
   getGetCatalogItemQueryKey,
+  getListCatalogItemsQueryKey,
   useListCatalogUnits,
   getListCatalogUnitsQueryKey
 } from '@workspace/api-client-react';
 import { queryClient } from '@/lib/queryClient';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ArrowLeft, ArrowRight, Package, MoreVertical, Edit, FileCode2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Package, MoreVertical, Edit, FileCode2, Power } from 'lucide-react';
 import { CatalogActivityTab } from './tabs/catalog-activity-tab';
+import { CatalogCreateSheet } from './catalog-create-sheet';
 
 export function CatalogProfile({ id }: { id: string }) {
   const { t, isRtl } = useTranslation();
@@ -20,6 +24,8 @@ export function CatalogProfile({ id }: { id: string }) {
   const { data: session } = useGetCurrentSession();
   const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization.id || '';
   
+  const [editOpen, setEditOpen] = useState(false);
+
   const { data, isLoading } = useGetCatalogItem(orgId, id, {
     query: { enabled: !!orgId, queryKey: getGetCatalogItemQueryKey(orgId, id) }
   });
@@ -54,13 +60,22 @@ export function CatalogProfile({ id }: { id: string }) {
   }
 
   const handleToggleStatus = () => {
+    const nextStatus = data.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     updateStatus.mutate({
       organizationId: orgId,
       itemId: id,
-      data: { status: data.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' }
+      data: { status: nextStatus }
     }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetCatalogItemQueryKey(orgId, id) });
+        queryClient.invalidateQueries({ queryKey: getListCatalogItemsQueryKey(orgId) });
+        showAlert.success(
+          nextStatus === 'ACTIVE' ? t('Item Reactivated!', 'تمت إعادة تنشيط الصنف!') : t('Item Deactivated!', 'تم إلغاء تنشيط الصنف!'),
+          nextStatus === 'ACTIVE' ? t('Catalog item is now active.', 'الصنف أصبح نشطاً الآن.') : t('Catalog item is now inactive.', 'الصنف أصبح غير نشط الآن.')
+        );
+      },
+      onError: (err: any) => {
+        showAlert.error(t('Status Update Failed', 'فشل تحديث الحالة'), err?.message || t('Could not update item status.', 'تعذر تحديث حالة الصنف.'));
       }
     });
   };
@@ -86,13 +101,13 @@ export function CatalogProfile({ id }: { id: string }) {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold tracking-tight text-foreground">{isRtl && data.nameAr ? data.nameAr : data.name}</h1>
-              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${data.status === 'ACTIVE' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' : 'bg-muted text-muted-foreground'}`}>
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${data.status === 'ACTIVE' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' : 'bg-muted text-muted-foreground border border-border'}`}>
                 {data.status === 'ACTIVE' ? t('Active', 'نشط') : t('Inactive', 'غير نشط')}
               </span>
             </div>
             <div className="flex items-center gap-3 mt-1.5 text-sm text-muted-foreground">
-              <span className="font-mono bg-muted/50 px-1.5 py-0.5 rounded text-xs">{data.code}</span>
-              <span className="text-xs font-semibold uppercase opacity-70">
+              <span className="font-mono bg-muted px-2 py-0.5 rounded text-xs font-semibold">{data.code}</span>
+              <span className="text-xs font-bold uppercase opacity-70">
                 {data.type === 'PRODUCT' ? t('Product', 'منتج') : t('Service', 'خدمة')}
               </span>
             </div>
@@ -100,7 +115,7 @@ export function CatalogProfile({ id }: { id: string }) {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="secondary" onClick={() => alert('Edit not implemented yet')}>
+          <Button variant="secondary" onClick={() => setEditOpen(true)} className="gap-2">
             <Edit size={16} />
             <span className="hidden sm:inline">{t('Edit', 'تعديل')}</span>
           </Button>
@@ -109,7 +124,8 @@ export function CatalogProfile({ id }: { id: string }) {
               <Button variant="secondary" className="px-3"><MoreVertical size={16} /></Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align={isRtl ? "start" : "end"} className="w-48">
-              <DropdownMenuItem onClick={handleToggleStatus} className={data.status === 'ACTIVE' ? "text-destructive focus:text-destructive focus:bg-destructive/10" : ""}>
+              <DropdownMenuItem onClick={handleToggleStatus} className={data.status === 'ACTIVE' ? "text-destructive focus:text-destructive focus:bg-destructive/10 gap-2 font-medium" : "gap-2 font-medium"}>
+                <Power size={14} />
                 {data.status === 'ACTIVE' ? t('Deactivate', 'إلغاء التنشيط') : t('Reactivate', 'إعادة التنشيط')}
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -119,20 +135,20 @@ export function CatalogProfile({ id }: { id: string }) {
 
       <div className="grid gap-4 md:grid-cols-4 grid-cols-2">
         <div className="soft-card p-5">
-          <div className="text-sm font-medium text-muted-foreground mb-1">{t('Sales Price', 'سعر البيع')}</div>
-          <div className="text-2xl font-bold">SAR {data.salesPrice}</div>
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t('Sales Price', 'سعر البيع')}</div>
+          <div className="text-2xl font-bold text-foreground">SAR {data.salesPrice}</div>
         </div>
         <div className="soft-card p-5">
-          <div className="text-sm font-medium text-muted-foreground mb-1">{t('Purchase Price', 'سعر الشراء')}</div>
-          <div className="text-2xl font-bold">SAR {data.purchasePrice}</div>
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t('Purchase Price', 'سعر الشراء')}</div>
+          <div className="text-2xl font-bold text-foreground">SAR {data.purchasePrice}</div>
         </div>
         <div className="soft-card p-5">
-          <div className="text-sm font-medium text-muted-foreground mb-1">{t('Unit', 'الوحدة')}</div>
-          <div className="text-2xl font-bold truncate" title={unitName}>{unitName}</div>
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t('Unit', 'الوحدة')}</div>
+          <div className="text-2xl font-bold truncate text-foreground" title={unitName}>{unitName}</div>
         </div>
         <div className="soft-card p-5">
-          <div className="text-sm font-medium text-muted-foreground mb-1">{t('VAT Rate', 'نسبة الضريبة')}</div>
-          <div className="text-2xl font-bold">{data.taxRate}%</div>
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t('VAT Rate', 'نسبة الضريبة')}</div>
+          <div className="text-2xl font-bold text-foreground">{data.taxRate}%</div>
         </div>
       </div>
 
@@ -157,32 +173,32 @@ export function CatalogProfile({ id }: { id: string }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
               <div>
                 <div className="text-sm text-muted-foreground">{t('English Name', 'الاسم (إنجليزي)')}</div>
-                <div className="font-medium mt-1">{data.name}</div>
+                <div className="font-semibold mt-1 text-foreground">{data.name}</div>
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">{t('Arabic Name', 'الاسم (عربي)')}</div>
-                <div className="font-medium mt-1">{data.nameAr}</div>
+                <div className="font-semibold mt-1 text-foreground arabic" dir="rtl">{data.nameAr}</div>
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">{t('VAT Treatment', 'المعاملة الضريبية')}</div>
-                <div className="font-medium mt-1">{data.taxCategory.replace('_', ' ')}</div>
+                <div className="font-semibold mt-1 text-foreground">{data.taxCategory.replace('_', ' ')}</div>
               </div>
               {data.type === 'PRODUCT' && (
                 <>
                   <div>
                     <div className="text-sm text-muted-foreground">{t('Track Inventory', 'تتبع المخزون')}</div>
-                    <div className="font-medium mt-1">{data.trackInventory ? t('Yes', 'نعم') : t('No', 'لا')}</div>
+                    <div className="font-semibold mt-1 text-foreground">{data.trackInventory ? t('Yes', 'نعم') : t('No', 'لا')}</div>
                   </div>
                   {data.sku && (
                     <div>
                       <div className="text-sm text-muted-foreground">{t('SKU', 'رمز التخزين')}</div>
-                      <div className="font-medium mt-1 font-mono">{data.sku}</div>
+                      <div className="font-semibold mt-1 font-mono text-foreground">{data.sku}</div>
                     </div>
                   )}
                   {data.barcode && (
                     <div>
                       <div className="text-sm text-muted-foreground">{t('Barcode', 'الباركود')}</div>
-                      <div className="font-medium mt-1 font-mono">{data.barcode}</div>
+                      <div className="font-semibold mt-1 font-mono text-foreground">{data.barcode}</div>
                     </div>
                   )}
                 </>
@@ -193,13 +209,13 @@ export function CatalogProfile({ id }: { id: string }) {
                 {data.description && (
                   <div>
                     <div className="text-sm text-muted-foreground mb-2">{t('Description (English)', 'الوصف (إنجليزي)')}</div>
-                    <p className="text-sm whitespace-pre-wrap">{data.description}</p>
+                    <p className="text-sm whitespace-pre-wrap text-foreground">{data.description}</p>
                   </div>
                 )}
                 {data.descriptionAr && (
                   <div>
                     <div className="text-sm text-muted-foreground mb-2">{t('Description (Arabic)', 'الوصف (عربي)')}</div>
-                    <p className="text-sm whitespace-pre-wrap arabic" dir="rtl">{data.descriptionAr}</p>
+                    <p className="text-sm whitespace-pre-wrap arabic text-foreground" dir="rtl">{data.descriptionAr}</p>
                   </div>
                 )}
               </div>
@@ -218,6 +234,15 @@ export function CatalogProfile({ id }: { id: string }) {
           <CatalogActivityTab entityId={id} orgId={orgId} />
         </TabsContent>
       </Tabs>
+
+      <CatalogCreateSheet 
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        orgId={orgId}
+        mode="edit"
+        initialData={data}
+        onSuccess={() => setEditOpen(false)}
+      />
     </div>
   );
 }

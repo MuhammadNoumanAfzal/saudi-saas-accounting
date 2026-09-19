@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useTranslation, Button } from '@/lib/utils';
+import { showAlert } from '@/lib/alerts';
 import { 
   useGetCurrentSession, 
   useListCatalogItems,
@@ -10,7 +11,7 @@ import {
   getListCatalogUnitsQueryKey
 } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
-import { Search, Plus, Filter, MoreHorizontal, Package, FileCode2, UploadCloud, DownloadCloud } from 'lucide-react';
+import { Search, Plus, Filter, MoreHorizontal, Package, FileCode2, UploadCloud, DownloadCloud, Eye } from 'lucide-react';
 import { CatalogCreateSheet } from './catalog-create-sheet';
 import { CatalogImportSheet } from './catalog-import-sheet';
 import type { CatalogItemType, CatalogItemStatus } from '@workspace/api-client-react';
@@ -27,6 +28,7 @@ export function CatalogList() {
   const [status, setStatus] = useState<CatalogItemStatus | ''>('');
   const [type, setType] = useState<CatalogItemType | ''>('');
   const [taxCategory, setTaxCategory] = useState<string>('');
+  const [exporting, setExporting] = useState(false);
   
   const [createOpen, setCreateOpen] = useState(() => {
     return new URLSearchParams(window.location.search).has('new');
@@ -58,6 +60,7 @@ export function CatalogList() {
 
   const handleExport = async () => {
     try {
+      setExporting(true);
       const blob = await exportCatalogItems(orgId, {
         search: queryParams.search,
         type: queryParams.type as any,
@@ -67,10 +70,20 @@ export function CatalogList() {
       const url = URL.createObjectURL(new Blob([blob as any]));
       const a = document.createElement('a');
       a.href = url;
-      a.download = `catalog_export.csv`;
+      a.download = `catalog_export_${new Date().toISOString().split('T')[0]}.csv`;
       a.click();
-    } catch (error) {
-      console.error('Failed to export catalog items', error);
+      URL.revokeObjectURL(url);
+      showAlert.success(
+        t('Export Successful!', 'تم التصدير بنجاح!'),
+        t('Catalog CSV data file has been downloaded.', 'تم تحميل ملف CSV الخاص بالكتالوج.')
+      );
+    } catch (error: any) {
+      showAlert.error(
+        t('Export Failed', 'فشل التصدير'),
+        error?.message || t('Failed to export catalog items', 'تعذر تصدير أصناف الكتالوج')
+      );
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -82,15 +95,15 @@ export function CatalogList() {
           <p className="mt-1 text-muted-foreground text-sm">{t('Manage what your business sells and purchases.', 'أدر ما تبيعه وتشتريه منشأتك.')}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" onClick={() => setImportOpen(true)} title={t('Import', 'استيراد')}>
+          <Button variant="secondary" onClick={() => setImportOpen(true)} title={t('Import', 'استيراد')} className="gap-2">
             <UploadCloud size={16} />
             <span className="hidden sm:inline">{t('Import', 'استيراد')}</span>
           </Button>
-          <Button variant="secondary" onClick={handleExport} title={t('Export', 'تصدير')}>
+          <Button variant="secondary" onClick={handleExport} disabled={exporting} title={t('Export', 'تصدير')} className="gap-2">
             <DownloadCloud size={16} />
-            <span className="hidden sm:inline">{t('Export', 'تصدير')}</span>
+            <span className="hidden sm:inline">{exporting ? t('Exporting...', 'جاري التصدير...') : t('Export', 'تصدير')}</span>
           </Button>
-          <Button variant="primary" onClick={() => setCreateOpen(true)}>
+          <Button variant="primary" onClick={() => setCreateOpen(true)} className="gap-2">
             <Plus size={16} />
             {t('New Item', 'صنف جديد')}
           </Button>
@@ -99,46 +112,46 @@ export function CatalogList() {
 
       <div className="grid gap-4 md:grid-cols-4 grid-cols-2">
         <div className="soft-card p-4">
-          <div className="text-sm font-medium text-muted-foreground mb-1">{t('Total Items', 'إجمالي الأصناف')}</div>
-          <div className="text-2xl font-bold">{totalCount}</div>
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t('Total Items', 'إجمالي الأصناف')}</div>
+          <div className="text-3xl font-bold text-foreground">{totalCount}</div>
         </div>
         <div className="soft-card p-4">
-          <div className="text-sm font-medium text-muted-foreground mb-1">{t('Products', 'المنتجات')}</div>
-          <div className="text-2xl font-bold">{productsCount}</div>
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t('Products', 'المنتجات')}</div>
+          <div className="text-3xl font-bold text-foreground">{productsCount}</div>
         </div>
         <div className="soft-card p-4">
-          <div className="text-sm font-medium text-muted-foreground mb-1">{t('Services', 'الخدمات')}</div>
-          <div className="text-2xl font-bold">{servicesCount}</div>
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t('Services', 'الخدمات')}</div>
+          <div className="text-3xl font-bold text-foreground">{servicesCount}</div>
         </div>
         <div className="soft-card p-4">
-          <div className="text-sm font-medium text-muted-foreground mb-1">{t('Active', 'النشطة')}</div>
-          <div className="text-2xl font-bold">{activeCount}</div>
+          <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1">{t('Active', 'النشطة')}</div>
+          <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{activeCount}</div>
         </div>
       </div>
 
       <div className="soft-card overflow-hidden">
-        <div className="p-4 border-b border-border bg-card/50 flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground rtl:left-auto rtl:right-3" />
+        <div className="p-4 border-b border-border bg-card/50 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1 min-w-[220px]">
+            <Search size={16} className="absolute left-3 top-3 text-muted-foreground rtl:left-auto rtl:right-3 pointer-events-none" />
             <input 
               value={search} 
               onChange={e => { setSearch(e.target.value); setPage(1); }} 
-              placeholder={t('Search products and services...', 'البحث في المنتجات والخدمات...')} 
-              className="field pl-9 rtl:pl-3 rtl:pr-9 bg-background h-10" 
+              placeholder={t('Search products and services by name, SKU or code...', 'البحث في المنتجات والخدمات...')} 
+              className="field pl-9 rtl:pl-3 rtl:pr-9 bg-background h-10 w-full" 
             />
           </div>
-          <div className="flex flex-wrap gap-2">
-            <select className="field bg-background h-10 w-full sm:w-auto" value={type} onChange={e => { setType(e.target.value as CatalogItemType | ''); setPage(1); }}>
+          <div className="flex flex-wrap items-center gap-2">
+            <select className="field bg-background h-10 w-auto text-xs font-semibold" value={type} onChange={e => { setType(e.target.value as CatalogItemType | ''); setPage(1); }}>
               <option value="">{t('All Types', 'جميع الأنواع')}</option>
               <option value="PRODUCT">{t('Product', 'منتج')}</option>
               <option value="SERVICE">{t('Service', 'خدمة')}</option>
             </select>
-            <select className="field bg-background h-10 w-full sm:w-auto" value={status} onChange={e => { setStatus(e.target.value as CatalogItemStatus | ''); setPage(1); }}>
+            <select className="field bg-background h-10 w-auto text-xs font-semibold" value={status} onChange={e => { setStatus(e.target.value as CatalogItemStatus | ''); setPage(1); }}>
               <option value="">{t('All Statuses', 'جميع الحالات')}</option>
               <option value="ACTIVE">{t('Active', 'نشط')}</option>
               <option value="INACTIVE">{t('Inactive', 'غير نشط')}</option>
             </select>
-            <select className="field bg-background h-10 w-full sm:w-auto" value={taxCategory} onChange={e => { setTaxCategory(e.target.value); setPage(1); }}>
+            <select className="field bg-background h-10 w-auto text-xs font-semibold" value={taxCategory} onChange={e => { setTaxCategory(e.target.value); setPage(1); }}>
               <option value="">{t('All Taxes', 'جميع الضرائب')}</option>
               <option value="STANDARD">{t('Standard (15%)', 'الأساسية (15%)')}</option>
               <option value="ZERO_RATED">{t('Zero Rated', 'نسبة الصفر')}</option>
@@ -150,20 +163,20 @@ export function CatalogList() {
 
         {isLoading ? (
           <div className="p-8 space-y-4">
-            {[1,2,3].map(i => <div key={i} className="shimmer h-12 w-full rounded-xl" />)}
+            {[1,2,3,4].map(i => <div key={i} className="shimmer h-14 w-full rounded-xl" />)}
           </div>
         ) : !data?.items.length ? (
           <div className="p-12 text-center flex flex-col items-center justify-center border-dashed">
-            <div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
-              <Package size={24} />
+            <div className="h-14 w-14 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
+              <Package size={28} />
             </div>
             <h3 className="text-lg font-bold mb-2">
-              {t('No products or services yet.', 'لا توجد منتجات أو خدمات بعد.')}
+              {t('No products or services found.', 'لم يتم العثور على منتجات أو خدمات.')}
             </h3>
             <p className="text-sm text-muted-foreground max-w-sm mb-6">
-              {t('Add the items you sell or purchase to use them in quotations and invoices.', 'أضف الأصناف التي تبيعها أو تشتريها لاستخدامها في عروض الأسعار والفواتير.')}
+              {t('Add items to your master catalog to issue ZATCA e-invoices and track purchase bills.', 'أضف أصنافا إلى الكتالوج الرئيسي لإصدار فواتير إلكترونية ومتابعة فواتير الشراء.')}
             </p>
-            <Button variant="primary" onClick={() => setCreateOpen(true)}>
+            <Button variant="primary" onClick={() => setCreateOpen(true)} className="gap-2">
               <Plus size={16} />
               {t('Add Item', 'إضافة صنف')}
             </Button>
@@ -173,57 +186,84 @@ export function CatalogList() {
             {/* Desktop Table */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm text-left rtl:text-right">
-                <thead className="bg-muted/30 text-xs uppercase text-muted-foreground border-b border-border">
+                <thead className="bg-muted/40 text-xs uppercase text-muted-foreground border-b border-border font-semibold">
                   <tr>
-                    <th className="px-4 py-3 font-medium">{t('Item', 'الصنف')}</th>
-                    <th className="px-4 py-3 font-medium">{t('Code', 'الرمز')}</th>
-                    <th className="px-4 py-3 font-medium">{t('Type', 'النوع')}</th>
-                    <th className="px-4 py-3 font-medium">{t('Unit', 'الوحدة')}</th>
-                    <th className="px-4 py-3 font-medium text-right rtl:text-left">{t('Sales Price', 'سعر البيع')}</th>
-                    <th className="px-4 py-3 font-medium text-right rtl:text-left">{t('Purchase Price', 'سعر الشراء')}</th>
-                    <th className="px-4 py-3 font-medium">{t('VAT', 'الضريبة')}</th>
-                    <th className="px-4 py-3 font-medium">{t('Status', 'الحالة')}</th>
-                    <th className="px-4 py-3 font-medium w-10"></th>
+                    <th className="px-5 py-3.5 font-bold">{t('Item', 'الصنف')}</th>
+                    <th className="px-5 py-3.5 font-bold">{t('Code', 'الرمز')}</th>
+                    <th className="px-5 py-3.5 font-bold">{t('Type', 'النوع')}</th>
+                    <th className="px-5 py-3.5 font-bold">{t('Unit', 'الوحدة')}</th>
+                    <th className="px-5 py-3.5 font-bold text-right rtl:text-left">{t('Sales Price', 'سعر البيع')}</th>
+                    <th className="px-5 py-3.5 font-bold text-right rtl:text-left">{t('Purchase Price', 'سعر الشراء')}</th>
+                    <th className="px-5 py-3.5 font-bold">{t('VAT', 'الضريبة')}</th>
+                    <th className="px-5 py-3.5 font-bold">{t('Status', 'الحالة')}</th>
+                    <th className="px-5 py-3.5 font-bold w-12 text-center">{t('Action', 'إجراء')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {data.items.map(item => {
                     const unit = units?.find(u => u.id === item.unitId);
+                    const isAct = item.status === 'ACTIVE';
                     return (
-                    <tr key={item.id} className="hover:bg-muted/20 transition-colors group cursor-pointer" onClick={() => setLocation(`/finance/items/${item.id}`)}>
-                      <td className="px-4 py-3">
-                        <div className="font-semibold text-foreground">{isRtl && item.nameAr ? item.nameAr : item.name}</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="inline-flex px-2 py-0.5 rounded bg-muted text-xs font-mono">{item.code}</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="text-xs text-muted-foreground">{item.type === 'PRODUCT' ? t('Product', 'منتج') : t('Service', 'خدمة')}</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="text-xs text-muted-foreground">{unit ? (isRtl ? unit.nameAr : unit.name) : '-'}</div>
-                      </td>
-                      <td className="px-4 py-3 text-right rtl:text-left font-semibold">
-                        SAR {item.salesPrice}
-                      </td>
-                      <td className="px-4 py-3 text-right rtl:text-left font-semibold">
-                        SAR {item.purchasePrice}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="text-xs text-muted-foreground">{item.taxRate}%</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${item.status === 'ACTIVE' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' : 'bg-muted text-muted-foreground'}`}>
-                          {item.status === 'ACTIVE' ? t('Active', 'نشط') : t('Inactive', 'غير نشط')}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => { e.stopPropagation(); setLocation(`/finance/items/${item.id}`); }}>
-                          <MoreHorizontal size={16} />
-                        </Button>
-                      </td>
-                    </tr>
-                  )})}
+                      <tr 
+                        key={item.id} 
+                        className="hover:bg-muted/20 transition-colors group cursor-pointer" 
+                        onClick={() => setLocation(`/finance/items/${item.id}`)}
+                      >
+                        <td className="px-5 py-4">
+                          <div className="font-bold text-foreground text-sm group-hover:text-primary transition-colors">
+                            {item.name}
+                          </div>
+                          {item.nameAr && (
+                            <div className="text-xs text-muted-foreground arabic font-medium mt-0.5" dir="rtl">{item.nameAr}</div>
+                          )}
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-foreground text-xs font-mono font-semibold border border-border">
+                            {item.code}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded bg-muted/60 text-muted-foreground">
+                            {item.type === 'PRODUCT' ? <Package size={12} /> : <FileCode2 size={12} />}
+                            {item.type === 'PRODUCT' ? t('Product', 'منتج') : t('Service', 'خدمة')}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 font-medium text-xs text-muted-foreground">
+                          {unit ? (isRtl ? unit.nameAr : unit.name) : '-'}
+                        </td>
+                        <td className="px-5 py-4 text-right rtl:text-left font-bold text-foreground">
+                          SAR {Number(item.salesPrice).toFixed(2)}
+                        </td>
+                        <td className="px-5 py-4 text-right rtl:text-left font-bold text-foreground">
+                          SAR {Number(item.purchasePrice).toFixed(2)}
+                        </td>
+                        <td className="px-5 py-4 font-semibold text-xs text-muted-foreground">
+                          {item.taxRate}%
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
+                            isAct 
+                              ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30' 
+                              : 'bg-muted text-muted-foreground border border-border'
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${isAct ? 'bg-emerald-500' : 'bg-muted-foreground'}`} />
+                            {isAct ? t('Active', 'نشط') : t('Inactive', 'غير نشط')}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 text-center" onClick={e => e.stopPropagation()}>
+                          <Button 
+                            variant="secondary" 
+                            size="sm"
+                            className="h-8 px-3 text-xs font-bold gap-1.5 hover:bg-primary hover:text-primary-foreground transition-colors border-border shadow-none" 
+                            onClick={() => setLocation(`/finance/items/${item.id}`)}
+                          >
+                            <Eye size={14} />
+                            {t('View', 'عرض')}
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -232,30 +272,41 @@ export function CatalogList() {
             <div className="md:hidden divide-y divide-border">
               {data.items.map(item => {
                 const unit = units?.find(u => u.id === item.unitId);
+                const isAct = item.status === 'ACTIVE';
                 return (
-                <div key={item.id} className="p-4 active:bg-muted/20 transition-colors cursor-pointer" onClick={() => setLocation(`/finance/items/${item.id}`)}>
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <div className="font-semibold text-foreground">{isRtl && item.nameAr ? item.nameAr : item.name}</div>
-                      <div className="text-xs text-muted-foreground mt-0.5 flex gap-2 items-center">
-                        <span className="font-mono bg-muted/50 px-1 rounded">{item.code}</span>
-                        <span>{item.type === 'PRODUCT' ? t('Product', 'منتج') : t('Service', 'خدمة')}</span>
-                        {unit && <span>· {isRtl ? unit.nameAr : unit.name}</span>}
+                  <div 
+                    key={item.id} 
+                    className="p-4 active:bg-muted/20 transition-colors cursor-pointer" 
+                    onClick={() => setLocation(`/finance/items/${item.id}`)}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <div className="font-bold text-foreground text-sm">{isRtl && item.nameAr ? item.nameAr : item.name}</div>
+                        <div className="text-xs text-muted-foreground mt-1 flex gap-2 items-center">
+                          <span className="font-mono bg-muted px-1.5 py-0.5 rounded font-bold">{item.code}</span>
+                          <span>{item.type === 'PRODUCT' ? t('Product', 'منتج') : t('Service', 'خدمة')}</span>
+                          {unit && <span>· {isRtl ? unit.nameAr : unit.name}</span>}
+                        </div>
                       </div>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                        isAct ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {isAct ? t('Active', 'نشط') : t('Inactive', 'غير نشط')}
+                      </span>
                     </div>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${item.status === 'ACTIVE' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' : 'bg-muted text-muted-foreground'}`}>
-                      {item.status === 'ACTIVE' ? t('Active', 'نشط') : t('Inactive', 'غير نشط')}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-end mt-4 text-xs text-muted-foreground">
-                    <div className="space-y-1">
-                      <div><span className="opacity-70">{t('Sales', 'البيع')}:</span> <span className="font-bold text-foreground">SAR {item.salesPrice}</span></div>
-                      <div><span className="opacity-70">{t('Purchases', 'الشراء')}:</span> <span className="font-bold text-foreground">SAR {item.purchasePrice}</span></div>
+                    <div className="flex justify-between items-end mt-3 text-xs text-muted-foreground">
+                      <div className="space-y-1">
+                        <div><span className="opacity-70">{t('Sales', 'البيع')}:</span> <span className="font-bold text-foreground">SAR {item.salesPrice}</span></div>
+                        <div><span className="opacity-70">{t('Purchases', 'الشراء')}:</span> <span className="font-bold text-foreground">SAR {item.purchasePrice}</span></div>
+                      </div>
+                      <Button variant="secondary" size="sm" className="h-8 px-3 text-xs font-bold gap-1">
+                        <Eye size={14} />
+                        {t('View', 'عرض')}
+                      </Button>
                     </div>
-                    <MoreHorizontal size={16} />
                   </div>
-                </div>
-              )})}
+                );
+              })}
             </div>
           </div>
         )}

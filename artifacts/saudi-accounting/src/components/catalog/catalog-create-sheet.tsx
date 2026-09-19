@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation, Button } from '@/lib/utils';
+import { showAlert } from '@/lib/alerts';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { 
   useCreateCatalogItem,
@@ -102,8 +103,8 @@ export function CatalogCreateSheet({
     e.preventDefault();
     
     const newErrors: Record<string, string> = {};
-    if (!nameEn) newErrors.nameEn = t('Name in English is required', 'الاسم باللغة الإنجليزية مطلوب');
-    if (!nameAr) newErrors.nameAr = t('Name in Arabic is required', 'الاسم باللغة العربية مطلوب');
+    if (!nameEn.trim()) newErrors.nameEn = t('Name in English is required', 'الاسم باللغة الإنجليزية مطلوب');
+    if (!nameAr.trim()) newErrors.nameAr = t('Name in Arabic is required', 'الاسم باللغة العربية مطلوب');
     if (!unitId && units?.length) newErrors.unitId = t('Unit is required', 'الوحدة مطلوبة');
     
     if (salesPrice && isNaN(Number(salesPrice))) newErrors.salesPrice = t('Must be a valid number', 'يجب أن يكون رقماً صالحاً');
@@ -111,22 +112,24 @@ export function CatalogCreateSheet({
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      const container = document.getElementById('item-form-container');
+      if (container) container.scrollTop = 0;
       return;
     }
 
     const payload = {
       type,
-      name: nameEn,
-      nameAr,
+      name: nameEn.trim(),
+      nameAr: nameAr.trim(),
       unitId: unitId || (units?.length ? units[0].id : 'default'), // Fallback if no units returned
-      salesPrice: salesPrice || '0.00',
-      purchasePrice: purchasePrice || '0.00',
+      salesPrice: salesPrice ? String(Number(salesPrice).toFixed(2)) : '0.00',
+      purchasePrice: purchasePrice ? String(Number(purchasePrice).toFixed(2)) : '0.00',
       taxCategory,
       taxRate: taxCategory === 'STANDARD' ? '15.00' : '0.00',
-      description: descriptionEn || null,
-      descriptionAr: descriptionAr || null,
-      sku: sku || null,
-      barcode: barcode || null,
+      description: descriptionEn.trim() || null,
+      descriptionAr: descriptionAr.trim() || null,
+      sku: sku.trim() || null,
+      barcode: barcode.trim() || null,
       trackInventory: type === 'PRODUCT' ? trackInventory : false,
     };
 
@@ -139,10 +142,16 @@ export function CatalogCreateSheet({
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListCatalogItemsQueryKey(orgId) });
           queryClient.invalidateQueries({ queryKey: getGetCatalogItemQueryKey(orgId, initialData.id) });
+          showAlert.success(
+            t('Item Updated!', 'تم تحديث الصنف!'),
+            t('Product/service updated successfully in catalog.', 'تم تحديث تفاصيل الصنف بنجاح في الكتالوج.')
+          );
           onSuccess(initialData.id);
         },
         onError: (err: any) => {
           setErrors({ submit: err?.message || t('Something went wrong', 'حدث خطأ ما') });
+          const container = document.getElementById('item-form-container');
+          if (container) container.scrollTop = 0;
         }
       });
     } else {
@@ -153,10 +162,16 @@ export function CatalogCreateSheet({
         onSuccess: (data) => {
           queryClient.invalidateQueries({ queryKey: getListCatalogItemsQueryKey(orgId) });
           queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey(orgId) });
+          showAlert.success(
+            t('Item Created!', 'تم إنشاء الصنف!'),
+            t('New product/service saved successfully to catalog.', 'تمت إضافة الصنف بنجاح إلى الكتالوج.')
+          );
           onSuccess(data.id);
         },
         onError: (err: any) => {
           setErrors({ submit: err?.message || t('Something went wrong', 'حدث خطأ ما') });
+          const container = document.getElementById('item-form-container');
+          if (container) container.scrollTop = 0;
         }
       });
     }
@@ -174,7 +189,7 @@ export function CatalogCreateSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+        <div id="item-form-container" className="flex-1 overflow-y-auto p-6 scrollbar-hide">
           <form id="item-form" onSubmit={handleSubmit} className="space-y-5">
             {errors.submit && (
               <div className="p-3 bg-destructive/10 text-destructive rounded-lg text-sm border border-destructive/20 font-medium">
@@ -220,17 +235,34 @@ export function CatalogCreateSheet({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold">{t('Sales Price', 'سعر البيع')}</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium rtl:left-auto rtl:right-3">SAR</span>
-                  <input type="text" className={`field pl-12 rtl:pl-3 rtl:pr-12 ${errors.salesPrice ? 'border-destructive' : ''}`} value={salesPrice} onChange={e => setSalesPrice(e.target.value)} placeholder="0.00" />
+                <div className={`flex rounded-xl overflow-hidden border bg-background ${errors.salesPrice ? 'border-destructive' : 'border-border'} focus-within:ring-2 focus-within:ring-primary/20`}>
+                  <span className="bg-muted/50 px-3 flex items-center text-xs font-bold text-muted-foreground border-r border-border rtl:border-r-0 rtl:border-l select-none shrink-0">
+                    SAR
+                  </span>
+                  <input 
+                    type="text" 
+                    className="w-full bg-transparent px-3 py-2 text-sm font-semibold outline-none placeholder:text-muted-foreground/40" 
+                    value={salesPrice} 
+                    onChange={e => setSalesPrice(e.target.value)} 
+                    placeholder="0.00" 
+                  />
                 </div>
                 {errors.salesPrice && <p className="text-xs text-destructive">{errors.salesPrice}</p>}
               </div>
+
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold">{t('Purchase Price', 'سعر الشراء')}</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium rtl:left-auto rtl:right-3">SAR</span>
-                  <input type="text" className={`field pl-12 rtl:pl-3 rtl:pr-12 ${errors.purchasePrice ? 'border-destructive' : ''}`} value={purchasePrice} onChange={e => setPurchasePrice(e.target.value)} placeholder="0.00" />
+                <div className={`flex rounded-xl overflow-hidden border bg-background ${errors.purchasePrice ? 'border-destructive' : 'border-border'} focus-within:ring-2 focus-within:ring-primary/20`}>
+                  <span className="bg-muted/50 px-3 flex items-center text-xs font-bold text-muted-foreground border-r border-border rtl:border-r-0 rtl:border-l select-none shrink-0">
+                    SAR
+                  </span>
+                  <input 
+                    type="text" 
+                    className="w-full bg-transparent px-3 py-2 text-sm font-semibold outline-none placeholder:text-muted-foreground/40" 
+                    value={purchasePrice} 
+                    onChange={e => setPurchasePrice(e.target.value)} 
+                    placeholder="0.00" 
+                  />
                 </div>
                 {errors.purchasePrice && <p className="text-xs text-destructive">{errors.purchasePrice}</p>}
               </div>
@@ -297,8 +329,8 @@ export function CatalogCreateSheet({
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} className="flex-1">
             {t('Cancel', 'إلغاء')}
           </Button>
-          <Button type="submit" form="item-form" variant="primary" className="flex-1" disabled={createItem.isPending}>
-            {createItem.isPending ? t('Saving...', 'جاري الحفظ...') : t('Save', 'حفظ')}
+          <Button type="submit" form="item-form" variant="primary" className="flex-1" disabled={createItem.isPending || updateItem.isPending}>
+            {(createItem.isPending || updateItem.isPending) ? t('Saving...', 'جاري الحفظ...') : t('Save', 'حفظ')}
           </Button>
         </div>
       </SheetContent>
