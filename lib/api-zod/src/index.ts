@@ -41,4 +41,12 @@ export * from "./generated/types/taxCategory";
 export * from "./generated/types/taxDefinition";
 export * from "./generated/types/catalogImportInput";
 export * from "./generated/types/catalogImportPreview";
-export * from "./generated/types/catalogImportResult";
+export * from "./generated/types/quotation";
+export * from "./generated/types/quotationInput";
+export * from "./generated/types/quotationItem";
+export * from "./generated/types/quotationItemInput";
+export * from "./generated/types/quotationListResponse";
+export * from "./generated/types/quotationStatus";
+export * from "./generated/types/quotationStatusUpdateInput";
+export * from "./generated/types/quotationUpdateInput";
+

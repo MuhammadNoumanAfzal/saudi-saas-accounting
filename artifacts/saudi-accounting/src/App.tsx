@@ -47,6 +47,8 @@ import { Suppliers } from './pages/suppliers';
 import { SupplierDetail } from './pages/supplier-detail';
 import { CatalogItems } from './pages/catalog-items';
 import { CatalogItemDetail } from './pages/catalog-item-detail';
+import { QuotationsPage } from './pages/quotations';
+import { QuotationDetailPage } from './pages/quotation-detail';
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
@@ -281,6 +283,22 @@ export default function App() {
               <AuthGuard>
                 <ModuleGuard moduleKey="finance">
                   <CatalogItemDetail />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
+            <Route path="/finance/quotations">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <QuotationsPage />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
+            <Route path="/finance/quotations/:quotationId">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <QuotationDetailPage />
                 </ModuleGuard>
               </AuthGuard>
             </Route>

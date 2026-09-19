@@ -867,6 +867,149 @@ export interface RequestUploadUrlResponse {
   metadata?: RequestUploadUrlResponseMetadata;
 }
 
+export type QuotationItemInputTaxCategory = typeof QuotationItemInputTaxCategory[keyof typeof QuotationItemInputTaxCategory];
+
+
+export const QuotationItemInputTaxCategory = {
+  STANDARD: 'STANDARD',
+  ZERO: 'ZERO',
+  EXEMPT: 'EXEMPT',
+  OUT_OF_SCOPE: 'OUT_OF_SCOPE',
+} as const;
+
+export interface QuotationItemInput {
+  /** @nullable */
+  catalogItemId?: string | null;
+  /** @nullable */
+  itemCode?: string | null;
+  /** @minLength 1 */
+  description: string;
+  /** @nullable */
+  descriptionAr?: string | null;
+  /** @nullable */
+  unitId?: string | null;
+  quantity: string;
+  unitPrice: string;
+  discountAmount?: string;
+  taxCategory?: QuotationItemInputTaxCategory;
+  taxRate?: string;
+}
+
+export interface QuotationItem {
+  id: string;
+  quotationId: string;
+  /** @nullable */
+  catalogItemId?: string | null;
+  /** @nullable */
+  itemCode?: string | null;
+  description: string;
+  /** @nullable */
+  descriptionAr?: string | null;
+  /** @nullable */
+  unitId?: string | null;
+  quantity: string;
+  unitPrice: string;
+  discountAmount: string;
+  taxCategory: string;
+  taxRate: string;
+  taxAmount: string;
+  lineTotal: string;
+  sortOrder: number;
+}
+
+export interface QuotationInput {
+  customerId: string;
+  /** @nullable */
+  issueDate?: string | null;
+  /** @nullable */
+  validUntilDate?: string | null;
+  currency?: string;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  terms?: string | null;
+  /** @minItems 1 */
+  items: QuotationItemInput[];
+}
+
+export interface QuotationUpdateInput {
+  /** @nullable */
+  customerId?: string | null;
+  /** @nullable */
+  issueDate?: string | null;
+  /** @nullable */
+  validUntilDate?: string | null;
+  /** @nullable */
+  currency?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  terms?: string | null;
+  items?: QuotationItemInput[];
+}
+
+export type QuotationStatusUpdateInputStatus = typeof QuotationStatusUpdateInputStatus[keyof typeof QuotationStatusUpdateInputStatus];
+
+
+export const QuotationStatusUpdateInputStatus = {
+  DRAFT: 'DRAFT',
+  SENT: 'SENT',
+  ACCEPTED: 'ACCEPTED',
+  DECLINED: 'DECLINED',
+  EXPIRED: 'EXPIRED',
+  CONVERTED: 'CONVERTED',
+} as const;
+
+export interface QuotationStatusUpdateInput {
+  status: QuotationStatusUpdateInputStatus;
+}
+
+export type QuotationStatus = typeof QuotationStatus[keyof typeof QuotationStatus];
+
+
+export const QuotationStatus = {
+  DRAFT: 'DRAFT',
+  SENT: 'SENT',
+  ACCEPTED: 'ACCEPTED',
+  DECLINED: 'DECLINED',
+  EXPIRED: 'EXPIRED',
+  CONVERTED: 'CONVERTED',
+} as const;
+
+export interface Quotation {
+  id: string;
+  organizationId: string;
+  quotationNumber: string;
+  customerId: string;
+  /** @nullable */
+  customerName?: string | null;
+  issueDate: string;
+  /** @nullable */
+  validUntilDate?: string | null;
+  currency: string;
+  subtotal: string;
+  discountAmount: string;
+  taxAmount: string;
+  totalAmount: string;
+  status: QuotationStatus;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  terms?: string | null;
+  /** @nullable */
+  convertedInvoiceId?: string | null;
+  items: QuotationItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface QuotationListResponse {
+  items: Quotation[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export type PartySearchParameter = string;
 
 export type PartyPageParameter = number;
@@ -988,4 +1131,31 @@ type?: CatalogItemType;
 status?: CatalogItemStatus;
 taxCategory?: TaxCategory;
 };
+
+export type ListQuotationsParams = {
+search?: string;
+status?: ListQuotationsStatus;
+customerId?: string;
+/**
+ * @minimum 1
+ */
+page?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: number;
+};
+
+export type ListQuotationsStatus = typeof ListQuotationsStatus[keyof typeof ListQuotationsStatus];
+
+
+export const ListQuotationsStatus = {
+  DRAFT: 'DRAFT',
+  SENT: 'SENT',
+  ACCEPTED: 'ACCEPTED',
+  DECLINED: 'DECLINED',
+  EXPIRED: 'EXPIRED',
+  CONVERTED: 'CONVERTED',
+} as const;
 

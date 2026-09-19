@@ -4,6 +4,7 @@ import foundationRouter from "./foundation";
 import partiesRouter from "./parties";
 import storageRouter from "./storage";
 import catalogRouter from "./catalog";
+import quotationsRouter from "./quotations";
 
 const router: IRouter = Router();
 
@@ -11,6 +12,7 @@ router.use(healthRouter);
 router.use(foundationRouter);
 router.use(catalogRouter);
 router.use(partiesRouter);
+router.use(quotationsRouter);
 router.use(storageRouter);
 
 export default router;

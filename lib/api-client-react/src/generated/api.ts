@@ -40,6 +40,7 @@ import type {
   GetSuppliersParams,
   HealthStatus,
   ListCatalogItemsParams,
+  ListQuotationsParams,
   ModuleDefinition,
   Organization,
   OrganizationInput,
@@ -66,6 +67,11 @@ import type {
   PartyTag,
   PartyTagInput,
   PartyUpdateInput,
+  Quotation,
+  QuotationInput,
+  QuotationListResponse,
+  QuotationStatusUpdateInput,
+  QuotationUpdateInput,
   RequestUploadUrlInput,
   RequestUploadUrlResponse,
   TaxDefinition,
@@ -4598,4 +4604,416 @@ export function useExportCatalogItems<TData = Awaited<ReturnType<typeof exportCa
 
 
 
+
+export const getListQuotationsUrl = (organizationId: string,
+    params?: ListQuotationsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/organizations/${organizationId}/quotations?${stringifiedParams}` : `/api/organizations/${organizationId}/quotations`
+}
+
+export const listQuotations = async (organizationId: string,
+    params?: ListQuotationsParams, options?: Parameters<typeof customFetch>[1]): Promise<QuotationListResponse> => {
+
+  return customFetch<QuotationListResponse>(getListQuotationsUrl(organizationId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListQuotationsQueryKey = (organizationId: string,
+    params?: ListQuotationsParams,) => {
+    return [
+    `/api/organizations/${organizationId}/quotations`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListQuotationsQueryOptions = <TData = Awaited<ReturnType<typeof listQuotations>>, TError = ErrorType<unknown>>(organizationId: string,
+    params?: ListQuotationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listQuotations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListQuotationsQueryKey(organizationId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listQuotations>>> = ({ signal }) => listQuotations(organizationId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: organizationId !== null && organizationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listQuotations>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListQuotationsQueryResult = NonNullable<Awaited<ReturnType<typeof listQuotations>>>
+export type ListQuotationsQueryError = ErrorType<unknown>
+
+
+
+export function useListQuotations<TData = Awaited<ReturnType<typeof listQuotations>>, TError = ErrorType<unknown>>(
+ organizationId: string,
+    params?: ListQuotationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listQuotations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListQuotationsQueryOptions(organizationId,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateQuotationUrl = (organizationId: string,) => {
+
+
+
+
+  return `/api/organizations/${organizationId}/quotations`
+}
+
+export const createQuotation = async (organizationId: string,
+    quotationInput: QuotationInput, options?: Parameters<typeof customFetch>[1]): Promise<Quotation> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Quotation>(getCreateQuotationUrl(organizationId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(quotationInput)
+  }
+);}
+
+
+
+
+
+export const getCreateQuotationMutationKey = () => ['createQuotation'] as const;
+
+export const getCreateQuotationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createQuotation>>, TError,CreateQuotationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createQuotation>>, TError,CreateQuotationMutationVariables, TContext> => {
+
+const mutationKey = getCreateQuotationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createQuotation>>, CreateQuotationMutationVariables> = (props) => {
+          const {organizationId,data} = props ?? {};
+
+          return  createQuotation(organizationId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateQuotationMutationResult = NonNullable<Awaited<ReturnType<typeof createQuotation>>>
+    export type CreateQuotationMutationBody = BodyType<QuotationInput>
+    export type CreateQuotationMutationError = ErrorType<unknown>
+    export type CreateQuotationMutationVariables = {organizationId: string;data: BodyType<QuotationInput>}
+
+    export const useCreateQuotation = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createQuotation>>, TError,CreateQuotationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createQuotation>>,
+        TError,
+        CreateQuotationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateQuotationMutationOptions(options));
+    }
+
+export const getGetQuotationUrl = (organizationId: string,
+    quotationId: string,) => {
+
+
+
+
+  return `/api/organizations/${organizationId}/quotations/${quotationId}`
+}
+
+export const getQuotation = async (organizationId: string,
+    quotationId: string, options?: Parameters<typeof customFetch>[1]): Promise<Quotation> => {
+
+  return customFetch<Quotation>(getGetQuotationUrl(organizationId,quotationId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQuotationQueryKey = (organizationId: string,
+    quotationId: string,) => {
+    return [
+    `/api/organizations/${organizationId}/quotations/${quotationId}`
+    ] as const;
+    }
+
+
+export const getGetQuotationQueryOptions = <TData = Awaited<ReturnType<typeof getQuotation>>, TError = ErrorType<unknown>>(organizationId: string,
+    quotationId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQuotation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQuotationQueryKey(organizationId,quotationId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQuotation>>> = ({ signal }) => getQuotation(organizationId,quotationId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: organizationId !== null && organizationId !== undefined && quotationId !== null && quotationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQuotation>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQuotationQueryResult = NonNullable<Awaited<ReturnType<typeof getQuotation>>>
+export type GetQuotationQueryError = ErrorType<unknown>
+
+
+
+export function useGetQuotation<TData = Awaited<ReturnType<typeof getQuotation>>, TError = ErrorType<unknown>>(
+ organizationId: string,
+    quotationId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQuotation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQuotationQueryOptions(organizationId,quotationId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateQuotationUrl = (organizationId: string,
+    quotationId: string,) => {
+
+
+
+
+  return `/api/organizations/${organizationId}/quotations/${quotationId}`
+}
+
+export const updateQuotation = async (organizationId: string,
+    quotationId: string,
+    quotationUpdateInput: QuotationUpdateInput, options?: Parameters<typeof customFetch>[1]): Promise<Quotation> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Quotation>(getUpdateQuotationUrl(organizationId,quotationId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(quotationUpdateInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateQuotationMutationKey = () => ['updateQuotation'] as const;
+
+export const getUpdateQuotationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateQuotation>>, TError,UpdateQuotationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateQuotation>>, TError,UpdateQuotationMutationVariables, TContext> => {
+
+const mutationKey = getUpdateQuotationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateQuotation>>, UpdateQuotationMutationVariables> = (props) => {
+          const {organizationId,quotationId,data} = props ?? {};
+
+          return  updateQuotation(organizationId,quotationId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateQuotationMutationResult = NonNullable<Awaited<ReturnType<typeof updateQuotation>>>
+    export type UpdateQuotationMutationBody = BodyType<QuotationUpdateInput>
+    export type UpdateQuotationMutationError = ErrorType<unknown>
+    export type UpdateQuotationMutationVariables = {organizationId: string;quotationId: string;data: BodyType<QuotationUpdateInput>}
+
+    export const useUpdateQuotation = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateQuotation>>, TError,UpdateQuotationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateQuotation>>,
+        TError,
+        UpdateQuotationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateQuotationMutationOptions(options));
+    }
+
+export const getUpdateQuotationStatusUrl = (organizationId: string,
+    quotationId: string,) => {
+
+
+
+
+  return `/api/organizations/${organizationId}/quotations/${quotationId}/status`
+}
+
+export const updateQuotationStatus = async (organizationId: string,
+    quotationId: string,
+    quotationStatusUpdateInput: QuotationStatusUpdateInput, options?: Parameters<typeof customFetch>[1]): Promise<Quotation> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Quotation>(getUpdateQuotationStatusUrl(organizationId,quotationId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(quotationStatusUpdateInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateQuotationStatusMutationKey = () => ['updateQuotationStatus'] as const;
+
+export const getUpdateQuotationStatusMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateQuotationStatus>>, TError,UpdateQuotationStatusMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateQuotationStatus>>, TError,UpdateQuotationStatusMutationVariables, TContext> => {
+
+const mutationKey = getUpdateQuotationStatusMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateQuotationStatus>>, UpdateQuotationStatusMutationVariables> = (props) => {
+          const {organizationId,quotationId,data} = props ?? {};
+
+          return  updateQuotationStatus(organizationId,quotationId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateQuotationStatusMutationResult = NonNullable<Awaited<ReturnType<typeof updateQuotationStatus>>>
+    export type UpdateQuotationStatusMutationBody = BodyType<QuotationStatusUpdateInput>
+    export type UpdateQuotationStatusMutationError = ErrorType<unknown>
+    export type UpdateQuotationStatusMutationVariables = {organizationId: string;quotationId: string;data: BodyType<QuotationStatusUpdateInput>}
+
+    export const useUpdateQuotationStatus = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateQuotationStatus>>, TError,UpdateQuotationStatusMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateQuotationStatus>>,
+        TError,
+        UpdateQuotationStatusMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateQuotationStatusMutationOptions(options));
+    }
 

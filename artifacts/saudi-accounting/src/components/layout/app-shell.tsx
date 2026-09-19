@@ -77,7 +77,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       icon: Receipt,
       children: [
         { href: '/finance/customers', label: t('Customers', 'العملاء') },
-        { href: '/finance/quotations', label: t('Quotations', 'عروض الأسعار'), soon: true },
+        { href: '/finance/quotations', label: t('Quotations', 'عروض الأسعار') },
         { href: '/finance/invoices', label: t('Invoices', 'الفواتير'), soon: true },
       ]
     },
@@ -275,8 +275,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <div className="truncate font-semibold text-primary-foreground text-xs">{user?.firstName || t('Owner', 'المالك')}</div>
-              <div className="truncate text-[10px] text-primary-foreground/50">{user?.emailAddresses?.[0]?.emailAddress}</div>
+              <div className="truncate font-semibold text-primary-foreground text-xs">{user?.fullName || user?.firstName || session?.user.displayName || user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || t('User', 'المستخدم')}</div>
+              <div className="truncate text-[10px] text-primary-foreground/50">{user?.emailAddresses?.[0]?.emailAddress || session?.user.email}</div>
             </div>
           )}
         </button>
