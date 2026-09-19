@@ -1547,6 +1547,113 @@ export interface TrialBalanceResponse {
   asOfDate: string;
 }
 
+export interface ProfitAndLossCategoryItem {
+  accountId: string;
+  code: string;
+  nameEnglish: string;
+  nameArabic: string;
+  amount: string;
+}
+
+export interface ProfitAndLossCategory {
+  categoryKey: string;
+  categoryNameEn: string;
+  categoryNameAr: string;
+  totalAmount: string;
+  items: ProfitAndLossCategoryItem[];
+}
+
+export interface ProfitAndLossReport {
+  currency: string;
+  startDate: string;
+  endDate: string;
+  totalRevenue: string;
+  totalCostOfSales: string;
+  grossProfit: string;
+  totalExpenses: string;
+  netOperatingIncome: string;
+  netProfit: string;
+  revenueCategories: ProfitAndLossCategory[];
+  expenseCategories: ProfitAndLossCategory[];
+}
+
+export interface BalanceSheetAccount {
+  accountId: string;
+  code: string;
+  nameEnglish: string;
+  nameArabic: string;
+  balance: string;
+}
+
+export interface BalanceSheetSection {
+  sectionKey: string;
+  titleEn: string;
+  titleAr: string;
+  totalBalance: string;
+  accounts: BalanceSheetAccount[];
+}
+
+export interface BalanceSheetReport {
+  currency: string;
+  asOfDate: string;
+  totalAssets: string;
+  totalLiabilities: string;
+  totalEquity: string;
+  totalLiabilitiesAndEquity: string;
+  isBalanced: boolean;
+  assetsSections: BalanceSheetSection[];
+  liabilitiesSections: BalanceSheetSection[];
+  equitySections: BalanceSheetSection[];
+}
+
+export interface ZatcaVatBox {
+  boxNumber: string;
+  titleEn: string;
+  titleAr: string;
+  taxableAmount: string;
+  vatAmount: string;
+}
+
+export interface ZatcaVatReturnReport {
+  currency: string;
+  startDate: string;
+  endDate: string;
+  totalSalesTaxable: string;
+  totalOutputVat: string;
+  totalPurchasesTaxable: string;
+  totalInputVat: string;
+  netVatPayable: string;
+  isRefundable: boolean;
+  salesBoxes: ZatcaVatBox[];
+  purchaseBoxes: ZatcaVatBox[];
+}
+
+export interface AccountLedgerEntry {
+  id: string;
+  date: string;
+  reference: string;
+  source: string;
+  description: string;
+  debit: string;
+  credit: string;
+  runningBalance: string;
+}
+
+export interface AccountLedgerReport {
+  accountId: string;
+  accountCode: string;
+  accountNameEn: string;
+  accountNameAr: string;
+  currency: string;
+  startDate: string;
+  endDate: string;
+  openingBalance: string;
+  totalDebit: string;
+  totalCredit: string;
+  closingBalance: string;
+  entries: AccountLedgerEntry[];
+}
+
 export type PartySearchParameter = string;
 
 export type PartyPageParameter = number;
@@ -1805,5 +1912,25 @@ page?: number;
  * @maximum 100
  */
 pageSize?: number;
+};
+
+export type GetProfitAndLossParams = {
+startDate?: string;
+endDate?: string;
+};
+
+export type GetBalanceSheetParams = {
+asOfDate?: string;
+};
+
+export type GetZatcaVatReturnParams = {
+startDate?: string;
+endDate?: string;
+};
+
+export type GetAccountLedgerParams = {
+accountId: string;
+startDate?: string;
+endDate?: string;
 };
 

@@ -22,8 +22,10 @@ import type {
 import type {
   Account,
   AccountInput,
+  AccountLedgerReport,
   AccountListResponse,
   AuditLog,
+  BalanceSheetReport,
   CatalogImportInput,
   CatalogImportPreview,
   CatalogImportResult,
@@ -43,9 +45,13 @@ import type {
   ExportCatalogItemsParams,
   ExportPartiesParams,
   FindPartiesParams,
+  GetAccountLedgerParams,
+  GetBalanceSheetParams,
   GetCustomersParams,
+  GetProfitAndLossParams,
   GetSuppliersParams,
   GetTrialBalanceParams,
+  GetZatcaVatReturnParams,
   HealthStatus,
   Invoice,
   InvoiceInput,
@@ -88,6 +94,7 @@ import type {
   PartyTag,
   PartyTagInput,
   PartyUpdateInput,
+  ProfitAndLossReport,
   PurchaseBill,
   PurchaseBillInput,
   PurchaseBillListResponse,
@@ -103,7 +110,8 @@ import type {
   TaxDefinition,
   TrialBalanceResponse,
   UserPreferences,
-  UserPreferencesInput
+  UserPreferencesInput,
+  ZatcaVatReturnReport
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -6884,6 +6892,338 @@ export function useGetJournalEntry<TData = Awaited<ReturnType<typeof getJournalE
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetJournalEntryQueryOptions(organizationId,entryId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetProfitAndLossUrl = (organizationId: string,
+    params?: GetProfitAndLossParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/organizations/${organizationId}/reports/profit-and-loss?${stringifiedParams}` : `/api/organizations/${organizationId}/reports/profit-and-loss`
+}
+
+export const getProfitAndLoss = async (organizationId: string,
+    params?: GetProfitAndLossParams, options?: Parameters<typeof customFetch>[1]): Promise<ProfitAndLossReport> => {
+
+  return customFetch<ProfitAndLossReport>(getGetProfitAndLossUrl(organizationId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetProfitAndLossQueryKey = (organizationId: string,
+    params?: GetProfitAndLossParams,) => {
+    return [
+    `/api/organizations/${organizationId}/reports/profit-and-loss`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetProfitAndLossQueryOptions = <TData = Awaited<ReturnType<typeof getProfitAndLoss>>, TError = ErrorType<unknown>>(organizationId: string,
+    params?: GetProfitAndLossParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProfitAndLoss>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProfitAndLossQueryKey(organizationId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProfitAndLoss>>> = ({ signal }) => getProfitAndLoss(organizationId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: organizationId !== null && organizationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProfitAndLoss>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetProfitAndLossQueryResult = NonNullable<Awaited<ReturnType<typeof getProfitAndLoss>>>
+export type GetProfitAndLossQueryError = ErrorType<unknown>
+
+
+
+export function useGetProfitAndLoss<TData = Awaited<ReturnType<typeof getProfitAndLoss>>, TError = ErrorType<unknown>>(
+ organizationId: string,
+    params?: GetProfitAndLossParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProfitAndLoss>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetProfitAndLossQueryOptions(organizationId,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetBalanceSheetUrl = (organizationId: string,
+    params?: GetBalanceSheetParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/organizations/${organizationId}/reports/balance-sheet?${stringifiedParams}` : `/api/organizations/${organizationId}/reports/balance-sheet`
+}
+
+export const getBalanceSheet = async (organizationId: string,
+    params?: GetBalanceSheetParams, options?: Parameters<typeof customFetch>[1]): Promise<BalanceSheetReport> => {
+
+  return customFetch<BalanceSheetReport>(getGetBalanceSheetUrl(organizationId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBalanceSheetQueryKey = (organizationId: string,
+    params?: GetBalanceSheetParams,) => {
+    return [
+    `/api/organizations/${organizationId}/reports/balance-sheet`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetBalanceSheetQueryOptions = <TData = Awaited<ReturnType<typeof getBalanceSheet>>, TError = ErrorType<unknown>>(organizationId: string,
+    params?: GetBalanceSheetParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBalanceSheet>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBalanceSheetQueryKey(organizationId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBalanceSheet>>> = ({ signal }) => getBalanceSheet(organizationId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: organizationId !== null && organizationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBalanceSheet>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBalanceSheetQueryResult = NonNullable<Awaited<ReturnType<typeof getBalanceSheet>>>
+export type GetBalanceSheetQueryError = ErrorType<unknown>
+
+
+
+export function useGetBalanceSheet<TData = Awaited<ReturnType<typeof getBalanceSheet>>, TError = ErrorType<unknown>>(
+ organizationId: string,
+    params?: GetBalanceSheetParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBalanceSheet>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBalanceSheetQueryOptions(organizationId,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetZatcaVatReturnUrl = (organizationId: string,
+    params?: GetZatcaVatReturnParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/organizations/${organizationId}/reports/zatca-vat-return?${stringifiedParams}` : `/api/organizations/${organizationId}/reports/zatca-vat-return`
+}
+
+export const getZatcaVatReturn = async (organizationId: string,
+    params?: GetZatcaVatReturnParams, options?: Parameters<typeof customFetch>[1]): Promise<ZatcaVatReturnReport> => {
+
+  return customFetch<ZatcaVatReturnReport>(getGetZatcaVatReturnUrl(organizationId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetZatcaVatReturnQueryKey = (organizationId: string,
+    params?: GetZatcaVatReturnParams,) => {
+    return [
+    `/api/organizations/${organizationId}/reports/zatca-vat-return`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetZatcaVatReturnQueryOptions = <TData = Awaited<ReturnType<typeof getZatcaVatReturn>>, TError = ErrorType<unknown>>(organizationId: string,
+    params?: GetZatcaVatReturnParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getZatcaVatReturn>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetZatcaVatReturnQueryKey(organizationId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getZatcaVatReturn>>> = ({ signal }) => getZatcaVatReturn(organizationId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: organizationId !== null && organizationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getZatcaVatReturn>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetZatcaVatReturnQueryResult = NonNullable<Awaited<ReturnType<typeof getZatcaVatReturn>>>
+export type GetZatcaVatReturnQueryError = ErrorType<unknown>
+
+
+
+export function useGetZatcaVatReturn<TData = Awaited<ReturnType<typeof getZatcaVatReturn>>, TError = ErrorType<unknown>>(
+ organizationId: string,
+    params?: GetZatcaVatReturnParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getZatcaVatReturn>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetZatcaVatReturnQueryOptions(organizationId,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAccountLedgerUrl = (organizationId: string,
+    params: GetAccountLedgerParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/organizations/${organizationId}/reports/account-ledger?${stringifiedParams}` : `/api/organizations/${organizationId}/reports/account-ledger`
+}
+
+export const getAccountLedger = async (organizationId: string,
+    params: GetAccountLedgerParams, options?: Parameters<typeof customFetch>[1]): Promise<AccountLedgerReport> => {
+
+  return customFetch<AccountLedgerReport>(getGetAccountLedgerUrl(organizationId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAccountLedgerQueryKey = (organizationId: string,
+    params?: GetAccountLedgerParams,) => {
+    return [
+    `/api/organizations/${organizationId}/reports/account-ledger`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetAccountLedgerQueryOptions = <TData = Awaited<ReturnType<typeof getAccountLedger>>, TError = ErrorType<unknown>>(organizationId: string,
+    params: GetAccountLedgerParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAccountLedger>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAccountLedgerQueryKey(organizationId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAccountLedger>>> = ({ signal }) => getAccountLedger(organizationId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: organizationId !== null && organizationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAccountLedger>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAccountLedgerQueryResult = NonNullable<Awaited<ReturnType<typeof getAccountLedger>>>
+export type GetAccountLedgerQueryError = ErrorType<unknown>
+
+
+
+export function useGetAccountLedger<TData = Awaited<ReturnType<typeof getAccountLedger>>, TError = ErrorType<unknown>>(
+ organizationId: string,
+    params: GetAccountLedgerParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAccountLedger>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAccountLedgerQueryOptions(organizationId,params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

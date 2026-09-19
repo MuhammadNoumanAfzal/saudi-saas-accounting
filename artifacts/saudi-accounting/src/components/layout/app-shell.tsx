@@ -101,7 +101,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         { href: '/accounting/trial-balance', label: t('Trial Balance', 'ميزان المراجعة') },
       ]
     },
-    { href: '/reports', label: t('Reports', 'التقارير'), icon: BarChart3, soon: true },
+    {
+      label: t('Reports', 'التقارير'),
+      icon: BarChart3,
+      children: [
+        { href: '/reports/profit-and-loss', label: t('Profit & Loss', 'قائمة الدخل') },
+        { href: '/reports/balance-sheet', label: t('Balance Sheet', 'الميزانية العمومية') },
+        { href: '/reports/zatca-vat-return', label: t('ZATCA VAT Return', 'إقرار الضريبة') },
+        { href: '/reports/account-ledger', label: t('Account Ledger', 'كشف حساب') },
+      ]
+    },
   ];
 
   const navSettings = [

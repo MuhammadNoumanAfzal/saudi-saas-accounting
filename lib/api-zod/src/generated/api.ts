@@ -3488,3 +3488,180 @@ export const GetJournalEntryResponse = zod.object({
 })
 
 
+export const GetProfitAndLossParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const GetProfitAndLossQueryParams = zod.object({
+  "startDate": zod.date().optional(),
+  "endDate": zod.date().optional()
+})
+
+export const GetProfitAndLossResponse = zod.object({
+  "currency": zod.string(),
+  "startDate": zod.coerce.date(),
+  "endDate": zod.coerce.date(),
+  "totalRevenue": zod.string(),
+  "totalCostOfSales": zod.string(),
+  "grossProfit": zod.string(),
+  "totalExpenses": zod.string(),
+  "netOperatingIncome": zod.string(),
+  "netProfit": zod.string(),
+  "revenueCategories": zod.array(zod.object({
+  "categoryKey": zod.string(),
+  "categoryNameEn": zod.string(),
+  "categoryNameAr": zod.string(),
+  "totalAmount": zod.string(),
+  "items": zod.array(zod.object({
+  "accountId": zod.string().uuid(),
+  "code": zod.string(),
+  "nameEnglish": zod.string(),
+  "nameArabic": zod.string(),
+  "amount": zod.string()
+}))
+})),
+  "expenseCategories": zod.array(zod.object({
+  "categoryKey": zod.string(),
+  "categoryNameEn": zod.string(),
+  "categoryNameAr": zod.string(),
+  "totalAmount": zod.string(),
+  "items": zod.array(zod.object({
+  "accountId": zod.string().uuid(),
+  "code": zod.string(),
+  "nameEnglish": zod.string(),
+  "nameArabic": zod.string(),
+  "amount": zod.string()
+}))
+}))
+})
+
+
+export const GetBalanceSheetParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const GetBalanceSheetQueryParams = zod.object({
+  "asOfDate": zod.date().optional()
+})
+
+export const GetBalanceSheetResponse = zod.object({
+  "currency": zod.string(),
+  "asOfDate": zod.coerce.date(),
+  "totalAssets": zod.string(),
+  "totalLiabilities": zod.string(),
+  "totalEquity": zod.string(),
+  "totalLiabilitiesAndEquity": zod.string(),
+  "isBalanced": zod.boolean(),
+  "assetsSections": zod.array(zod.object({
+  "sectionKey": zod.string(),
+  "titleEn": zod.string(),
+  "titleAr": zod.string(),
+  "totalBalance": zod.string(),
+  "accounts": zod.array(zod.object({
+  "accountId": zod.string().uuid(),
+  "code": zod.string(),
+  "nameEnglish": zod.string(),
+  "nameArabic": zod.string(),
+  "balance": zod.string()
+}))
+})),
+  "liabilitiesSections": zod.array(zod.object({
+  "sectionKey": zod.string(),
+  "titleEn": zod.string(),
+  "titleAr": zod.string(),
+  "totalBalance": zod.string(),
+  "accounts": zod.array(zod.object({
+  "accountId": zod.string().uuid(),
+  "code": zod.string(),
+  "nameEnglish": zod.string(),
+  "nameArabic": zod.string(),
+  "balance": zod.string()
+}))
+})),
+  "equitySections": zod.array(zod.object({
+  "sectionKey": zod.string(),
+  "titleEn": zod.string(),
+  "titleAr": zod.string(),
+  "totalBalance": zod.string(),
+  "accounts": zod.array(zod.object({
+  "accountId": zod.string().uuid(),
+  "code": zod.string(),
+  "nameEnglish": zod.string(),
+  "nameArabic": zod.string(),
+  "balance": zod.string()
+}))
+}))
+})
+
+
+export const GetZatcaVatReturnParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const GetZatcaVatReturnQueryParams = zod.object({
+  "startDate": zod.date().optional(),
+  "endDate": zod.date().optional()
+})
+
+export const GetZatcaVatReturnResponse = zod.object({
+  "currency": zod.string(),
+  "startDate": zod.coerce.date(),
+  "endDate": zod.coerce.date(),
+  "totalSalesTaxable": zod.string(),
+  "totalOutputVat": zod.string(),
+  "totalPurchasesTaxable": zod.string(),
+  "totalInputVat": zod.string(),
+  "netVatPayable": zod.string(),
+  "isRefundable": zod.boolean(),
+  "salesBoxes": zod.array(zod.object({
+  "boxNumber": zod.string(),
+  "titleEn": zod.string(),
+  "titleAr": zod.string(),
+  "taxableAmount": zod.string(),
+  "vatAmount": zod.string()
+})),
+  "purchaseBoxes": zod.array(zod.object({
+  "boxNumber": zod.string(),
+  "titleEn": zod.string(),
+  "titleAr": zod.string(),
+  "taxableAmount": zod.string(),
+  "vatAmount": zod.string()
+}))
+})
+
+
+export const GetAccountLedgerParams = zod.object({
+  "organizationId": zod.coerce.string().uuid()
+})
+
+export const GetAccountLedgerQueryParams = zod.object({
+  "accountId": zod.coerce.string().uuid(),
+  "startDate": zod.date().optional(),
+  "endDate": zod.date().optional()
+})
+
+export const GetAccountLedgerResponse = zod.object({
+  "accountId": zod.string().uuid(),
+  "accountCode": zod.string(),
+  "accountNameEn": zod.string(),
+  "accountNameAr": zod.string(),
+  "currency": zod.string(),
+  "startDate": zod.coerce.date(),
+  "endDate": zod.coerce.date(),
+  "openingBalance": zod.string(),
+  "totalDebit": zod.string(),
+  "totalCredit": zod.string(),
+  "closingBalance": zod.string(),
+  "entries": zod.array(zod.object({
+  "id": zod.string(),
+  "date": zod.coerce.date(),
+  "reference": zod.string(),
+  "source": zod.string(),
+  "description": zod.string(),
+  "debit": zod.string(),
+  "credit": zod.string(),
+  "runningBalance": zod.string()
+}))
+})
+
+

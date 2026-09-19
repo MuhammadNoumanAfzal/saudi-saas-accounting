@@ -26,3 +26,12 @@ export function Button({ children, className = '', variant = 'primary', ...props
   };
   return <button className={`${base} ${variants[variant]} ${className}`} {...props}>{children}</button>;
 }
+
+export function formatCurrency(amount: number, currency: string = 'SAR', locale: string = 'en-US') {
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: currency || 'SAR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}

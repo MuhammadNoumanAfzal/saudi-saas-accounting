@@ -8,6 +8,7 @@ import quotationsRouter from "./quotations";
 import invoicesRouter from "./invoices";
 import purchasesRouter from "./purchases";
 import accountingRouter from "./accounting";
+import reportsRouter from "./reports";
 
 const router: IRouter = Router();
 
@@ -19,6 +20,7 @@ router.use(quotationsRouter);
 router.use(invoicesRouter);
 router.use(purchasesRouter);
 router.use(accountingRouter);
+router.use(reportsRouter);
 router.use(storageRouter);
 
 

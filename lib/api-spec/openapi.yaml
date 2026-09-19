@@ -32,6 +32,8 @@ tags:
     description: Chart of Accounts and Trial Balance
   - name: journal-entries
     description: Manual Double-Entry Journal Vouchers
+  - name: reports
+    description: Financial Statements and ZATCA VAT Return Reports
 
 paths:
   /healthz:
@@ -1128,6 +1130,46 @@ paths:
       parameters: [{ $ref: "#/components/parameters/OrganizationId" }, { $ref: "#/components/parameters/JournalEntryId" }]
       responses:
         "200": { description: Journal Entry, content: { application/json: { schema: { $ref: "#/components/schemas/JournalEntry" } } } }
+  /organizations/{organizationId}/reports/profit-and-loss:
+    get:
+      operationId: getProfitAndLoss
+      tags: [reports]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - { name: startDate, in: query, schema: { type: string, format: date-time } }
+        - { name: endDate, in: query, schema: { type: string, format: date-time } }
+      responses:
+        "200": { description: Profit and Loss Report, content: { application/json: { schema: { $ref: "#/components/schemas/ProfitAndLossReport" } } } }
+  /organizations/{organizationId}/reports/balance-sheet:
+    get:
+      operationId: getBalanceSheet
+      tags: [reports]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - { name: asOfDate, in: query, schema: { type: string, format: date-time } }
+      responses:
+        "200": { description: Balance Sheet Report, content: { application/json: { schema: { $ref: "#/components/schemas/BalanceSheetReport" } } } }
+  /organizations/{organizationId}/reports/zatca-vat-return:
+    get:
+      operationId: getZatcaVatReturn
+      tags: [reports]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - { name: startDate, in: query, schema: { type: string, format: date-time } }
+        - { name: endDate, in: query, schema: { type: string, format: date-time } }
+      responses:
+        "200": { description: ZATCA VAT Return Report, content: { application/json: { schema: { $ref: "#/components/schemas/ZatcaVatReturnReport" } } } }
+  /organizations/{organizationId}/reports/account-ledger:
+    get:
+      operationId: getAccountLedger
+      tags: [reports]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - { name: accountId, in: query, required: true, schema: { type: string, format: uuid } }
+        - { name: startDate, in: query, schema: { type: string, format: date-time } }
+        - { name: endDate, in: query, schema: { type: string, format: date-time } }
+      responses:
+        "200": { description: Account Ledger Statement, content: { application/json: { schema: { $ref: "#/components/schemas/AccountLedgerReport" } } } }
 
 components:
   parameters:
@@ -2422,6 +2464,143 @@ components:
         totalCredit: { type: string }
         isBalanced: { type: boolean }
         asOfDate: { type: string, format: date-time }
+    ProfitAndLossCategoryItem:
+      type: object
+      required: [accountId, code, nameEnglish, nameArabic, amount]
+      properties:
+        accountId: { type: string, format: uuid }
+        code: { type: string }
+        nameEnglish: { type: string }
+        nameArabic: { type: string }
+        amount: { type: string }
+    ProfitAndLossCategory:
+      type: object
+      required: [categoryKey, categoryNameEn, categoryNameAr, totalAmount, items]
+      properties:
+        categoryKey: { type: string }
+        categoryNameEn: { type: string }
+        categoryNameAr: { type: string }
+        totalAmount: { type: string }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ProfitAndLossCategoryItem" }
+    ProfitAndLossReport:
+      type: object
+      required: [currency, startDate, endDate, totalRevenue, totalCostOfSales, grossProfit, totalExpenses, netOperatingIncome, netProfit, revenueCategories, expenseCategories]
+      properties:
+        currency: { type: string }
+        startDate: { type: string, format: date-time }
+        endDate: { type: string, format: date-time }
+        totalRevenue: { type: string }
+        totalCostOfSales: { type: string }
+        grossProfit: { type: string }
+        totalExpenses: { type: string }
+        netOperatingIncome: { type: string }
+        netProfit: { type: string }
+        revenueCategories:
+          type: array
+          items: { $ref: "#/components/schemas/ProfitAndLossCategory" }
+        expenseCategories:
+          type: array
+          items: { $ref: "#/components/schemas/ProfitAndLossCategory" }
+    BalanceSheetAccount:
+      type: object
+      required: [accountId, code, nameEnglish, nameArabic, balance]
+      properties:
+        accountId: { type: string, format: uuid }
+        code: { type: string }
+        nameEnglish: { type: string }
+        nameArabic: { type: string }
+        balance: { type: string }
+    BalanceSheetSection:
+      type: object
+      required: [sectionKey, titleEn, titleAr, totalBalance, accounts]
+      properties:
+        sectionKey: { type: string }
+        titleEn: { type: string }
+        titleAr: { type: string }
+        totalBalance: { type: string }
+        accounts:
+          type: array
+          items: { $ref: "#/components/schemas/BalanceSheetAccount" }
+    BalanceSheetReport:
+      type: object
+      required: [currency, asOfDate, totalAssets, totalLiabilities, totalEquity, totalLiabilitiesAndEquity, isBalanced, assetsSections, liabilitiesSections, equitySections]
+      properties:
+        currency: { type: string }
+        asOfDate: { type: string, format: date-time }
+        totalAssets: { type: string }
+        totalLiabilities: { type: string }
+        totalEquity: { type: string }
+        totalLiabilitiesAndEquity: { type: string }
+        isBalanced: { type: boolean }
+        assetsSections:
+          type: array
+          items: { $ref: "#/components/schemas/BalanceSheetSection" }
+        liabilitiesSections:
+          type: array
+          items: { $ref: "#/components/schemas/BalanceSheetSection" }
+        equitySections:
+          type: array
+          items: { $ref: "#/components/schemas/BalanceSheetSection" }
+    ZatcaVatBox:
+      type: object
+      required: [boxNumber, titleEn, titleAr, taxableAmount, vatAmount]
+      properties:
+        boxNumber: { type: string }
+        titleEn: { type: string }
+        titleAr: { type: string }
+        taxableAmount: { type: string }
+        vatAmount: { type: string }
+    ZatcaVatReturnReport:
+      type: object
+      required: [currency, startDate, endDate, totalSalesTaxable, totalOutputVat, totalPurchasesTaxable, totalInputVat, netVatPayable, isRefundable, salesBoxes, purchaseBoxes]
+      properties:
+        currency: { type: string }
+        startDate: { type: string, format: date-time }
+        endDate: { type: string, format: date-time }
+        totalSalesTaxable: { type: string }
+        totalOutputVat: { type: string }
+        totalPurchasesTaxable: { type: string }
+        totalInputVat: { type: string }
+        netVatPayable: { type: string }
+        isRefundable: { type: boolean }
+        salesBoxes:
+          type: array
+          items: { $ref: "#/components/schemas/ZatcaVatBox" }
+        purchaseBoxes:
+          type: array
+          items: { $ref: "#/components/schemas/ZatcaVatBox" }
+    AccountLedgerEntry:
+      type: object
+      required: [id, date, reference, source, description, debit, credit, runningBalance]
+      properties:
+        id: { type: string }
+        date: { type: string, format: date-time }
+        reference: { type: string }
+        source: { type: string }
+        description: { type: string }
+        debit: { type: string }
+        credit: { type: string }
+        runningBalance: { type: string }
+    AccountLedgerReport:
+      type: object
+      required: [accountId, accountCode, accountNameEn, accountNameAr, currency, startDate, endDate, openingBalance, totalDebit, totalCredit, closingBalance, entries]
+      properties:
+        accountId: { type: string, format: uuid }
+        accountCode: { type: string }
+        accountNameEn: { type: string }
+        accountNameAr: { type: string }
+        currency: { type: string }
+        startDate: { type: string, format: date-time }
+        endDate: { type: string, format: date-time }
+        openingBalance: { type: string }
+        totalDebit: { type: string }
+        totalCredit: { type: string }
+        closingBalance: { type: string }
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/AccountLedgerEntry" }
 
 
 

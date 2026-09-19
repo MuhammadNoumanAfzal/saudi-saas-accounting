@@ -58,6 +58,11 @@ import { ChartOfAccountsPage } from './pages/chart-of-accounts';
 import { JournalEntriesPage } from './pages/journal-entries';
 import { JournalEntryDetailPage } from './pages/journal-entry-detail';
 import { TrialBalancePage } from './pages/trial-balance-page';
+import { ReportsPage } from './pages/reports-page';
+import { ProfitLossPage } from './pages/profit-loss-page';
+import { BalanceSheetPage } from './pages/balance-sheet-page';
+import { VatReturnPage } from './pages/vat-return-page';
+import { AccountLedgerPage } from './pages/account-ledger-page';
 
 
 
@@ -390,6 +395,46 @@ export default function App() {
               <AuthGuard>
                 <ModuleGuard moduleKey="finance">
                   <TrialBalancePage />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
+            <Route path="/reports">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <ReportsPage />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
+            <Route path="/reports/profit-and-loss">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <ProfitLossPage />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
+            <Route path="/reports/balance-sheet">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <BalanceSheetPage />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
+            <Route path="/reports/zatca-vat-return">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <VatReturnPage />
+                </ModuleGuard>
+              </AuthGuard>
+            </Route>
+
+            <Route path="/reports/account-ledger">
+              <AuthGuard>
+                <ModuleGuard moduleKey="finance">
+                  <AccountLedgerPage />
                 </ModuleGuard>
               </AuthGuard>
             </Route>
