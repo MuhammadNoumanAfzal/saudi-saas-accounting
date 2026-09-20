@@ -1,120 +1,468 @@
+import { useState } from 'react';
 import { useAuth } from '@clerk/react';
 import { Redirect, Link } from 'wouter';
-import { ArrowRight, BarChart3, Building2, Check, CreditCard, FileText, Globe2, LockKeyhole, Sparkles, Users, WalletCards, Clock3 } from 'lucide-react';
+import { 
+  ArrowRight, 
+  Sparkles, 
+  ShieldCheck, 
+  QrCode, 
+  Scale, 
+  Zap,
+  TrendingUp,
+  Layers,
+  ChevronRight,
+  CheckCircle2,
+  Receipt,
+  FileCheck2,
+  WalletCards,
+  Clock3,
+  Building2,
+  BarChart3,
+  Check,
+  Globe2,
+  Sliders,
+  ArrowUpRight,
+  Activity
+} from 'lucide-react';
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 function Logo({ dark = false }: { dark?: boolean }) {
   return (
-    <Link href="/" className="flex items-center gap-3" data-testid="link-brand">
-      <img src={`${basePath}/logo.svg`} className="h-10 w-10 rounded-xl" alt="KHANBAS NEXUS" data-testid="img-brand-logo" />
-      <span className={`text-[18px] font-bold tracking-tight uppercase ${dark ? 'text-[#f9f5e9]' : 'text-[#173b38]'}`}>KHANBAS NEXUS</span>
+    <Link href="/" className="flex items-center gap-3 group" data-testid="link-brand">
+      <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#176752] via-[#0d3d31] to-[#071f19] p-2 shadow-md shadow-[#176752]/25 ring-1 ring-white/20 transition-transform duration-300 group-hover:scale-105">
+        <img src={`${basePath}/logo.svg`} className="h-full w-full object-contain drop-shadow" alt="KHANBAS NEXUS" data-testid="img-brand-logo" />
+      </div>
+      <div className="flex flex-col">
+        <span className={`text-[17px] font-black tracking-tight uppercase ${dark ? 'text-[#f9f5e9]' : 'text-[#0a2620]'}`}>
+          KHANBAS <span className="text-[#d4af37]">NEXUS</span>
+        </span>
+        <span className="text-[9px] font-bold tracking-widest text-[#5c726a] uppercase -mt-1">Saudi Enterprise SaaS</span>
+      </div>
     </Link>
   );
 }
 
 export function PublicHome() {
   const { isSignedIn, isLoaded } = useAuth();
+  const [activeTab, setActiveTab] = useState<'invoice' | 'ledger' | 'vat'>('invoice');
+
   if (isLoaded && isSignedIn) return <Redirect to="/home" />;
+
   return (
-    <div className="app-noise min-h-[100dvh] overflow-hidden">
-      <header className="mx-auto flex max-w-[1240px] items-center justify-between px-6 py-6 lg:px-10">
-        <Logo />
-        <nav className="hidden items-center gap-8 text-sm font-medium text-[#53645f] md:flex">
-          <a href="#platform" data-testid="link-platform">Platform</a>
-          <a href="#modules" data-testid="link-modules">Modules</a>
-          <a href="#trust" data-testid="link-trust">Built for Saudi SMEs</a>
-        </nav>
-        <div className="flex items-center gap-2">
-          <Link href="/sign-in" className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-[#173b38] transition hover:bg-[#e9e6d8] sm:block" data-testid="link-sign-in">Sign in</Link>
-          <Link href="/sign-up" className="btn-primary text-sm" data-testid="link-get-started">Get started <ArrowRight size={16} /></Link>
+    <div className="app-noise relative min-h-[100dvh] bg-[#f8f6f0] text-[#0a2620] selection:bg-[#176752] selection:text-white overflow-x-hidden">
+      
+      {/* Sleek Top Announcement Pill Bar */}
+      <div className="bg-[#071f19] text-white py-2 px-4 border-b border-[#176752]/30">
+        <div className="mx-auto flex max-w-[1240px] items-center justify-between text-xs">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#d4af37]/20 px-2.5 py-0.5 text-[10px] font-extrabold text-[#fde68a] border border-[#d4af37]/40 uppercase tracking-wider">
+              🇸🇦 ZATCA Approved
+            </span>
+            <span className="hidden sm:inline text-[#b5c7c0] font-medium">Phase 1 & 2 E-Invoicing • SOCPA Double-Entry Accounting • VAT Form 21</span>
+          </div>
+          <a href="#zatca" className="font-bold text-[#d4af37] hover:text-white transition flex items-center gap-1 text-[11px]">
+            <span>Explore Compliance</span>
+            <ChevronRight size={13} />
+          </a>
+        </div>
+      </div>
+
+      {/* Radiant Background Lighting */}
+      <div className="pointer-events-none absolute left-1/2 -top-24 -z-10 h-[550px] w-[1000px] -translate-x-1/2 rounded-full bg-gradient-to-b from-[#176752]/18 via-[#d4af37]/12 to-transparent blur-[140px]" />
+      <div className="pointer-events-none absolute right-0 top-96 -z-10 h-[450px] w-[450px] rounded-full bg-[#10b981]/10 blur-[130px]" />
+
+      {/* Header */}
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#f8f6f0]/85 border-b border-[#e2dcce]/70 transition-all">
+        <div className="mx-auto flex max-w-[1240px] items-center justify-between px-6 py-3.5 lg:px-10">
+          <Logo />
+          
+          <nav className="hidden items-center gap-8 text-xs font-bold uppercase tracking-wider text-[#485b54] md:flex">
+            <a href="#preview" className="hover:text-[#176752] transition-colors">Live Preview</a>
+            <a href="#features" className="hover:text-[#176752] transition-colors">Core Features</a>
+            <a href="#modules" className="hover:text-[#176752] transition-colors">Modules</a>
+            <a href="#trust" className="hover:text-[#176752] transition-colors">Compliance</a>
+          </nav>
+
+          <div className="flex items-center gap-3">
+            <Link href="/sign-in" className="hidden rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#0a2620] hover:bg-[#eadecc]/50 sm:block transition">
+              Sign In
+            </Link>
+            <Link href="/sign-up" className="btn-primary flex items-center gap-2 text-xs font-bold uppercase tracking-wider px-4 py-2.5 shadow-md shadow-[#176752]/20 hover:shadow-lg hover:shadow-[#176752]/30 transition-all">
+              <span>Get Started</span>
+              <ArrowRight size={14} />
+            </Link>
+          </div>
         </div>
       </header>
+
       <main>
-        <section className="mx-auto grid max-w-[1240px] items-center gap-12 px-6 pb-24 pt-16 lg:grid-cols-[1.02fr_.98fr] lg:px-10 lg:pb-32 lg:pt-24">
+        {/* COMPACT LUXURY HERO SECTION */}
+        <section className="mx-auto grid max-w-[1240px] items-center gap-10 px-6 py-10 lg:grid-cols-[1fr_1fr] lg:px-10 lg:py-14">
           <div className="fade-up">
-            <div className="eyebrow mb-5">Connected Business Platform</div>
-            <h1 className="max-w-[680px] text-[clamp(3.5rem,7vw,6.5rem)] font-bold leading-[.93] tracking-[-.075em] text-[#173b38]">Run your business. <span className="text-[#b8800b]">Connected.</span></h1>
-            <p className="mt-7 max-w-[550px] text-lg leading-8 text-[#5a6963]">Start with what you need. Add more when you need it. A modular foundation built for Saudi businesses to manage finance, operations, and growth from day one.</p>
-            <div className="mt-9 flex flex-wrap items-center gap-3">
-              <Link href="/sign-up" className="btn-primary px-5 py-3" data-testid="link-hero-start">Get started <ArrowRight size={17} /></Link>
-              <a href="#platform" className="btn-secondary px-5 py-3 border-transparent bg-[#e1eee5] text-[#176752] hover:bg-[#d0e0d5]">Explore Nexus</a>
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#176752]/25 bg-white/80 backdrop-blur-md px-3 py-1 text-xs font-bold text-[#176752] shadow-sm mb-5">
+              <span className="flex h-2 w-2 rounded-full bg-[#10b981] animate-ping" />
+              <Sparkles size={13} className="text-[#d4af37]" />
+              <span>Saudi Enterprise Accounting Platform</span>
             </div>
-            <div className="mt-10 flex flex-wrap items-center gap-6 text-sm text-[#61716b]">
-              <span className="flex items-center gap-2"><Check size={16} className="text-[#176752]" /> Nexus Finance Available</span>
-              <span className="flex items-center gap-2"><Clock3 size={16} className="text-[#8c9c94]" /> More modules coming soon</span>
+
+            <h1 className="text-[clamp(2.5rem,4.5vw,4.5rem)] font-black leading-[1.04] tracking-tight text-[#071f19]">
+              Saudi Enterprise Accounting. <br />
+              <span className="bg-gradient-to-r from-[#176752] via-[#b8800b] to-[#d4af37] bg-clip-text text-transparent">
+                Smarter, Faster & Compliant.
+              </span>
+            </h1>
+
+            <p className="mt-4 text-base leading-relaxed text-[#485d56] max-w-[520px]">
+              Unified double-entry financial ledger, instant Base64 TLV e-invoicing, automatic 15% VAT Form 21 reporting, and multi-branch operations designed strictly to SOCPA & ZATCA FATOORA standards.
+            </p>
+
+            {/* CTAs */}
+            <div className="mt-7 flex flex-wrap items-center gap-3">
+              <Link href="/sign-up" className="btn-primary flex items-center gap-2 px-6 py-3 text-sm shadow-lg shadow-[#176752]/25 hover:scale-[1.02] transition-all" data-testid="link-hero-start">
+                <span>Start Free Account</span>
+                <ArrowRight size={16} />
+              </Link>
+              <a href="#preview" className="flex items-center gap-2 rounded-xl border border-[#d6cfbe] bg-white px-5 py-3 text-sm font-bold text-[#0a2620] hover:bg-[#ede7d8] transition-colors">
+                <Activity size={16} className="text-[#176752]" />
+                <span>Interactive Live Demo</span>
+              </a>
+            </div>
+
+            {/* Compact Trust Pills */}
+            <div className="mt-8 flex flex-wrap items-center gap-4 text-xs font-bold text-[#3e524b]">
+              <span className="flex items-center gap-1.5"><CheckCircle2 size={15} className="text-[#176752]" /> ZATCA Phase 1 & 2</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 size={15} className="text-[#176752]" /> SOCPA GAAP Compliant</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 size={15} className="text-[#176752]" /> Instant TLV QR Code</span>
             </div>
           </div>
-          <div className="fade-up-2 relative mx-auto w-full max-w-[530px]">
-            <div className="absolute -right-7 -top-8 h-28 w-28 rounded-full bg-[#edca4e] opacity-80 blur-[1px]" />
-            <div className="absolute -bottom-12 -left-10 h-44 w-44 rounded-full bg-[#d8e7dd]" />
-            <div className="relative rounded-[28px] border border-[#d9d4c2] bg-[#f9f5e9] p-3 shadow-[0_30px_80px_rgba(23,59,56,.14)]">
-              <div className="overflow-hidden rounded-[20px] bg-[#173b38]">
-                <div className="flex items-center justify-between border-b border-white/10 px-6 py-5"><span className="text-sm font-bold text-[#f9f5e9]">Nexus Core</span><span className="rounded-full bg-[#f3c746] px-3 py-1 text-[10px] font-bold text-[#173b38]">ACTIVE</span></div>
-                <div className="p-6">
-                  <div className="mb-6 flex items-end justify-between"><div><div className="text-xs text-[#b2c5bd]">Workspace</div><div className="mt-1 text-2xl font-bold tracking-tight text-[#f9f5e9]">Ready to connect</div></div></div>
-                  <div className="grid grid-cols-2 gap-3 mb-5">
-                    <div className="rounded-xl bg-white/10 p-4 border border-white/20"><div className="text-xs text-[#b2c5bd]">Nexus Finance</div><div className="mt-2 font-semibold text-[#f9f5e9] text-sm">Available</div></div>
-                    <div className="rounded-xl bg-white/[.03] p-4 border border-dashed border-white/15 opacity-60"><div className="text-xs text-[#b2c5bd]">Fleet & Projects</div><div className="mt-2 font-semibold text-[#f9f5e9] text-sm">Coming Soon</div></div>
+
+          {/* DYNAMIC DUAL-MODE INTERACTIVE PREVIEW WIDGET */}
+          <div id="preview" className="fade-up-2 relative mx-auto w-full max-w-[540px]">
+            {/* Background Glow Ring */}
+            <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-gradient-to-br from-[#d4af37] to-[#10b981] opacity-60 blur-xl" />
+            <div className="absolute -left-6 -bottom-6 h-36 w-36 rounded-full bg-[#176752]/20 blur-xl" />
+
+            <div className="relative overflow-hidden rounded-2xl border border-[#d8d2c2] bg-white/90 p-2 shadow-2xl backdrop-blur-xl">
+              <div className="rounded-xl bg-[#071f19] text-white p-5 shadow-2xl">
+                
+                {/* Header Navigation Tabs */}
+                <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+                  <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-xl border border-white/10">
+                    <button
+                      onClick={() => setActiveTab('invoice')}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
+                        activeTab === 'invoice' ? 'bg-[#176752] text-white shadow' : 'text-[#8fa8a0] hover:text-white'
+                      }`}
+                    >
+                      <QrCode size={13} />
+                      <span>E-Invoice</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('ledger')}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
+                        activeTab === 'ledger' ? 'bg-[#176752] text-white shadow' : 'text-[#8fa8a0] hover:text-white'
+                      }`}
+                    >
+                      <BarChart3 size={13} />
+                      <span>Ledger</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('vat')}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
+                        activeTab === 'vat' ? 'bg-[#176752] text-white shadow' : 'text-[#8fa8a0] hover:text-white'
+                      }`}
+                    >
+                      <Receipt size={13} />
+                      <span>VAT Form 21</span>
+                    </button>
                   </div>
-                  <div className="flex h-[100px] flex-col items-center justify-center rounded-xl border border-dashed border-white/15 bg-white/[.03] px-6 text-center"><Globe2 size={24} className="text-[#8fb0a0]" /><div className="mt-3 text-xs font-semibold text-[#f9f5e9]">Bilingual & Saudi-ready foundation</div></div>
+                  <span className="hidden sm:flex items-center gap-1 rounded-full bg-[#10b981]/20 border border-[#10b981]/30 px-2.5 py-0.5 text-[10px] font-bold text-[#6ee7b7]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#34d399] animate-pulse" />
+                    ZATCA Live
+                  </span>
                 </div>
+
+                {/* TAB 1: E-INVOICE PREVIEW */}
+                {activeTab === 'invoice' && (
+                  <div className="space-y-4 animate-in fade-in duration-300">
+                    <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3.5">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#d4af37]/20 text-[#d4af37]">
+                          <QrCode size={20} />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-white">Tax Invoice #INV-00091</div>
+                          <div className="text-[10px] text-[#9ab3a9]">Al-Rashid Commercial Trading Co.</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-extrabold text-[#d4af37]">SAR 6,900.00</div>
+                        <div className="text-[10px] text-[#6ee7b7] font-semibold">Incl. 15% VAT (SAR 900.00)</div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                        <div className="text-[10px] text-[#8fa8a0]">TLV QR Spec</div>
+                        <div className="mt-1 font-bold text-white flex items-center gap-1">
+                          <CheckCircle2 size={12} className="text-[#34d399]" /> Base64 Encoded
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                        <div className="text-[10px] text-[#8fa8a0]">ZATCA Status</div>
+                        <div className="mt-1 font-bold text-[#34d399] flex items-center gap-1">
+                          <ShieldCheck size={12} /> ECDSA Signed
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 2: LEDGER PREVIEW */}
+                {activeTab === 'ledger' && (
+                  <div className="space-y-4 animate-in fade-in duration-300">
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-3.5">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-[#d4af37]">Trial Balance Reconciliation</span>
+                        <span className="text-[10px] font-bold text-[#34d399] bg-[#34d399]/20 px-2 py-0.5 rounded">100% Balanced</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-white/10">
+                        <div>
+                          <div className="text-[10px] text-[#8fa8a0]">Total Debits</div>
+                          <div className="font-bold text-white">SAR 73,000.00</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-[#8fa8a0]">Total Credits</div>
+                          <div className="font-bold text-white">SAR 73,000.00</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 3: VAT FORM 21 PREVIEW */}
+                {activeTab === 'vat' && (
+                  <div className="space-y-4 animate-in fade-in duration-300">
+                    <div className="rounded-xl border border-[#176752] bg-[#176752]/30 p-3.5">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-[10px] uppercase font-bold tracking-wider text-[#9ab3a9]">Quarterly Net VAT</div>
+                          <div className="text-lg font-extrabold text-[#ffffff] mt-0.5">SAR 1,200.00 Refundable</div>
+                        </div>
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#176752] text-white">
+                          <Receipt size={18} />
+                        </div>
+                      </div>
+                      <div className="mt-2 text-[10px] text-[#6ee7b7] border-t border-white/10 pt-2 flex justify-between">
+                        <span>Box 1 Output VAT: SAR 900.00</span>
+                        <span>Box 8 Input VAT: SAR 2,100.00</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
               </div>
             </div>
-            <div className="absolute -bottom-5 -right-6 rounded-2xl border border-[#d9d4c2] bg-[#fffdf7] px-4 py-3 shadow-xl"><div className="flex items-center gap-2 text-xs font-semibold text-[#173b38]"><span className="h-2 w-2 rounded-full bg-[#3f9d77]" /> Core platform active</div></div>
           </div>
         </section>
-        <section id="platform" className="border-y border-[#ded9ca] bg-[#eeece1]">
-          <div className="mx-auto grid max-w-[1240px] gap-0 px-6 lg:grid-cols-3 lg:px-10">
-            {[
-              ['01', 'Get the details right', 'Saudi business fields, bilingual names, VAT status, and fiscal settings belong in one considered place in Nexus Core.'],
-              ['02', 'Start with what you need', 'Activate Nexus Finance today. Keep the complexity away until your business earns it.'],
-              ['03', 'Add more when you need it', 'Fleet, Projects, Assets, and Automate modules are built to connect seamlessly when available.'],
-            ].map(([n, title, text]) => <div key={n} className="border-b border-[#d9d4c2] py-10 last:border-0 lg:border-b-0 lg:border-r lg:px-9 lg:first:pl-0 lg:last:border-r-0"><div className="font-mono text-xs text-[#aa7a0d]">{n}</div><h2 className="mt-5 text-xl font-bold text-[#173b38]">{title}</h2><p className="mt-3 text-sm leading-7 text-[#65736d]">{text}</p></div>)}
+
+        {/* ULTRA-COMPACT GLASS METRICS BAR */}
+        <section className="border-y border-[#e2dcce] bg-[#efeade]/80 py-6">
+          <div className="mx-auto flex max-w-[1240px] items-center justify-between gap-4 px-6 overflow-x-auto text-xs font-extrabold text-[#071f19] lg:px-10">
+            <div className="flex items-center gap-2 whitespace-nowrap">
+              <ShieldCheck size={16} className="text-[#176752]" />
+              <span>100% ZATCA Compliant</span>
+            </div>
+            <span className="text-[#c5bea9]">|</span>
+            <div className="flex items-center gap-2 whitespace-nowrap">
+              <Receipt size={16} className="text-[#b8800b]" />
+              <span>Automated 15% VAT Form 21</span>
+            </div>
+            <span className="text-[#c5bea9]">|</span>
+            <div className="flex items-center gap-2 whitespace-nowrap">
+              <Scale size={16} className="text-[#176752]" />
+              <span>SOCPA GAAP Standard</span>
+            </div>
+            <span className="text-[#c5bea9]">|</span>
+            <div className="flex items-center gap-2 whitespace-nowrap">
+              <Zap size={16} className="text-[#b8800b]" />
+              <span>Instant TLV Base64 QR</span>
+            </div>
+            <span className="text-[#c5bea9]">|</span>
+            <div className="flex items-center gap-2 whitespace-nowrap">
+              <Globe2 size={16} className="text-[#176752]" />
+              <span>Arabic & English Bilingual</span>
+            </div>
           </div>
         </section>
-        <section id="modules" className="mx-auto max-w-[1240px] px-6 py-24 lg:px-10 lg:py-32"><div className="grid gap-12 lg:grid-cols-[.72fr_1.28fr]"><div><div className="eyebrow">The Modules</div><h2 className="mt-4 max-w-[430px] text-4xl font-bold leading-tight tracking-[-.05em] text-[#173b38]">One platform.<br/>Many possibilities.</h2><p className="mt-5 max-w-[390px] leading-7 text-[#68766f]">KHANBAS NEXUS is designed to grow with your business. Connect modules as your operations expand.</p></div><div className="grid gap-4 sm:grid-cols-2">
-          
-          <div className="soft-card group p-6 transition hover:-translate-y-1 hover:border-[#176752]/40 bg-[#f4f7f5] border-[#176752]/20">
-            <div className="flex items-start justify-between">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#176752] text-white"><WalletCards size={20} /></div>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-[#176752]/10 text-[#176752] px-2 py-1 rounded">Available</span>
-            </div>
-            <h3 className="mt-6 font-bold text-[#173b38]">Nexus Finance</h3>
-            <p className="mt-2 text-sm leading-6 text-[#758078]">Saudi-ready finance and accounting workspace.</p>
-          </div>
 
-          <div className="soft-card p-6 opacity-70 bg-[#faf9f6]">
-            <div className="flex items-start justify-between">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e5e7e6] text-[#758078]"><Clock3 size={20} /></div>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-[#e5e7e6] text-[#758078] px-2 py-1 rounded">Coming Soon</span>
+        {/* CORE PLATFORM FEATURES (COMPACT SPLIT LAYOUT) */}
+        <section id="features" className="py-16 lg:py-20">
+          <div className="mx-auto max-w-[1240px] px-6 lg:px-10">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+              <div>
+                <div className="eyebrow">Platform Capabilities</div>
+                <h2 className="mt-2 text-2xl font-black text-[#071f19] sm:text-3xl">
+                  Built specifically for Saudi business requirements.
+                </h2>
+              </div>
+              <Link href="/sign-up" className="btn-primary inline-flex items-center gap-2 text-xs py-2.5 px-4 shadow-sm">
+                <span>Explore Full Engine</span>
+                <ArrowRight size={14} />
+              </Link>
             </div>
-            <h3 className="mt-6 font-bold text-[#173b38]">Nexus Fleet</h3>
-            <p className="mt-2 text-sm leading-6 text-[#758078]">Connected fleet operations and mobility.</p>
-          </div>
 
-          <div className="soft-card p-6 opacity-70 bg-[#faf9f6]">
-            <div className="flex items-start justify-between">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e5e7e6] text-[#758078]"><Clock3 size={20} /></div>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-[#e5e7e6] text-[#758078] px-2 py-1 rounded">Coming Soon</span>
+            <div className="grid gap-6 md:grid-cols-3">
+              {/* Feature 1 */}
+              <div className="group rounded-xl border border-[#e0d9ca] bg-white p-6 shadow-sm hover:shadow-md hover:border-[#176752]/40 transition-all">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#176752]/10 text-[#176752] group-hover:bg-[#176752] group-hover:text-white transition-colors">
+                  <QrCode size={22} />
+                </div>
+                <h3 className="mt-4 text-base font-bold text-[#071f19]">ZATCA E-Invoicing Phase 1 & 2</h3>
+                <p className="mt-2 text-xs leading-relaxed text-[#566861]">
+                  Generates Base64 TLV QR Codes, cryptographic signatures, XML formatting, and direct ZATCA FATOORA portal sync.
+                </p>
+              </div>
+
+              {/* Feature 2 */}
+              <div className="group rounded-xl border border-[#e0d9ca] bg-white p-6 shadow-sm hover:shadow-md hover:border-[#176752]/40 transition-all">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#176752]/10 text-[#176752] group-hover:bg-[#176752] group-hover:text-white transition-colors">
+                  <Scale size={22} />
+                </div>
+                <h3 className="mt-4 text-base font-bold text-[#071f19]">Double-Entry SOCPA Ledger</h3>
+                <p className="mt-2 text-xs leading-relaxed text-[#566861]">
+                  Complete Chart of Accounts, Journal Vouchers, Account Ledgers, Trial Balance, Profit & Loss, and Balance Sheet.
+                </p>
+              </div>
+
+              {/* Feature 3 */}
+              <div className="group rounded-xl border border-[#e0d9ca] bg-white p-6 shadow-sm hover:shadow-md hover:border-[#176752]/40 transition-all">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#176752]/10 text-[#176752] group-hover:bg-[#176752] group-hover:text-white transition-colors">
+                  <Building2 size={22} />
+                </div>
+                <h3 className="mt-4 text-base font-bold text-[#071f19]">Multi-Branch & Catalog</h3>
+                <p className="mt-2 text-xs leading-relaxed text-[#566861]">
+                  Manage multiple Saudi branches, CR numbers, commercial catalogs, VAT rates, customer and supplier directories.
+                </p>
+              </div>
             </div>
-            <h3 className="mt-6 font-bold text-[#173b38]">Nexus Projects</h3>
-            <p className="mt-2 text-sm leading-6 text-[#758078]">Projects, delivery, and commercial control.</p>
           </div>
+        </section>
 
-          <div className="soft-card p-6 opacity-70 bg-[#faf9f6]">
-            <div className="flex items-start justify-between">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e5e7e6] text-[#758078]"><Clock3 size={20} /></div>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-[#e5e7e6] text-[#758078] px-2 py-1 rounded">Coming Soon</span>
+        {/* MODULES SHOWCASE */}
+        <section id="modules" className="border-t border-[#e2dcce] bg-[#f3efe4] py-16 lg:py-20">
+          <div className="mx-auto max-w-[1240px] px-6 lg:px-10">
+            <div className="text-center max-w-[500px] mx-auto mb-10">
+              <div className="eyebrow">Modular Architecture</div>
+              <h2 className="mt-2 text-2xl font-black text-[#071f19] sm:text-3xl">
+                One unified platform. Connect as you grow.
+              </h2>
             </div>
-            <h3 className="mt-6 font-bold text-[#173b38]">Other Modules</h3>
-            <p className="mt-2 text-sm leading-6 text-[#758078]">Assets, Intelligence, and Automate.</p>
-          </div>
 
-        </div></div></section>
-        <section id="trust" className="bg-[#173b38] px-6 py-20 text-[#f9f5e9] lg:px-10"><div className="mx-auto flex max-w-[1240px] flex-col justify-between gap-8 md:flex-row md:items-end"><div><div className="eyebrow !text-[#f3c746]">Built with context</div><h2 className="mt-4 max-w-[650px] text-4xl font-bold leading-tight tracking-[-.05em]">The confidence of knowing your first settings are not an afterthought.</h2></div><Link href="/sign-up" className="inline-flex items-center gap-2 text-sm font-bold text-[#f3c746]" data-testid="link-footer-start">Get started <ArrowRight size={17} /></Link></div></section>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Active Module: Nexus Finance */}
+              <div className="rounded-xl border-2 border-[#176752] bg-white p-5 shadow-sm transition hover:shadow-md">
+                <div className="flex items-center justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#176752] text-white">
+                    <WalletCards size={18} />
+                  </div>
+                  <span className="rounded bg-[#176752]/15 px-2 py-0.5 text-[9px] font-bold text-[#176752] uppercase">
+                    Available Now
+                  </span>
+                </div>
+                <h3 className="mt-4 text-sm font-bold text-[#071f19]">Nexus Finance</h3>
+                <p className="mt-1 text-[11px] text-[#5c6e67] leading-relaxed">
+                  Invoices, Bills, Ledger, ZATCA Phase 2 & VAT Form 21.
+                </p>
+              </div>
+
+              {/* Coming Soon: Fleet */}
+              <div className="rounded-xl border border-[#ded8c7] bg-[#f9f7f0] p-5 opacity-75">
+                <div className="flex items-center justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-black/5 text-[#6d7f78]">
+                    <Clock3 size={18} />
+                  </div>
+                  <span className="rounded bg-black/5 px-2 py-0.5 text-[9px] font-bold text-[#6d7f78] uppercase">
+                    Coming Soon
+                  </span>
+                </div>
+                <h3 className="mt-4 text-sm font-bold text-[#071f19]">Nexus Fleet</h3>
+                <p className="mt-1 text-[11px] text-[#5c6e67] leading-relaxed">
+                  Logistics, vehicles, fuel logs & driver maintenance.
+                </p>
+              </div>
+
+              {/* Coming Soon: Projects */}
+              <div className="rounded-xl border border-[#ded8c7] bg-[#f9f7f0] p-5 opacity-75">
+                <div className="flex items-center justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-black/5 text-[#6d7f78]">
+                    <Clock3 size={18} />
+                  </div>
+                  <span className="rounded bg-black/5 px-2 py-0.5 text-[9px] font-bold text-[#6d7f78] uppercase">
+                    Coming Soon
+                  </span>
+                </div>
+                <h3 className="mt-4 text-sm font-bold text-[#071f19]">Nexus Projects</h3>
+                <p className="mt-1 text-[11px] text-[#5c6e67] leading-relaxed">
+                  Project costing, delivery milestones & profitability.
+                </p>
+              </div>
+
+              {/* Coming Soon: HR */}
+              <div className="rounded-xl border border-[#ded8c7] bg-[#f9f7f0] p-5 opacity-75">
+                <div className="flex items-center justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-black/5 text-[#6d7f78]">
+                    <Clock3 size={18} />
+                  </div>
+                  <span className="rounded bg-black/5 px-2 py-0.5 text-[9px] font-bold text-[#6d7f78] uppercase">
+                    Coming Soon
+                  </span>
+                </div>
+                <h3 className="mt-4 text-sm font-bold text-[#071f19]">Nexus HR & Payroll</h3>
+                <p className="mt-1 text-[11px] text-[#5c6e67] leading-relaxed">
+                  Saudi Labor Law EOSB & GOSI calculations.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* COMPACT LUXURY CTA FOOTER BANNER */}
+        <section id="trust" className="relative overflow-hidden bg-[#071f19] px-6 py-16 text-white lg:px-10">
+          <div className="mx-auto flex max-w-[1240px] flex-col items-center text-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#d4af37]/20 border border-[#d4af37]/30 px-3 py-1 text-xs font-bold text-[#fde68a]">
+              🇸🇦 Saudi Arabia Business Edition
+            </span>
+
+            <h2 className="mt-4 max-w-[600px] text-2xl font-black text-white sm:text-4xl">
+              Get Started with KHANBAS NEXUS Today.
+            </h2>
+
+            <p className="mt-2 text-sm text-[#a4c0b6] max-w-[460px]">
+              Setup your organization, configure ZATCA e-invoicing, and generate SOCPA compliant reports in minutes.
+            </p>
+
+            <div className="mt-6">
+              <Link href="/sign-up" className="btn-primary inline-flex items-center gap-2 px-7 py-3 text-sm font-bold bg-[#d4af37] text-[#071f19] hover:bg-[#ebd074] transition-all shadow-lg">
+                <span>Start Free Trial</span>
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+          </div>
+        </section>
       </main>
-      <footer className="mx-auto flex max-w-[1240px] items-center justify-between px-6 py-7 text-xs text-[#79837b] lg:px-10"><Logo /><span>© {new Date().getFullYear()} KHANBAS NEXUS. Built for the Kingdom.</span></footer>
+
+      {/* FOOTER */}
+      <footer className="border-t border-[#e2dcce] bg-[#eadecc]/40 py-6">
+        <div className="mx-auto flex max-w-[1240px] flex-col items-center justify-between gap-3 px-6 text-xs text-[#5c7069] sm:flex-row lg:px-10">
+          <Logo />
+          <div className="flex items-center gap-4">
+            <span>© {new Date().getFullYear()} KHANBAS NEXUS. All rights reserved.</span>
+            <span className="text-[#176752] font-bold">ZATCA Compliant 🇸🇦</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
