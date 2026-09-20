@@ -47,27 +47,19 @@ export function PublicHome() {
   const { isSignedIn, isLoaded } = useAuth();
   const [activeTab, setActiveTab] = useState<'invoice' | 'ledger' | 'vat'>('invoice');
 
-  if (isLoaded && isSignedIn) return <Redirect to="/home" />;
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-[#f8f6f0] flex items-center justify-center">
+        <div className="w-7 h-7 border-3 border-[#176752] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (isSignedIn) return <Redirect to="/home" />;
 
   return (
     <div className="app-noise relative min-h-[100dvh] bg-[#f8f6f0] text-[#0a2620] selection:bg-[#176752] selection:text-white overflow-x-hidden">
       
-      {/* Sleek Top Announcement Pill Bar */}
-      <div className="bg-[#071f19] text-white py-2 px-4 border-b border-[#176752]/30">
-        <div className="mx-auto flex max-w-[1240px] items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#d4af37]/20 px-2.5 py-0.5 text-[10px] font-extrabold text-[#fde68a] border border-[#d4af37]/40 uppercase tracking-wider">
-              🇸🇦 ZATCA Approved
-            </span>
-            <span className="hidden sm:inline text-[#b5c7c0] font-medium">Phase 1 & 2 E-Invoicing • SOCPA Double-Entry Accounting • VAT Form 21</span>
-          </div>
-          <a href="#zatca" className="font-bold text-[#d4af37] hover:text-white transition flex items-center gap-1 text-[11px]">
-            <span>Explore Compliance</span>
-            <ChevronRight size={13} />
-          </a>
-        </div>
-      </div>
-
       {/* Radiant Background Lighting */}
       <div className="pointer-events-none absolute left-1/2 -top-24 -z-10 h-[550px] w-[1000px] -translate-x-1/2 rounded-full bg-gradient-to-b from-[#176752]/18 via-[#d4af37]/12 to-transparent blur-[140px]" />
       <div className="pointer-events-none absolute right-0 top-96 -z-10 h-[450px] w-[450px] rounded-full bg-[#10b981]/10 blur-[130px]" />

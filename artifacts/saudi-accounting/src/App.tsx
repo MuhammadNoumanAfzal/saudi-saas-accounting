@@ -89,31 +89,19 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 }
 
 function SessionGuard({ children }: { children: React.ReactNode }) {
-  const { data: session, isLoading } = useGetCurrentSession();
-  const [path] = useLocation();
+  const { data: session, isLoading } = useGetCurrentSession({
+    query: { staleTime: 10 * 60 * 1000 }
+  });
   
   if (isLoading && !session) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-7 h-7 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-semibold text-muted-foreground">Loading KHANBAS NEXUS...</span>
+        </div>
       </div>
     );
-  }
-  
-  const org =
-    session?.organizations?.find(
-      (item) =>
-        item.organization.id === session.preferences.currentOrganizationId,
-    )?.organization ?? session?.organizations?.[0]?.organization;
-  const isComplete = org?.onboardingCompleted;
-
-  // If no org or not complete, trap in onboarding unless we are already on it.
-  if (!isComplete && path !== '/onboarding') {
-    return <Redirect to="/onboarding" />;
-  }
-  
-  if (path === '/onboarding') {
-    return <>{children}</>;
   }
 
   return <AppShell>{children}</AppShell>;
@@ -126,7 +114,9 @@ function ModuleGuard({
   moduleKey: ModuleKey;
   children: React.ReactNode;
 }) {
-  const { data: session, isLoading: sessionLoading } = useGetCurrentSession();
+  const { data: session, isLoading: sessionLoading } = useGetCurrentSession({
+    query: { staleTime: 10 * 60 * 1000 }
+  });
   const organizationId =
     session?.preferences.currentOrganizationId ??
     session?.organizations[0]?.organization.id ??
@@ -136,6 +126,7 @@ function ModuleGuard({
       query: {
         enabled: Boolean(organizationId),
         queryKey: getListOrganizationModulesQueryKey(organizationId),
+        staleTime: 10 * 60 * 1000,
       },
     });
 
@@ -230,25 +221,49 @@ function AuthLayout({ children, title, subtitle }: { children: React.ReactNode; 
 }
 
 function SignInPage() {
+  const { isSignedIn, isLoaded } = useAuth();
   const { t } = useTranslation();
+
+  if (isLoaded && isSignedIn) {
+    return <Redirect to="/home" />;
+  }
+
   return (
     <AuthLayout
       title={t('Empowering Saudi Enterprises with Smart Accounting', 'تمكين المنشآت السعودية بنظام إداري متكامل')}
       subtitle={t('Access your consolidated financial ledger, ZATCA tax invoices, and real-time executive analytics.', 'الوصول إلى دفتر الاستاد المحاسبي والفواتير الضريبية والتحليلات المباشرة.')}
     >
-      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+      <SignIn
+        routing="path"
+        path={`${basePath}/sign-in`}
+        signUpUrl={`${basePath}/sign-up`}
+        fallbackRedirectUrl={`${basePath}/home`}
+        forceRedirectUrl={`${basePath}/home`}
+      />
     </AuthLayout>
   );
 }
 
 function SignUpPage() {
+  const { isSignedIn, isLoaded } = useAuth();
   const { t } = useTranslation();
+
+  if (isLoaded && isSignedIn) {
+    return <Redirect to="/home" />;
+  }
+
   return (
     <AuthLayout
       title={t('Start Your ZATCA Compliant Workspace Today', 'ابدأ مساحة عملك المتوافقة مع هيئة الزكاة والضريبة اليوم')}
       subtitle={t('Join thousands of Saudi enterprises managing SOCPA accounts, purchase bills, and VAT return reporting.', 'انضم إلى آلاف المنشآت السعودية في إدارة الحسابات، فواتير المشتريات، وإقرارات الضريبة.')}
     >
-      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
+      <SignUp
+        routing="path"
+        path={`${basePath}/sign-up`}
+        signInUrl={`${basePath}/sign-in`}
+        fallbackRedirectUrl={`${basePath}/home`}
+        forceRedirectUrl={`${basePath}/home`}
+      />
     </AuthLayout>
   );
 }
@@ -273,8 +288,10 @@ const clerkAppearance = {
     rootBox: "w-full flex justify-center",
     cardBox: "bg-card rounded-[22px] shadow-2xl w-[440px] max-w-full overflow-hidden border border-border/80 p-1",
     card: "!shadow-none !border-0 !bg-transparent !rounded-none p-6",
-    footer: "!hidden",
-    footerAction: "!hidden",
+    footer: "bg-muted/20 border-t border-border/40 py-3 text-center flex justify-center items-center",
+    footerAction: "flex items-center justify-center gap-1.5 text-xs text-muted-foreground font-medium",
+    footerActionLink: "text-primary font-bold hover:underline ml-1",
+    footerActionText: "text-muted-foreground text-xs",
     devModeBadge: "!hidden",
     internalB3fy6s: "!hidden",
     headerTitle: "text-foreground font-bold tracking-tight text-xl text-center",
@@ -285,8 +302,6 @@ const clerkAppearance = {
     dividerText: "text-xs text-muted-foreground uppercase font-bold tracking-wider",
     formFieldLabel: "text-foreground font-bold text-xs uppercase tracking-wide mb-1.5",
     formFieldInput: "field rounded-xl text-sm py-2.5",
-    footerActionLink: "text-primary font-bold hover:text-primary/80 transition-colors",
-    footerActionText: "text-muted-foreground text-xs",
     formButtonPrimary: "bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md rounded-xl py-3 text-sm transition-all mt-2",
   }
 };
@@ -300,6 +315,8 @@ export default function App() {
         appearance={clerkAppearance}
         signInUrl={`${basePath}/sign-in`}
         signUpUrl={`${basePath}/sign-up`}
+        fallbackRedirectUrl={`${basePath}/home`}
+        forceRedirectUrl={`${basePath}/home`}
       >
         <ClerkTokenInitializer>
           <QueryClientProvider client={queryClient}>

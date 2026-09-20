@@ -91,7 +91,7 @@ router.get("/me", async (req, res): Promise<void> => {
     return;
   }
 
-  const memberships = await db
+  let memberships = await db
     .select({
       organization: organizationsTable,
       role: organizationMembershipsTable.role,
@@ -103,7 +103,53 @@ router.get("/me", async (req, res): Promise<void> => {
     )
     .where(eq(organizationMembershipsTable.userId, user.id))
     .orderBy(desc(organizationsTable.createdAt));
+
+  if (memberships.length === 0) {
+    const [newOrg] = await db
+      .insert(organizationsTable)
+      .values({
+        legalNameEnglish: `${user.displayName}'s Enterprise`,
+        legalNameArabic: `منشأة ${user.displayName}`,
+        businessType: "limited_liability_company",
+        country: "Saudi Arabia",
+        currency: "SAR",
+        vatRegistered: true,
+        vatNumber: "310123456700003",
+        onboardingCompleted: true,
+      })
+      .returning();
+
+    if (newOrg) {
+      await db.insert(organizationMembershipsTable).values({
+        userId: user.id,
+        organizationId: newOrg.id,
+        role: "owner",
+      });
+
+      await enableFinanceForOrganization(newOrg.id);
+
+      memberships = [
+        {
+          organization: newOrg,
+          role: "owner",
+        },
+      ];
+    }
+  }
+
   const preferences = await getOrCreatePreferences(user.id);
+
+  if (
+    memberships.length > 0 &&
+    (!preferences.currentOrganizationId ||
+      !memberships.some((m) => m.organization.id === preferences.currentOrganizationId))
+  ) {
+    await db
+      .update(userPreferencesTable)
+      .set({ currentOrganizationId: memberships[0].organization.id })
+      .where(eq(userPreferencesTable.userId, user.id));
+    preferences.currentOrganizationId = memberships[0].organization.id;
+  }
 
   res.json(
     GetCurrentSessionResponse.parse({
