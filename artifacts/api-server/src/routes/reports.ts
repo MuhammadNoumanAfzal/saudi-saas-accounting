@@ -590,7 +590,19 @@ router.get(
       const startDate = startDateStr ? new Date(startDateStr) : new Date(now.getFullYear(), 0, 1);
       const endDate = endDateStr ? new Date(endDateStr) : new Date(now.getFullYear(), 11, 31, 23, 59, 59);
 
-      // Fetch posted Journal Entry lines for this account
+      interface RawLedgerItem {
+        id: string;
+        date: Date;
+        reference: string;
+        source: string;
+        description: string;
+        debit: number;
+        credit: number;
+      }
+
+      const rawItems: RawLedgerItem[] = [];
+
+      // 1. Fetch posted Journal Entry lines for this account
       const journalLines = await db
         .select({
           id: journalEntryLinesTable.id,
@@ -613,13 +625,212 @@ router.get(
           )
         );
 
+      for (const line of journalLines) {
+        rawItems.push({
+          id: line.id,
+          date: line.date,
+          reference: line.reference,
+          source: line.source || "MANUAL_JOURNAL",
+          description: line.description || "Journal Entry Line",
+          debit: Number(line.debit || 0),
+          credit: Number(line.credit || 0),
+        });
+      }
+
+      // 2. Fetch Sales Invoices
+      const invoicesList = await db
+        .select()
+        .from(invoicesTable)
+        .where(
+          and(
+            eq(invoicesTable.organizationId, organizationId),
+            gte(invoicesTable.issueDate, startDate),
+            lte(invoicesTable.issueDate, endDate)
+          )
+        );
+
+      for (const inv of invoicesList) {
+        if (inv.status === 'CANCELLED') continue;
+        const subtotal = Number(inv.subtotal || 0);
+        const taxAmount = Number(inv.taxAmount || 0);
+        const total = Number(inv.totalAmount || 0);
+        const paidAmount = Number(inv.paidAmount || (inv.status === 'PAID' ? total : 0));
+        const unpaidAmount = Math.max(0, total - paidAmount);
+
+        if (account.code === '40100' && subtotal > 0) {
+          rawItems.push({
+            id: `inv-rev-${inv.id}`,
+            date: inv.issueDate,
+            reference: inv.invoiceNumber,
+            source: 'INVOICE',
+            description: `إيراد مبيعات فاتورة ${inv.invoiceNumber} (${inv.customerName})`,
+            debit: 0,
+            credit: subtotal,
+          });
+        }
+        if (account.code === '20200' && taxAmount > 0) {
+          rawItems.push({
+            id: `inv-vat-${inv.id}`,
+            date: inv.issueDate,
+            reference: inv.invoiceNumber,
+            source: 'INVOICE',
+            description: `ضريبة مخرجات 15% فاتورة ${inv.invoiceNumber}`,
+            debit: 0,
+            credit: taxAmount,
+          });
+        }
+        if (account.code === '10100' && paidAmount > 0) {
+          rawItems.push({
+            id: `inv-cash-${inv.id}`,
+            date: inv.issueDate,
+            reference: inv.invoiceNumber,
+            source: 'INVOICE_PAYMENT',
+            description: `تحصيل نقدي من عميل - فاتورة ${inv.invoiceNumber} (${inv.customerName})`,
+            debit: paidAmount,
+            credit: 0,
+          });
+        }
+        if (account.code === '10300' && unpaidAmount > 0) {
+          rawItems.push({
+            id: `inv-ar-${inv.id}`,
+            date: inv.issueDate,
+            reference: inv.invoiceNumber,
+            source: 'INVOICE',
+            description: `رصيد عميل مدين - فاتورة ${inv.invoiceNumber} (${inv.customerName})`,
+            debit: unpaidAmount,
+            credit: 0,
+          });
+        }
+      }
+
+      // 3. Fetch Purchase Bills
+      const billsList = await db
+        .select()
+        .from(purchaseBillsTable)
+        .where(
+          and(
+            eq(purchaseBillsTable.organizationId, organizationId),
+            gte(purchaseBillsTable.billDate, startDate),
+            lte(purchaseBillsTable.billDate, endDate)
+          )
+        );
+
+      for (const bill of billsList) {
+        if (bill.status === 'CANCELLED') continue;
+        const subtotal = Number(bill.subtotal || 0);
+        const taxAmount = Number(bill.taxAmount || 0);
+        const total = Number(bill.totalAmount || 0);
+        const paidAmount = Number(bill.paidAmount || (bill.status === 'PAID' ? total : 0));
+        const unpaidAmount = Math.max(0, total - paidAmount);
+
+        if (account.code === '50100' && subtotal > 0) {
+          rawItems.push({
+            id: `bill-cogs-${bill.id}`,
+            date: bill.billDate,
+            reference: bill.billNumber,
+            source: 'PURCHASE_BILL',
+            description: `تكلفة بضاعة / مشتريات فاتورة ${bill.billNumber} (${bill.supplierName})`,
+            debit: subtotal,
+            credit: 0,
+          });
+        }
+        if (account.code === '10400' && taxAmount > 0) {
+          rawItems.push({
+            id: `bill-vat-${bill.id}`,
+            date: bill.billDate,
+            reference: bill.billNumber,
+            source: 'PURCHASE_BILL',
+            description: `ضريبة مدخلات 15% فاتورة مشتريات ${bill.billNumber}`,
+            debit: taxAmount,
+            credit: 0,
+          });
+        }
+        if (account.code === '10100' && paidAmount > 0) {
+          rawItems.push({
+            id: `bill-cash-${bill.id}`,
+            date: bill.billDate,
+            reference: bill.billNumber,
+            source: 'BILL_PAYMENT',
+            description: `سداد نقدي لمورد - فاتورة ${bill.billNumber} (${bill.supplierName})`,
+            debit: 0,
+            credit: paidAmount,
+          });
+        }
+        if (account.code === '20100' && unpaidAmount > 0) {
+          rawItems.push({
+            id: `bill-ap-${bill.id}`,
+            date: bill.billDate,
+            reference: bill.billNumber,
+            source: 'PURCHASE_BILL',
+            description: `رصيد مورد دائن - فاتورة مشتريات ${bill.billNumber} (${bill.supplierName})`,
+            debit: 0,
+            credit: unpaidAmount,
+          });
+        }
+      }
+
+      // 4. Fetch Direct Expenses
+      const expensesList = await db
+        .select()
+        .from(expensesTable)
+        .where(
+          and(
+            eq(expensesTable.organizationId, organizationId),
+            gte(expensesTable.expenseDate, startDate),
+            lte(expensesTable.expenseDate, endDate)
+          )
+        );
+
+      for (const exp of expensesList) {
+        const subtotal = Number(exp.subtotal || 0);
+        const taxAmount = Number(exp.taxAmount || 0);
+        const total = Number(exp.totalAmount || 0);
+
+        if (account.code === '50500' && subtotal > 0) {
+          rawItems.push({
+            id: `exp-ga-${exp.id}`,
+            date: exp.expenseDate,
+            reference: exp.expenseNumber,
+            source: 'EXPENSE',
+            description: `مصروفات عمومية وإدارية ${exp.expenseNumber} (${exp.payeeName})`,
+            debit: subtotal,
+            credit: 0,
+          });
+        }
+        if (account.code === '10400' && taxAmount > 0) {
+          rawItems.push({
+            id: `exp-vat-${exp.id}`,
+            date: exp.expenseDate,
+            reference: exp.expenseNumber,
+            source: 'EXPENSE',
+            description: `ضريبة مدخلات مصروف ${exp.expenseNumber}`,
+            debit: taxAmount,
+            credit: 0,
+          });
+        }
+        if (account.code === '10100' && total > 0) {
+          rawItems.push({
+            id: `exp-cash-${exp.id}`,
+            date: exp.expenseDate,
+            reference: exp.expenseNumber,
+            source: 'EXPENSE_PAYMENT',
+            description: `سداد مصروف نقدي ${exp.expenseNumber} (${exp.payeeName})`,
+            debit: 0,
+            credit: total,
+          });
+        }
+      }
+
+      // Sort raw items chronologically
+      rawItems.sort((a, b) => a.date.getTime() - b.date.getTime());
+
       let runningBalance = 0;
       let totalDebit = 0;
       let totalCredit = 0;
 
-      const entries = journalLines.map(line => {
-        const d = Number(line.debit || 0);
-        const c = Number(line.credit || 0);
+      const entries = rawItems.map(item => {
+        const d = item.debit;
+        const c = item.credit;
         totalDebit += d;
         totalCredit += c;
 
@@ -630,11 +841,11 @@ router.get(
         }
 
         return {
-          id: line.id,
-          date: line.date.toISOString(),
-          reference: line.reference,
-          source: line.source,
-          description: line.description || "Journal Entry Line",
+          id: item.id,
+          date: item.date.toISOString(),
+          reference: item.reference,
+          source: item.source,
+          description: item.description,
           debit: d.toFixed(2),
           credit: c.toFixed(2),
           runningBalance: runningBalance.toFixed(2),

@@ -305,7 +305,7 @@ router.post("/organizations/:organizationId/purchase-bills", async (req, res) =>
 
     await writeAuditLog({
       organizationId: orgId,
-      userId: (req as any).user?.id || "system",
+      userId: (req as any).user?.id || null,
       action: "purchase_bill.created",
       entityType: "purchase_bill",
       entityId: newBill.id,

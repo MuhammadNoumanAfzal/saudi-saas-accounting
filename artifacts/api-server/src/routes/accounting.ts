@@ -6,6 +6,9 @@ import {
   journalEntriesTable,
   journalEntryLinesTable,
   accountingSequenceCountersTable,
+  invoicesTable,
+  purchaseBillsTable,
+  expensesTable,
 } from "@workspace/db";
 import { requireAuthentication } from "../middlewares/auth";
 import { requireModule } from "../middlewares/moduleEntitlement";
@@ -504,7 +507,9 @@ router.get("/organizations/:organizationId/accounting/trial-balance", async (req
       .where(eq(accountsTable.organizationId, orgId))
       .orderBy(accountsTable.code);
 
-    // Sum debits & credits for each account from posted entries
+    const totalsMap = new Map<string, { debit: number; credit: number }>();
+
+    // 1. Sum posted Journal Entries
     const lineTotals = await db
       .select({
         accountId: journalEntryLinesTable.accountId,
@@ -521,12 +526,98 @@ router.get("/organizations/:organizationId/accounting/trial-balance", async (req
       )
       .groupBy(journalEntryLinesTable.accountId);
 
-    const totalsMap = new Map<string, { debit: number; credit: number }>();
     for (const lt of lineTotals) {
       totalsMap.set(lt.accountId, {
         debit: parseFloat(lt.totalDebit) || 0,
         credit: parseFloat(lt.totalCredit) || 0,
       });
+    }
+
+    // Helper to add debit/credit to account by code
+    const addAccountBalance = (code: string, debit: number, credit: number) => {
+      const acc = accounts.find((a) => a.code === code);
+      if (acc) {
+        const cur = totalsMap.get(acc.id) || { debit: 0, credit: 0 };
+        totalsMap.set(acc.id, {
+          debit: cur.debit + debit,
+          credit: cur.credit + credit,
+        });
+      }
+    };
+
+    // 2. Aggregate Sales Invoices
+    const invoicesList = await db
+      .select()
+      .from(invoicesTable)
+      .where(eq(invoicesTable.organizationId, orgId));
+
+    for (const inv of invoicesList) {
+      if (inv.status === 'CANCELLED') continue;
+      const subtotal = Number(inv.subtotal || 0);
+      const taxAmount = Number(inv.taxAmount || 0);
+      const total = Number(inv.totalAmount || 0);
+      const paidAmount = Number(inv.paidAmount || (inv.status === 'PAID' ? total : 0));
+      const unpaidAmount = Math.max(0, total - paidAmount);
+
+      // Revenue (40100) -> Credit subtotal
+      addAccountBalance('40100', 0, subtotal);
+      // Output VAT (20200) -> Credit taxAmount
+      addAccountBalance('20200', 0, taxAmount);
+      // Cash/Bank (10100) -> Debit paidAmount
+      if (paidAmount > 0) {
+        addAccountBalance('10100', paidAmount, 0);
+      }
+      // Accounts Receivable (10300) -> Debit unpaidAmount
+      if (unpaidAmount > 0) {
+        addAccountBalance('10300', unpaidAmount, 0);
+      }
+    }
+
+    // 3. Aggregate Purchase Bills
+    const billsList = await db
+      .select()
+      .from(purchaseBillsTable)
+      .where(eq(purchaseBillsTable.organizationId, orgId));
+
+    for (const bill of billsList) {
+      if (bill.status === 'CANCELLED') continue;
+      const subtotal = Number(bill.subtotal || 0);
+      const taxAmount = Number(bill.taxAmount || 0);
+      const total = Number(bill.totalAmount || 0);
+      const paidAmount = Number(bill.paidAmount || (bill.status === 'PAID' ? total : 0));
+      const unpaidAmount = Math.max(0, total - paidAmount);
+
+      // Cost of Goods Sold / Expense (50100) -> Debit subtotal
+      addAccountBalance('50100', subtotal, 0);
+      // Input VAT Recoverable (10400) -> Debit taxAmount
+      addAccountBalance('10400', taxAmount, 0);
+      // Cash/Bank (10100) -> Credit paidAmount
+      if (paidAmount > 0) {
+        addAccountBalance('10100', 0, paidAmount);
+      }
+      // Accounts Payable (20100) -> Credit unpaidAmount
+      if (unpaidAmount > 0) {
+        addAccountBalance('20100', 0, unpaidAmount);
+      }
+    }
+
+    // 4. Aggregate Direct Expenses
+    const expensesList = await db
+      .select()
+      .from(expensesTable)
+      .where(eq(expensesTable.organizationId, orgId));
+
+    for (const exp of expensesList) {
+      const subtotal = Number(exp.subtotal || 0);
+      const taxAmount = Number(exp.taxAmount || 0);
+      const total = Number(exp.totalAmount || 0);
+
+      // General & Admin Expenses (50500) -> Debit subtotal
+      addAccountBalance('50500', subtotal, 0);
+      // Input VAT Recoverable (10400) -> Debit taxAmount
+      addAccountBalance('10400', taxAmount, 0);
+      // Cash/Bank (10100) -> Credit total
+      addAccountBalance('10100', 0, total);
     }
 
     let overallDebit = 0;

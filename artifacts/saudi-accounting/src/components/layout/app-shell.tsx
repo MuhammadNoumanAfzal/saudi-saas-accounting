@@ -339,13 +339,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-row">
       
       {/* Desktop Sidebar */}
-      <aside className={`hidden md:flex flex-col sidebar-bg sticky top-0 h-screen shrink-0 transition-all duration-300 z-20 ${collapsed ? 'w-[72px]' : 'w-[240px]'}`}>
+      <aside className={`hidden md:flex flex-col sidebar-bg sticky top-0 h-screen shrink-0 transition-all duration-300 z-20 print:hidden ${collapsed ? 'w-[72px]' : 'w-[240px]'}`}>
         <SidebarContent />
       </aside>
 
       {/* Mobile Drawer */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 flex">
+        <div className="fixed inset-0 z-50 flex print:hidden">
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <aside className="relative flex w-[260px] flex-col sidebar-bg shadow-2xl">
             <button className="absolute top-4 end-4 text-primary-foreground/50 hover:text-primary-foreground" onClick={() => setMobileOpen(false)}>
@@ -357,8 +357,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 relative">
-        <header className="h-14 border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-10 px-4 flex items-center justify-between gap-4">
+      <div className="flex-1 flex flex-col min-w-0 relative print:block print:w-full print:p-0">
+        <header className="h-14 border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-10 px-4 flex items-center justify-between gap-4 print:hidden">
           <div className="flex items-center gap-3">
             <button className="md:hidden p-1.5 -ms-1.5 text-muted-foreground hover:text-foreground" onClick={() => setMobileOpen(true)}>
               <Menu size={20} />
@@ -422,7 +422,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8 w-full">
+        <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8 w-full print:p-0 print:overflow-visible print:block">
           {children}
         </main>
       </div>

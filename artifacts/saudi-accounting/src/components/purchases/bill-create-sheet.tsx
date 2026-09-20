@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation, Button } from '@/lib/utils';
+import { showAlert } from '@/lib/alerts';
 import { 
   useGetCurrentSession, 
   useGetSuppliers,
@@ -150,10 +151,17 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess }: BillCreateShe
         }
       });
 
+      showAlert.success(
+        t('Purchase Bill Saved!', 'تم حفظ فاتورة المشتريات!'),
+        t('Input VAT has been calculated and recorded in tax returns.', 'تم حساب ضريبة المدخلات وتسجيلها في الإقرار الضريبي بنجاح.')
+      );
+
       onSuccess();
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || (isRtl ? 'فشل إنشاء فاتورة الشراء' : 'Failed to create purchase bill'));
+      const msg = err?.message || (isRtl ? 'فشل إنشاء فاتورة الشراء' : 'Failed to create purchase bill');
+      setErrorMsg(msg);
+      showAlert.error(t('Error', 'خطأ'), msg);
     }
   };
 
