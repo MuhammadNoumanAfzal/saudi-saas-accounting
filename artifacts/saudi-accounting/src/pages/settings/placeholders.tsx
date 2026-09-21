@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from '@/lib/utils';
+import { useGetCurrentSession } from '@workspace/api-client-react';
 import { Store, Zap, ShieldCheck, QrCode, CheckCircle2, KeyRound, Building2, Send, RefreshCw, AlertCircle, Sparkles, Server } from 'lucide-react';
 
 export function BranchesSettings() {
@@ -25,10 +26,22 @@ export function BranchesSettings() {
 
 export function ZatcaSettings() {
   const { t } = useTranslation();
+  const { data: session } = useGetCurrentSession();
+  const org = session?.organization;
+
   const [envMode, setEnvMode] = useState<'sandbox' | 'production'>('sandbox');
-  const [vatNumber, setVatNumber] = useState('310123456700003');
-  const [companyName, setCompanyName] = useState('Majaj Luxury Goods LLC');
+  const [vatNumber, setVatNumber] = useState(org?.vatNumber || '');
+  const [companyName, setCompanyName] = useState(org?.legalNameEnglish || org?.legalNameArabic || '');
   const [otpCode, setOtpCode] = useState('123456');
+
+  useEffect(() => {
+    if (org) {
+      if (org.vatNumber) setVatNumber(org.vatNumber);
+      if (org.legalNameEnglish || org.legalNameArabic) {
+        setCompanyName(org.legalNameEnglish || org.legalNameArabic || '');
+      }
+    }
+  }, [org]);
   const [loading, setLoading] = useState(false);
   const [csidActive, setCsidActive] = useState(true);
   const [testResult, setTestResult] = useState<{ status: 'idle' | 'testing' | 'success'; message?: string }>({ status: 'idle' });
