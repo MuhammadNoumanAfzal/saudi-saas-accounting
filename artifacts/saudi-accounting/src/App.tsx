@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Redirect, Route, Switch, useLocation } from 'wouter';
-import { ClerkProvider, SignIn, SignUp, useAuth } from '@clerk/react';
+import { ClerkProvider, SignIn, SignUp, useAuth, useClerk, useUser } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -64,8 +64,6 @@ import { BalanceSheetPage } from './pages/balance-sheet-page';
 import { VatReturnPage } from './pages/vat-return-page';
 import { AccountLedgerPage } from './pages/account-ledger-page';
 
-
-
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 const rawPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -89,6 +87,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 }
 
 function SessionGuard({ children }: { children: React.ReactNode }) {
+  const [location] = useLocation();
   const { data: session, isLoading } = useGetCurrentSession({
     query: { staleTime: 10 * 60 * 1000 }
   });
@@ -102,6 +101,21 @@ function SessionGuard({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     );
+  }
+
+  const currentOrg = session?.organizations.find(
+    (item) => item.organization.id === session?.preferences?.currentOrganizationId
+  )?.organization ?? session?.organizations[0]?.organization;
+
+  if (
+    location !== '/onboarding' &&
+    (!session?.organizations.length || !currentOrg?.onboardingCompleted)
+  ) {
+    return <Redirect to="/onboarding" />;
+  }
+
+  if (location === '/onboarding') {
+    return <>{children}</>;
   }
 
   return <AppShell>{children}</AppShell>;
@@ -221,11 +235,47 @@ function AuthLayout({ children, title, subtitle }: { children: React.ReactNode; 
 }
 
 function SignInPage() {
-  const { isSignedIn, isLoaded } = useAuth();
   const { t } = useTranslation();
+  const { isSignedIn, isLoaded } = useAuth();
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  const [, setLocation] = useLocation();
 
   if (isLoaded && isSignedIn) {
-    return <Redirect to="/home" />;
+    return (
+      <AuthLayout
+        title={t('Empowering Saudi Enterprises with Smart Accounting', 'تمكين المنشآت السعودية بنظام إداري متكامل')}
+        subtitle={t('Access your consolidated financial ledger, ZATCA tax invoices, and real-time executive analytics.', 'الوصول إلى دفتر الاستاد المحاسبي والفواتير الضريبية والتحليلات المباشرة.')}
+      >
+        <div className="w-full max-w-md bg-card p-6 rounded-2xl shadow-xl border border-border text-center space-y-4">
+          <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto text-xl font-bold">
+            ✓
+          </div>
+          <div>
+            <h3 className="font-bold text-lg text-foreground">
+              {t('Already Signed In', 'أنت مسجل الدخول بالفعل')}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t('Logged in as', 'مسجل باسم')}: <span className="font-semibold text-foreground">{user?.primaryEmailAddress?.emailAddress || user?.fullName || 'User'}</span>
+            </p>
+          </div>
+          <div className="pt-2 flex flex-col gap-2">
+            <button
+              onClick={() => setLocation('/home')}
+              className="w-full py-2.5 px-4 rounded-xl bg-primary text-primary-foreground font-bold text-xs shadow-md hover:bg-primary/90 transition-all"
+            >
+              {t('Go to Workspace / Dashboard', 'الانتقال إلى مساحة العمل / لوحة التحكم')}
+            </button>
+            <button
+              onClick={() => signOut()}
+              className="w-full py-2.5 px-4 rounded-xl border border-border bg-background hover:bg-muted text-foreground font-bold text-xs transition-all"
+            >
+              {t('Sign Out to Test New Credentials', 'تسجيل الخروج لتجربة بيانات دخول جديدة')}
+            </button>
+          </div>
+        </div>
+      </AuthLayout>
+    );
   }
 
   return (
@@ -245,11 +295,47 @@ function SignInPage() {
 }
 
 function SignUpPage() {
-  const { isSignedIn, isLoaded } = useAuth();
   const { t } = useTranslation();
+  const { isSignedIn, isLoaded } = useAuth();
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  const [, setLocation] = useLocation();
 
   if (isLoaded && isSignedIn) {
-    return <Redirect to="/home" />;
+    return (
+      <AuthLayout
+        title={t('Start Your ZATCA Compliant Workspace Today', 'ابدأ مساحة عملك المتوافقة مع هيئة الزكاة والضريبة اليوم')}
+        subtitle={t('Join thousands of Saudi enterprises managing SOCPA accounts, purchase bills, and VAT return reporting.', 'انضم إلى آلاف المنشآت السعودية في إدارة الحسابات، فواتير المشتريات، وإقرارات الضريبة.')}
+      >
+        <div className="w-full max-w-md bg-card p-6 rounded-2xl shadow-xl border border-border text-center space-y-4">
+          <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto text-xl font-bold">
+            ✓
+          </div>
+          <div>
+            <h3 className="font-bold text-lg text-foreground">
+              {t('Already Signed In', 'أنت مسجل الدخول بالفعل')}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t('Logged in as', 'مسجل باسم')}: <span className="font-semibold text-foreground">{user?.primaryEmailAddress?.emailAddress || user?.fullName || 'User'}</span>
+            </p>
+          </div>
+          <div className="pt-2 flex flex-col gap-2">
+            <button
+              onClick={() => setLocation('/home')}
+              className="w-full py-2.5 px-4 rounded-xl bg-primary text-primary-foreground font-bold text-xs shadow-md hover:bg-primary/90 transition-all"
+            >
+              {t('Go to Workspace / Dashboard', 'الانتقال إلى مساحة العمل / لوحة التحكم')}
+            </button>
+            <button
+              onClick={() => signOut()}
+              className="w-full py-2.5 px-4 rounded-xl border border-border bg-background hover:bg-muted text-foreground font-bold text-xs transition-all"
+            >
+              {t('Sign Out to Test New Credentials', 'تسجيل الخروج لتجربة بيانات دخول جديدة')}
+            </button>
+          </div>
+        </div>
+      </AuthLayout>
+    );
   }
 
   return (
@@ -561,8 +647,6 @@ export default function App() {
                 </ModuleGuard>
               </AuthGuard>
             </Route>
-
-
 
             {/* Placeholders for coming soon routes */}
             <Route path="/:rest*">

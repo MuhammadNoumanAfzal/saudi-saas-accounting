@@ -1,4 +1,5 @@
 import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
 
 export const showAlert = {
   success: (title: string, text?: string) => {
@@ -6,11 +7,12 @@ export const showAlert = {
       icon: 'success',
       title,
       text,
-      confirmButtonColor: '#10b981',
-      timer: 2500,
+      confirmButtonColor: '#176752',
+      timer: 3000,
       timerProgressBar: true,
       customClass: {
-        popup: 'rounded-2xl shadow-2xl border border-emerald-500/20 font-sans',
+        popup: 'rounded-2xl shadow-2xl border border-emerald-500/20 font-sans bg-card text-foreground',
+        confirmButton: 'rounded-xl px-5 py-2.5 font-bold text-sm bg-[#176752] text-white hover:bg-[#0f4d3d] transition-all',
       },
     });
   },
@@ -21,7 +23,8 @@ export const showAlert = {
       text,
       confirmButtonColor: '#ef4444',
       customClass: {
-        popup: 'rounded-2xl shadow-2xl border border-red-500/20 font-sans',
+        popup: 'rounded-2xl shadow-2xl border border-red-500/20 font-sans bg-card text-foreground',
+        confirmButton: 'rounded-xl px-5 py-2.5 font-bold text-sm bg-red-600 text-white hover:bg-red-700 transition-all',
       },
     });
   },
@@ -30,9 +33,10 @@ export const showAlert = {
       icon: 'warning',
       title,
       text,
-      confirmButtonColor: '#f59e0b',
+      confirmButtonColor: '#d4af37',
       customClass: {
-        popup: 'rounded-2xl shadow-2xl font-sans',
+        popup: 'rounded-2xl shadow-2xl border border-amber-500/20 font-sans bg-card text-foreground',
+        confirmButton: 'rounded-xl px-5 py-2.5 font-bold text-sm bg-[#d4af37] text-[#071f19] hover:bg-[#b89528] transition-all',
       },
     });
   },
@@ -42,12 +46,14 @@ export const showAlert = {
       text,
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: '#10b981',
+      confirmButtonColor: '#176752',
       cancelButtonColor: '#6b7280',
       confirmButtonText,
       cancelButtonText,
       customClass: {
-        popup: 'rounded-2xl shadow-2xl font-sans',
+        popup: 'rounded-2xl shadow-2xl font-sans bg-card text-foreground border border-border',
+        confirmButton: 'rounded-xl px-5 py-2.5 font-bold text-sm bg-[#176752] text-white hover:bg-[#0f4d3d] transition-all mr-2',
+        cancelButton: 'rounded-xl px-5 py-2.5 font-bold text-sm bg-muted text-muted-foreground hover:bg-muted/80 transition-all',
       },
     });
     return result.isConfirmed;
@@ -59,6 +65,9 @@ export const showAlert = {
       showConfirmButton: false,
       timer: 3000,
       timerProgressBar: true,
+      customClass: {
+        popup: 'rounded-xl shadow-lg border border-border font-sans bg-card text-foreground',
+      },
       didOpen: (toast) => {
         toast.addEventListener('mouseenter', Swal.stopTimer);
         toast.addEventListener('mouseleave', Swal.resumeTimer);
@@ -67,3 +76,4 @@ export const showAlert = {
     return Toast.fire({ icon, title });
   }
 };
+

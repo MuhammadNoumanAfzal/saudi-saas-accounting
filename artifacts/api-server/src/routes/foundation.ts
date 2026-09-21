@@ -104,38 +104,8 @@ router.get("/me", async (req, res): Promise<void> => {
     .where(eq(organizationMembershipsTable.userId, user.id))
     .orderBy(desc(organizationsTable.createdAt));
 
-  if (memberships.length === 0) {
-    const [newOrg] = await db
-      .insert(organizationsTable)
-      .values({
-        legalNameEnglish: `${user.displayName}'s Enterprise`,
-        legalNameArabic: `منشأة ${user.displayName}`,
-        businessType: "limited_liability_company",
-        country: "Saudi Arabia",
-        currency: "SAR",
-        vatRegistered: true,
-        vatNumber: "310123456700003",
-        onboardingCompleted: true,
-      })
-      .returning();
-
-    if (newOrg) {
-      await db.insert(organizationMembershipsTable).values({
-        userId: user.id,
-        organizationId: newOrg.id,
-        role: "owner",
-      });
-
-      await enableFinanceForOrganization(newOrg.id);
-
-      memberships = [
-        {
-          organization: newOrg,
-          role: "owner",
-        },
-      ];
-    }
-  }
+  // Do not auto-create fake organizations with onboardingCompleted: true.
+  // New users must go through the Onboarding wizard to set up their company details.
 
   const preferences = await getOrCreatePreferences(user.id);
 
