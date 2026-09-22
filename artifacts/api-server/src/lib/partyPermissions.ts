@@ -6,39 +6,37 @@ export type PartyPermission =
   | "customers.create"
   | "customers.edit"
   | "customers.deactivate"
+  | "customers.delete"
   | "customers.export"
   | "customers.import"
   | "suppliers.view"
   | "suppliers.create"
   | "suppliers.edit"
   | "suppliers.deactivate"
+  | "suppliers.delete"
   | "suppliers.export"
   | "suppliers.import"
   | "contacts.manage"
   | "party_documents.manage";
-  // Catalog permissions intentionally live alongside the existing finance RBAC.
-export type CatalogPermission =
-  | "products.view" | "products.create" | "products.edit" | "products.deactivate"
-  | "products.import" | "products.export";
 
 const rolePermissions: Record<string, Set<PartyPermission>> = {
   owner: new Set([
-    "customers.view", "customers.create", "customers.edit", "customers.deactivate", "customers.export", "customers.import",
-    "suppliers.view", "suppliers.create", "suppliers.edit", "suppliers.deactivate", "suppliers.export", "suppliers.import",
+    "customers.view", "customers.create", "customers.edit", "customers.deactivate", "customers.delete", "customers.export", "customers.import",
+    "suppliers.view", "suppliers.create", "suppliers.edit", "suppliers.deactivate", "suppliers.delete", "suppliers.export", "suppliers.import",
     "contacts.manage", "party_documents.manage",
   ]),
   admin: new Set([
-    "customers.view", "customers.create", "customers.edit", "customers.deactivate", "customers.export", "customers.import",
-    "suppliers.view", "suppliers.create", "suppliers.edit", "suppliers.deactivate", "suppliers.export", "suppliers.import",
+    "customers.view", "customers.create", "customers.edit", "customers.deactivate", "customers.delete", "customers.export", "customers.import",
+    "suppliers.view", "suppliers.create", "suppliers.edit", "suppliers.deactivate", "suppliers.delete", "suppliers.export", "suppliers.import",
     "contacts.manage", "party_documents.manage",
   ]),
   accountant: new Set([
-    "customers.view", "customers.create", "customers.edit",
-    "suppliers.view", "suppliers.create", "suppliers.edit",
+    "customers.view", "customers.create", "customers.edit", "customers.delete",
+    "suppliers.view", "suppliers.create", "suppliers.edit", "suppliers.delete",
     "contacts.manage", "party_documents.manage",
   ]),
-  sales: new Set(["customers.view", "customers.create", "customers.edit", "customers.deactivate", "customers.export", "customers.import", "contacts.manage", "party_documents.manage"]),
-  purchasing: new Set(["suppliers.view", "suppliers.create", "suppliers.edit", "suppliers.deactivate", "suppliers.export", "suppliers.import", "contacts.manage", "party_documents.manage"]),
+  sales: new Set(["customers.view", "customers.create", "customers.edit", "customers.deactivate", "customers.delete", "customers.export", "customers.import", "contacts.manage", "party_documents.manage"]),
+  purchasing: new Set(["suppliers.view", "suppliers.create", "suppliers.edit", "suppliers.deactivate", "suppliers.delete", "suppliers.export", "suppliers.import", "contacts.manage", "party_documents.manage"]),
   viewer: new Set(["customers.view", "suppliers.view"]),
 };
 const catalogPermissions: Record<string, Set<CatalogPermission>> = {

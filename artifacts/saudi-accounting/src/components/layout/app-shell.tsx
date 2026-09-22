@@ -16,6 +16,7 @@ import { queryClient } from '@/lib/queryClient';
 import { prefetchSalesModule } from '@/lib/sales-prefetch';
 import { prefetchPurchasesModule } from '@/lib/purchases-prefetch';
 import { prefetchCatalogModule } from '@/lib/catalog-prefetch';
+import { prefetchAccountingModule } from '@/lib/accounting-prefetch';
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -251,6 +252,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                   prefetchSalesModule(orgId, child.href);
                                   prefetchPurchasesModule(orgId, child.href);
                                   prefetchCatalogModule(orgId, child.href);
+                                  prefetchAccountingModule(orgId, child.href);
                                 }}
                                 onClick={() => setMobileOpen(false)}
                                 className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${

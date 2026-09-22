@@ -11,10 +11,11 @@ import {
   customFetch
 } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
-import { Search, Plus, Filter, MoreHorizontal, User, Building2, UploadCloud, DownloadCloud, ChevronRight, ChevronLeft, Eye } from 'lucide-react';
+import { Search, Plus, Filter, MoreHorizontal, User, Building2, UploadCloud, DownloadCloud, ChevronRight, ChevronLeft, Eye, Trash2 } from 'lucide-react';
 import { PartyCreateSheet } from './party-create-sheet';
 import { PartyImportSheet } from './party-import-sheet';
 import { SkeletonTable } from '@/components/ui/platform-loader';
+import { queryClient } from '@/lib/queryClient';
 
 export function PartyList({ role }: { role: 'customer' | 'supplier' }) {
   const { t, isRtl } = useTranslation();
@@ -62,6 +63,48 @@ export function PartyList({ role }: { role: 'customer' | 'supplier' }) {
   const totalCount = data?.summary.total || 0;
   const activeCount = data?.summary.active || 0;
   const withBalanceCount = data?.summary.withBalance || 0;
+
+  const handleDeleteParty = async (partyId: string, partyName: string) => {
+    if (!orgId) return;
+    const confirmed = await showAlert.confirm(
+      t(`Delete ${isCustomer ? 'Customer' : 'Supplier'}?`, `حذف ${isCustomer ? 'العميل' : 'المورد'}؟`),
+      t(`Are you sure you want to delete ${partyName}? This action cannot be undone.`, `هل أنت تأكد من رغبتك في حذف ${partyName}؟ لا يمكن التراجع عن هذا الإجراء.`),
+      t('Yes, Delete', 'نعم، حذف'),
+      t('Cancel', 'إلغاء')
+    );
+
+    if (!confirmed) return;
+
+    // Optimistically update local React Query cache for 0ms instant UI removal
+    const queryKey = isCustomer ? getGetCustomersQueryKey(orgId, queryParams as any) : getGetSuppliersQueryKey(orgId, queryParams as any);
+    queryClient.setQueryData(queryKey, (oldData: any) => {
+      if (!oldData || !oldData.items) return oldData;
+      return {
+        ...oldData,
+        items: oldData.items.filter((item: any) => item.id !== partyId),
+        summary: {
+          ...oldData.summary,
+          total: Math.max(0, (oldData.summary?.total || 1) - 1),
+          active: Math.max(0, (oldData.summary?.active || 1) - 1),
+        }
+      };
+    });
+
+    showAlert.toast(
+      t('Deleted Successfully!', 'تم الحذف بنجاح!'),
+      'success'
+    );
+
+    try {
+      const rolePlural = isCustomer ? 'customers' : 'suppliers';
+      await customFetch(`/api/organizations/${orgId}/${rolePlural}/${partyId}`, {
+        method: 'DELETE'
+      });
+      queryClient.invalidateQueries({ queryKey: isCustomer ? getGetCustomersQueryKey(orgId) : getGetSuppliersQueryKey(orgId) });
+    } catch {
+      queryClient.invalidateQueries({ queryKey: isCustomer ? getGetCustomersQueryKey(orgId) : getGetSuppliersQueryKey(orgId) });
+    }
+  };
 
   const handleExport = async () => {
     if (!orgId) return;
@@ -243,15 +286,26 @@ export function PartyList({ role }: { role: 'customer' | 'supplier' }) {
                           SAR 0.00
                         </td>
                         <td className="px-5 py-4 text-center" onClick={e => e.stopPropagation()}>
-                          <Button 
-                            variant="secondary" 
-                            size="sm"
-                            className="h-8 px-3 text-xs font-bold gap-1.5 hover:bg-primary hover:text-primary-foreground transition-colors border-border shadow-none" 
-                            onClick={() => setLocation(`/finance/${role}s/${item.id}`)}
-                          >
-                            <Eye size={14} />
-                            {t('View', 'عرض')}
-                          </Button>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <Button 
+                              variant="secondary" 
+                              size="sm"
+                              className="h-8 px-2.5 text-xs font-bold gap-1 hover:bg-primary hover:text-primary-foreground transition-colors border-border shadow-none" 
+                              onClick={() => setLocation(`/finance/${role}s/${item.id}`)}
+                            >
+                              <Eye size={14} />
+                              {t('View', 'عرض')}
+                            </Button>
+                            <Button 
+                              variant="secondary" 
+                              size="sm"
+                              className="h-8 px-2 text-xs font-bold text-red-500 hover:bg-red-500 hover:text-white transition-colors border-border shadow-none" 
+                              onClick={() => handleDeleteParty(item.id, item.displayName)}
+                              title={t('Delete', 'حذف')}
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -279,11 +333,20 @@ export function PartyList({ role }: { role: 'customer' | 'supplier' }) {
                           <span>{item.partyType === 'organization' ? t('Organization', 'منشأة') : t('Individual', 'فرد')}</span>
                         </div>
                       </div>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                        isAct ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' : 'bg-muted text-muted-foreground'
-                      }`}>
-                        {isAct ? t('Active', 'نشط') : t('Inactive', 'غير نشط')}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                          isAct ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {isAct ? t('Active', 'نشط') : t('Inactive', 'غير نشط')}
+                        </span>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleDeleteParty(item.id, item.displayName); }} 
+                          className="p-1 text-red-500 hover:bg-red-500/10 rounded"
+                          title={t('Delete', 'حذف')}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
                     <div className="flex justify-between items-end mt-3 text-xs text-muted-foreground">
                       <div>
@@ -307,9 +370,13 @@ export function PartyList({ role }: { role: 'customer' | 'supplier' }) {
         onOpenChange={setCreateOpen} 
         role={role}
         orgId={orgId}
-        onSuccess={(partyId) => {
+        onSuccess={() => {
           setCreateOpen(false);
-          setLocation(`/finance/${role}s/${partyId}`);
+          if (isCustomer) {
+            queryClient.invalidateQueries({ queryKey: getGetCustomersQueryKey(orgId) });
+          } else {
+            queryClient.invalidateQueries({ queryKey: getGetSuppliersQueryKey(orgId) });
+          }
         }}
       />
       <PartyImportSheet

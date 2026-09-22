@@ -80,14 +80,51 @@ export function PartyEditSheet({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const finalNameEn = nameEn.trim() || legalEn.trim();
-    const finalNameAr = nameAr.trim() || legalAr.trim();
+    const finalNameEn = nameEn.trim();
+    const finalNameAr = nameAr.trim();
+    const trimmedEmail = email.trim();
+    const trimmedPhone = phone.trim();
 
     const newErrors: Record<string, string> = {};
+
     if (type === 'organization') {
-      if (!finalNameEn) newErrors.nameEn = t('Business Name (English) is required', 'اسم المنشأة بالإنجليزية مطلوب');
+      if (!finalNameEn) {
+        newErrors.nameEn = t('Business Name (English) is required', 'اسم المنشأة باللغة الإنجليزية مطلوب');
+      } else if (finalNameEn.length < 2) {
+        newErrors.nameEn = t('Business Name (English) must be at least 2 characters', 'اسم المنشأة باللغة الإنجليزية يجب أن يكون حرفين على الأقل');
+      }
+
+      if (!finalNameAr) {
+        newErrors.nameAr = t('Business Name (Arabic) is required', 'اسم المنشأة باللغة العربية مطلوب');
+      } else if (finalNameAr.length < 2) {
+        newErrors.nameAr = t('Business Name (Arabic) must be at least 2 characters', 'اسم المنشأة باللغة العربية يجب أن يكون حرفين على الأقل');
+      }
     } else {
-      if (!firstName.trim()) newErrors.firstName = t('First name is required', 'الاسم الأول مطلوب');
+      if (!firstName.trim()) {
+        newErrors.firstName = t('First name is required', 'الاسم الأول مطلوب');
+      } else if (firstName.trim().length < 2) {
+        newErrors.firstName = t('First name must be at least 2 characters', 'الاسم الأول يجب أن يكون حرفين على الأقل');
+      }
+
+      if (!lastName.trim()) {
+        newErrors.lastName = t('Last name is required', 'اسم العائلة مطلوب');
+      }
+
+      if (!arabicName.trim()) {
+        newErrors.arabicName = t('Arabic Name is required', 'الاسم بالعربي مطلوب');
+      }
+    }
+
+    if (!trimmedEmail) {
+      newErrors.email = t('Email address is required', 'البريد الإلكتروني مطلوب');
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      newErrors.email = t('Please enter a valid email address', 'يرجى أدخال بريد إلكتروني صحيح');
+    }
+
+    if (!trimmedPhone) {
+      newErrors.phone = t('Phone number is required', 'رقم الهاتف مطلوب');
+    } else if (trimmedPhone.length < 7) {
+      newErrors.phone = t('Phone number must be at least 7 digits', 'رقم الهاتف يجب أن يكون 7 أرقام على الأقل');
     }
     
     if (vatRegistered) {
@@ -136,9 +173,9 @@ export function PartyEditSheet({
           queryClient.invalidateQueries({ queryKey: getGetSupplierQueryKey(orgId, partyData.id) });
           queryClient.invalidateQueries({ queryKey: getGetSuppliersQueryKey(orgId) });
         }
-        showAlert.success(
-          isCustomer ? t('Customer Updated!', 'تم تحديث العميل!') : t('Supplier Updated!', 'تم تحديث المورد!'),
-          t('Profile details updated successfully.', 'تم تحديث تفاصيل الملف بنجاح.')
+        showAlert.toast(
+          isCustomer ? t('Customer Updated Successfully!', 'تم تحديث العميل بنجاح!') : t('Supplier Updated Successfully!', 'تم تحديث المورد بنجاح!'),
+          'success'
         );
         onOpenChange(false);
       },

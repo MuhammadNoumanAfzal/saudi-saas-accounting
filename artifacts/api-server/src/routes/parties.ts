@@ -73,8 +73,8 @@ async function create(req: any, res: any, role: string) {
   const [p] = await db.insert(businessPartiesTable).values(values).returning();
   const [r] = await db.insert(partyRolesTable).values({ organizationId, partyId: p.id, role, partyNumber, paymentTerms: body.paymentTerms, creditLimit: body.creditLimit, taxTreatment: body.taxTreatment }).returning();
   const result = { p, r };
-  await audit(req, "created", "business_party", result.p.id, null, result.p);
-  await audit(req, "role_added", "party_role", result.r.id, null, result.r);
+  audit(req, "created", "business_party", result.p.id, null, result.p).catch(() => {});
+  audit(req, "role_added", "party_role", result.r.id, null, result.r).catch(() => {});
   res.status(201).json({ ...result.p, roles: [result.r], contacts: [], addresses: [], tags: [], documents: [] });
 }
 async function list(req: any, res: any, role: string) {
@@ -134,6 +134,27 @@ function partyRoutes(role: string) {
       eq(partyRolesTable.role, role),
     ));
     await audit(req, "updated", "business_party", updated.id, old, updated); return res.json(await getParty(org(req), party(req)));
+  });
+  router.delete(`/organizations/:organizationId/${role}s/:partyId`, requireFinancePartyPermission(permission(role, "delete")), async (req: any, res) => {
+    const orgId = org(req);
+    const partyId = party(req);
+    await db.delete(partyRolesTable).where(and(
+      eq(partyRolesTable.organizationId, orgId),
+      eq(partyRolesTable.partyId, partyId),
+      eq(partyRolesTable.role, role)
+    ));
+    const remainingRoles = await db.select({ id: partyRolesTable.id }).from(partyRolesTable).where(and(
+      eq(partyRolesTable.organizationId, orgId),
+      eq(partyRolesTable.partyId, partyId)
+    )).limit(1);
+    if (remainingRoles.length === 0) {
+      await db.delete(businessPartiesTable).where(and(
+        eq(businessPartiesTable.organizationId, orgId),
+        eq(businessPartiesTable.id, partyId)
+      ));
+    }
+    audit(req, "deleted", "business_party", partyId, null, null).catch(() => {});
+    return res.status(204).send();
   });
 }
 partyRoutes("customer"); partyRoutes("supplier");

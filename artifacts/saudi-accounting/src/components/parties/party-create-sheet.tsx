@@ -121,22 +121,24 @@ export function PartyCreateSheet({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Auto-fallback: if Business Name En/Ar is empty, use Legal Name En/Ar if provided
-    const finalNameEn = nameEn.trim() || legalEn.trim();
-    const finalNameAr = nameAr.trim() || legalAr.trim();
+    const finalNameEn = nameEn.trim();
+    const finalNameAr = nameAr.trim();
+    const trimmedEmail = email.trim();
+    const trimmedPhone = phone.trim();
 
     const newErrors: Record<string, string> = {};
+
     if (type === 'organization') {
-      if (!finalNameEn && !finalNameAr) {
-        newErrors.nameEn = t('Business Name (English or Arabic) is required (min 2 chars)', 'اسم المنشأة مطلوب بالإنجليزي أو العربي (حرفين على الأقل)');
-        newErrors.nameAr = t('Business Name (English or Arabic) is required (min 2 chars)', 'اسم المنشأة مطلوب بالإنجليزي أو العربي (حرفين على الأقل)');
-      } else {
-        if (finalNameEn && finalNameEn.length < 2) {
-          newErrors.nameEn = t('Business Name must be at least 2 characters', 'اسم المنشأة يجب أن يكون حرفين على الأقل');
-        }
-        if (finalNameAr && finalNameAr.length < 2) {
-          newErrors.nameAr = t('Business Name must be at least 2 characters', 'اسم المنشأة يجب أن يكون حرفين على الأقل');
-        }
+      if (!finalNameEn) {
+        newErrors.nameEn = t('Business Name (English) is required', 'اسم المنشأة باللغة الإنجليزية مطلوب');
+      } else if (finalNameEn.length < 2) {
+        newErrors.nameEn = t('Business Name (English) must be at least 2 characters', 'اسم المنشأة باللغة الإنجليزية يجب أن يكون حرفين على الأقل');
+      }
+
+      if (!finalNameAr) {
+        newErrors.nameAr = t('Business Name (Arabic) is required', 'اسم المنشأة باللغة العربية مطلوب');
+      } else if (finalNameAr.length < 2) {
+        newErrors.nameAr = t('Business Name (Arabic) must be at least 2 characters', 'اسم المنشأة باللغة العربية يجب أن يكون حرفين على الأقل');
       }
     } else {
       if (!firstName.trim()) {
@@ -144,6 +146,28 @@ export function PartyCreateSheet({
       } else if (firstName.trim().length < 2) {
         newErrors.firstName = t('First name must be at least 2 characters', 'الاسم الأول يجب أن يكون حرفين على الأقل');
       }
+
+      if (!lastName.trim()) {
+        newErrors.lastName = t('Last name is required', 'اسم العائلة مطلوب');
+      }
+
+      if (!arabicName.trim()) {
+        newErrors.arabicName = t('Arabic Name is required', 'الاسم بالعربي مطلوب');
+      }
+    }
+
+    // Email validation (mandatory)
+    if (!trimmedEmail) {
+      newErrors.email = t('Email address is required', 'البريد الإلكتروني مطلوب');
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      newErrors.email = t('Please enter a valid email address', 'يرجى أدخال بريد إلكتروني صحيح');
+    }
+
+    // Phone validation (mandatory)
+    if (!trimmedPhone) {
+      newErrors.phone = t('Phone number is required', 'رقم الهاتف مطلوب');
+    } else if (trimmedPhone.length < 7) {
+      newErrors.phone = t('Phone number must be at least 7 digits', 'رقم الهاتف يجب أن يكون 7 أرقام على الأقل');
     }
     
     // VAT Number: If checked, must be trimmed and exactly 15 digits starting and ending with 3
@@ -164,21 +188,8 @@ export function PartyCreateSheet({
       }
     }
 
-    // Email format validation
-    if (email.trim()) {
-      const trimmedEmail = email.trim();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-        newErrors.email = t('Please enter a valid email address', 'يرجى أدخال بريد إلكتروني صحيح');
-      }
-    }
-
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      showAlert.error(
-        t('Validation Error', 'خطأ في البيانات'),
-        t('Please correct the highlighted errors before saving.', 'يرجى تصحيح الأخطاء المحددة قبل الحفظ.')
-      );
-      // Auto-scroll container to top to reveal error fields
       const container = document.getElementById('party-form-container');
       if (container) container.scrollTop = 0;
       return;
@@ -216,10 +227,12 @@ export function PartyCreateSheet({
           queryClient.invalidateQueries({ queryKey: getGetSuppliersQueryKey(orgId) });
         }
         queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey(orgId) });
-        showAlert.success(
-          isCustomer ? t('Customer Created!', 'تم إضافة العميل!') : t('Supplier Created!', 'تم إضافة المورد!'),
-          t('Profile has been saved successfully.', 'تم حفظ الملف بنجاح.')
+
+        showAlert.toast(
+          isCustomer ? t('Customer Created Successfully!', 'تم إضافة العميل بنجاح!') : t('Supplier Created Successfully!', 'تم إضافة المورد بنجاح!'),
+          'success'
         );
+        onOpenChange(false);
         onSuccess(data.id);
       },
       onError: (err: any) => {
@@ -291,7 +304,7 @@ export function PartyCreateSheet({
                   {errors.nameEn && <p className="text-xs font-medium text-red-500">{errors.nameEn}</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold">{t('Business Name (Arabic)', 'اسم المنشأة (عربي)')}</label>
+                  <label className="text-sm font-semibold">{t('Business Name (Arabic)', 'اسم المنشأة (عربي)')} <span className="text-red-500">*</span></label>
                   <input 
                     className={`field arabic ${errors.nameAr ? 'border-red-500 bg-red-500/5 focus:ring-red-500/20' : ''}`} 
                     value={nameAr} 
@@ -314,12 +327,23 @@ export function PartyCreateSheet({
                   {errors.firstName && <p className="text-xs font-medium text-red-500">{errors.firstName}</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold">{t('Last Name', 'اسم العائلة')}</label>
-                  <input className="field" value={lastName} onChange={e => setLastName(e.target.value)} />
+                  <label className="text-sm font-semibold">{t('Last Name', 'اسم العائلة')} <span className="text-red-500">*</span></label>
+                  <input 
+                    className={`field ${errors.lastName ? 'border-red-500 bg-red-500/5 focus:ring-red-500/20' : ''}`} 
+                    value={lastName} 
+                    onChange={e => { setLastName(e.target.value); if (errors.lastName) setErrors(prev => ({ ...prev, lastName: '' })); }} 
+                  />
+                  {errors.lastName && <p className="text-xs font-medium text-red-500">{errors.lastName}</p>}
                 </div>
                 <div className="col-span-2 space-y-1.5">
-                  <label className="text-sm font-semibold">{t('Arabic Name', 'الاسم بالعربي')}</label>
-                  <input className="field arabic" value={arabicName} onChange={e => setArabicName(e.target.value)} dir="rtl" />
+                  <label className="text-sm font-semibold">{t('Arabic Name', 'الاسم بالعربي')} <span className="text-red-500">*</span></label>
+                  <input 
+                    className={`field arabic ${errors.arabicName ? 'border-red-500 bg-red-500/5 focus:ring-red-500/20' : ''}`} 
+                    value={arabicName} 
+                    onChange={e => { setArabicName(e.target.value); if (errors.arabicName) setErrors(prev => ({ ...prev, arabicName: '' })); }} 
+                    dir="rtl" 
+                  />
+                  {errors.arabicName && <p className="text-xs font-medium text-red-500">{errors.arabicName}</p>}
                 </div>
               </div>
             )}
@@ -361,7 +385,7 @@ export function PartyCreateSheet({
 
             <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border">
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold">{t('Email', 'البريد الإلكتروني')}</label>
+                <label className="text-sm font-semibold">{t('Email', 'البريد الإلكتروني')} <span className="text-red-500">*</span></label>
                 <input 
                   type="email" 
                   className={`field ${errors.email ? 'border-red-500 bg-red-500/5 focus:ring-red-500/20' : ''}`} 
@@ -372,8 +396,15 @@ export function PartyCreateSheet({
                 {errors.email && <p className="text-xs font-medium text-red-500">{errors.email}</p>}
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold">{t('Phone', 'رقم الهاتف')}</label>
-                <input type="tel" className="field" value={phone} onChange={e => setPhone(e.target.value)} />
+                <label className="text-sm font-semibold">{t('Phone', 'رقم الهاتف')} <span className="text-red-500">*</span></label>
+                <input 
+                  type="tel" 
+                  className={`field ${errors.phone ? 'border-red-500 bg-red-500/5 focus:ring-red-500/20' : ''}`} 
+                  value={phone} 
+                  onChange={e => { setPhone(e.target.value); if (errors.phone) setErrors(prev => ({ ...prev, phone: '' })); }} 
+                  placeholder="0501234567"
+                />
+                {errors.phone && <p className="text-xs font-medium text-red-500">{errors.phone}</p>}
               </div>
               <div className="col-span-2 space-y-1.5">
                 <label className="text-sm font-semibold">{t('City', 'المدينة')}</label>

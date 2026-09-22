@@ -11,12 +11,13 @@ import {
   getGetCustomerQueryKey,
   getGetSupplierQueryKey,
   getGetCustomersQueryKey,
-  getGetSuppliersQueryKey
+  getGetSuppliersQueryKey,
+  customFetch
 } from '@workspace/api-client-react';
 import { queryClient } from '@/lib/queryClient';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ArrowLeft, ArrowRight, Building2, User, MoreVertical, Edit, Phone, Mail, MapPin, Power } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Building2, User, MoreVertical, Edit, Phone, Mail, MapPin, Power, Trash2 } from 'lucide-react';
 import { OverviewTab } from './tabs/overview-tab';
 import { ContactsTab } from './tabs/contacts-tab';
 import { AddressesTab } from './tabs/addresses-tab';
@@ -132,6 +133,43 @@ export function PartyProfile({ role, id }: { role: 'customer' | 'supplier'; id: 
     });
   };
 
+  const handleDeleteParty = async () => {
+    if (!orgId) return;
+    const confirmed = await showAlert.confirm(
+      t(`Delete ${isCustomer ? 'Customer' : 'Supplier'}?`, `حذف ${isCustomer ? 'العميل' : 'المورد'}؟`),
+      t(`Are you sure you want to delete ${data.displayName}? This action cannot be undone.`, `هل أنت تأكد من رغبتك في حذف ${data.displayName}؟ لا يمكن التراجع عن هذا الإجراء.`),
+      t('Yes, Delete', 'نعم، حذف'),
+      t('Cancel', 'إلغاء')
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const rolePlural = isCustomer ? 'customers' : 'suppliers';
+      await customFetch(`/api/organizations/${orgId}/${rolePlural}/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (isCustomer) {
+        queryClient.invalidateQueries({ queryKey: getGetCustomersQueryKey(orgId) });
+      } else {
+        queryClient.invalidateQueries({ queryKey: getGetSuppliersQueryKey(orgId) });
+      }
+
+      showAlert.success(
+        t('Deleted Successfully!', 'تم الحذف بنجاح!'),
+        t(`${data.displayName} has been removed.`, `تم إزالة ${data.displayName}.`)
+      );
+
+      setLocation(`/finance/${role}s`);
+    } catch (err: any) {
+      showAlert.error(
+        t('Delete Failed', 'فشل الحذف'),
+        err?.message || t('Could not delete record.', 'تعذر حذف السجل.')
+      );
+    }
+  };
+
   return (
     <div className="space-y-6 fade-up pb-12">
       <button 
@@ -187,9 +225,16 @@ export function PartyProfile({ role, id }: { role: 'customer' | 'supplier'; id: 
               )}
               <DropdownMenuItem 
                 onClick={handleToggleStatus}
-                className={data.status === 'active' ? "text-destructive focus:text-destructive focus:bg-destructive/10" : "text-emerald-600 focus:text-emerald-600 focus:bg-emerald-500/10"}
+                className={data.status === 'active' ? "text-muted-foreground" : "text-emerald-600 focus:text-emerald-600 focus:bg-emerald-500/10"}
               >
                 {data.status === 'active' ? t('Deactivate', 'إلغاء التنشيط') : t('Activate', 'تنشيط')}
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={handleDeleteParty}
+                className="text-destructive focus:text-destructive focus:bg-destructive/10 font-medium"
+              >
+                <Trash2 size={14} className="me-2" />
+                {t('Delete Record', 'حذف السجل')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
