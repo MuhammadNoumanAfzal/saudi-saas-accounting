@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useLocation } from 'wouter';
 import { useTranslation, Button } from '@/lib/utils';
 import { 
@@ -11,6 +11,8 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { FileText, Plus, Search, Filter, Building2, Eye, ArrowRight, ArrowLeft } from 'lucide-react';
 import { BillCreateSheet } from './bill-create-sheet';
 import { SkeletonTable } from '@/components/ui/platform-loader';
+import { PurchasesKpiSummaryCards } from './purchases-kpi-summary-cards';
+import { PurchasesFilterBar } from './purchases-filter-bar';
 
 interface BillsListProps {
   onSelectBill?: (id: string) => void;
@@ -31,16 +33,17 @@ export function BillsList({ onSelectBill }: BillsListProps) {
     return new URLSearchParams(window.location.search).has('new');
   });
 
-  const queryParams = {
+  const queryParams = useMemo(() => ({
     search: debouncedSearch || undefined,
     page,
     pageSize: 20,
     status: (statusFilter as any) || undefined,
-  };
+  }), [debouncedSearch, page, statusFilter]);
 
   const { data, isLoading, refetch } = useListPurchaseBills(orgId, queryParams as any, {
     query: { 
       enabled: !!orgId, 
+      staleTime: 5 * 60 * 1000,
       queryKey: getListPurchaseBillsQueryKey(orgId, queryParams as any) 
     }
   });
@@ -102,73 +105,36 @@ export function BillsList({ onSelectBill }: BillsListProps) {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400 block mb-1">
-            {isRtl ? 'إجمالي الفواتير' : 'Total Bills'}
-          </span>
-          <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{summary.total}</div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-          <span className="text-xs font-medium text-blue-600 dark:text-blue-400 block mb-1">
-            {isRtl ? 'مستلمة ومستحقة' : 'Received & Due'}
-          </span>
-          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{summary.received}</div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-          <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 block mb-1">
-            {isRtl ? 'مدفوعة' : 'Paid Bills'}
-          </span>
-          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{summary.paid}</div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-          <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 block mb-1">
-            {isRtl ? 'القيمة الإجمالية (ر.س)' : 'Total Volume (SAR)'}
-          </span>
-          <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-            {summary.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal">SAR</span>
-          </div>
-        </div>
-      </div>
+      <PurchasesKpiSummaryCards
+        cards={[
+          { titleEn: 'Total Bills', titleAr: 'إجمالي الفواتير', value: summary.total },
+          { titleEn: 'Received & Due', titleAr: 'مستلمة ومستحقة', value: summary.received, colorClass: 'text-blue-600 dark:text-blue-400' },
+          { titleEn: 'Paid Bills', titleAr: 'مدفوعة', value: summary.paid, colorClass: 'text-emerald-600 dark:text-emerald-400' },
+          { titleEn: 'Total Volume (SAR)', titleAr: 'القيمة الإجمالية (ر.س)', value: summary.totalValue, isCurrency: true, colorClass: 'text-indigo-600 dark:text-indigo-400' },
+        ]}
+      />
 
       {/* Filter & Search Bar */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full md:w-96">
-          <Search className="w-4 h-4 absolute left-3 rtl:right-3 rtl:left-auto top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={isRtl ? 'البحث بالرقم أو اسم المورد...' : 'Search by bill number, vendor name...'}
-            className="w-full pl-9 rtl:pr-9 rtl:pl-3 pr-3 py-2 text-sm bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 dark:text-slate-100"
-          />
-        </div>
-
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-slate-400" />
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setPage(1);
-              }}
-              className="py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-            >
-              <option value="">{isRtl ? 'جميع الحالات' : 'All Statuses'}</option>
-              <option value="RECEIVED">{isRtl ? 'تم الاستلام' : 'Received'}</option>
-              <option value="PAID">{isRtl ? 'مدفوعة' : 'Paid'}</option>
-              <option value="PARTIALLY_PAID">{isRtl ? 'مدفوعة جزئياً' : 'Partially Paid'}</option>
-              <option value="OVERDUE">{isRtl ? 'متأخرة' : 'Overdue'}</option>
-              <option value="DRAFT">{isRtl ? 'مسودة' : 'Draft'}</option>
-              <option value="CANCELLED">{isRtl ? 'ملغاة' : 'Cancelled'}</option>
-            </select>
-          </div>
-        </div>
-      </div>
+      <PurchasesFilterBar
+        search={search}
+        onSearchChange={setSearch}
+        placeholderEn="Search by bill number, vendor name..."
+        placeholderAr="البحث بالرقم أو اسم المورد..."
+        filterValue={statusFilter}
+        onFilterChange={(val) => {
+          setStatusFilter(val);
+          setPage(1);
+        }}
+        filterOptions={[
+          { value: '', labelEn: 'All Statuses', labelAr: 'جميع الحالات' },
+          { value: 'RECEIVED', labelEn: 'Received', labelAr: 'تم الاستلام' },
+          { value: 'PAID', labelEn: 'Paid', labelAr: 'مدفوعة' },
+          { value: 'PARTIALLY_PAID', labelEn: 'Partially Paid', labelAr: 'مدفوعة جزئياً' },
+          { value: 'OVERDUE', labelEn: 'Overdue', labelAr: 'متأخرة' },
+          { value: 'DRAFT', labelEn: 'Draft', labelAr: 'مسودة' },
+          { value: 'CANCELLED', labelEn: 'Cancelled', labelAr: 'ملغاة' },
+        ]}
+      />
 
       {/* Main Bills Table */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">

@@ -10,6 +10,7 @@ import {
   useCreatePurchaseBill
 } from '@workspace/api-client-react';
 import { X, Plus, Trash2, Building2, Calendar, FileText, DollarSign, Calculator } from 'lucide-react';
+import { BillLineItemsTable } from './bill-line-items-table';
 
 interface BillCreateSheetProps {
   open: boolean;
