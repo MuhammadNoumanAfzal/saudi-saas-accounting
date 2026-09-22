@@ -231,8 +231,6 @@ export function InvoiceCreateSheet({
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      const firstError = Object.values(newErrors)[0];
-      showAlert.error(t('Validation Error', 'خطأ في بيانات الفاتورة'), firstError);
       return;
     }
 
@@ -263,9 +261,9 @@ export function InvoiceCreateSheet({
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey(orgId) });
             queryClient.invalidateQueries({ queryKey: getGetInvoiceQueryKey(orgId, invoiceId) });
-            showAlert.success(
+            showAlert.toast(
               isRtl ? 'تم تحديث الفاتورة الضريبية!' : 'Invoice Updated Successfully!',
-              isRtl ? 'تم تحديث بيانات الفاتورة وإعادة حساب الضريبة.' : 'Invoice tax details and line items updated.'
+              'success'
             );
             handleOpenChange(false);
             if (onSuccess) onSuccess();
@@ -278,9 +276,9 @@ export function InvoiceCreateSheet({
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey(orgId) });
-            showAlert.success(
-              isRtl ? 'تم إصدار الفاتورة الضريبية ZATCA!' : 'ZATCA Tax Invoice Issued!',
-              isRtl ? 'تم توليد رمز الاستجابة السريعة (QR Code) وحساب 15% ضريبة.' : 'Generated with ZATCA Phase 2 QR Code & 15% Output VAT.'
+            showAlert.toast(
+              isRtl ? 'تم إصدار الفاتورة الضريبية بنجاح!' : 'Invoice Issued Successfully!',
+              'success'
             );
             handleOpenChange(false);
             if (onSuccess) onSuccess();

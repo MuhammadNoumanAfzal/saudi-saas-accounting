@@ -100,9 +100,9 @@ export function ExpenseCreateSheet({ open, onOpenChange, onSuccess }: ExpenseCre
         }
       });
 
-      showAlert.success(
-        isRtl ? 'تم تسجيل المصروف!' : 'Expense Recorded!',
-        isRtl ? 'تم حفظ المصروف في السجلات بنجاح.' : 'Expense recorded successfully.'
+      showAlert.toast(
+        isRtl ? 'تم تسجيل المصروف بنجاح!' : 'Expense Recorded Successfully!',
+        'success'
       );
       onSuccess();
     } catch (err: any) {

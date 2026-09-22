@@ -226,8 +226,6 @@ export function QuotationCreateSheet({
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      const firstError = Object.values(newErrors)[0];
-      showAlert.error(t('Validation Error', 'خطأ في بيانات عرض السعر'), firstError);
       return;
     }
 
@@ -257,9 +255,9 @@ export function QuotationCreateSheet({
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListQuotationsQueryKey(orgId) });
             queryClient.invalidateQueries({ queryKey: getGetQuotationQueryKey(orgId, quotationId) });
-            showAlert.success(
+            showAlert.toast(
               isRtl ? 'تم تحديث عرض السعر!' : 'Quotation Updated Successfully!',
-              isRtl ? 'تم حفظ التعديلات بنجاح.' : 'Quotation details updated successfully.'
+              'success'
             );
             handleOpenChange(false);
             if (onSuccess) onSuccess();
@@ -272,9 +270,9 @@ export function QuotationCreateSheet({
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListQuotationsQueryKey(orgId) });
-            showAlert.success(
-              isRtl ? 'تم إنشاء عرض السعر!' : 'Quotation Created Successfully!',
-              isRtl ? 'تم حفظ عرض السعر بنجاح.' : 'New quotation saved successfully.'
+            showAlert.toast(
+              isRtl ? 'تم إنشاء عرض السعر بنجاح!' : 'Quotation Created Successfully!',
+              'success'
             );
             handleOpenChange(false);
             if (onSuccess) onSuccess();

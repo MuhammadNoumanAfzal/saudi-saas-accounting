@@ -138,8 +138,6 @@ export function JournalEntryCreateSheet({ open, onOpenChange, onSuccess }: Journ
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      const firstErr = Object.values(newErrors)[0];
-      showAlert.error(isRtl ? 'خطأ في توازن/بيانات القيد' : 'Validation Error', firstErr);
       return;
     }
 
@@ -161,9 +159,9 @@ export function JournalEntryCreateSheet({ open, onOpenChange, onSuccess }: Journ
         }
       });
 
-      showAlert.success(
-        isRtl ? 'تم ترحيل القيد المحاسبي بنجاح! 📜' : 'Journal Voucher Posted Successfully!',
-        isRtl ? `تم تسجيل القيد المزدوج بقيمة ${totalDebit.toFixed(2)} ر.س في دفتر الأستاذ العام.` : `Double-entry journal voucher recorded (${totalDebit.toFixed(2)} SAR).`
+      showAlert.toast(
+        isRtl ? 'تم ترحيل القيد المحاسبي بنجاح!' : 'Journal Voucher Posted Successfully!',
+        'success'
       );
       onSuccess();
     } catch (err: any) {

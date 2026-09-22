@@ -182,9 +182,9 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess }: BillCreateShe
         }
       });
 
-      showAlert.success(
+      showAlert.toast(
         t('Purchase Bill Saved!', 'تم حفظ فاتورة المشتريات!'),
-        t('Input VAT has been calculated and recorded in tax returns.', 'تم حساب ضريبة المدخلات وتسجيلها في الإقرار الضريبي بنجاح.')
+        'success'
       );
 
       onSuccess();

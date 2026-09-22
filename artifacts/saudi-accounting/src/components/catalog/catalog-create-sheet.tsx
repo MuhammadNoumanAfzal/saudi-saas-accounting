@@ -137,10 +137,6 @@ export function CatalogCreateSheet({
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      showAlert.error(
-        t('Validation Error', 'خطأ في التحقق من البيانات'),
-        t('Please fix the highlighted field errors before submitting.', 'يرجى تصحيح الأخطاء المحددة في النموذج قبل التقديم.')
-      );
       const container = document.getElementById('item-form-container');
       if (container) container.scrollTop = 0;
       return;
@@ -171,10 +167,11 @@ export function CatalogCreateSheet({
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListCatalogItemsQueryKey(orgId) });
           queryClient.invalidateQueries({ queryKey: getGetCatalogItemQueryKey(orgId, initialData.id) });
-          showAlert.success(
-            t('Item Updated!', 'تم تحديث الصنف!'),
-            t('Product/service updated successfully in catalog.', 'تم تحديث تفاصيل الصنف بنجاح في الكتالوج.')
+          showAlert.toast(
+            t('Item Updated Successfully!', 'تم تحديث الصنف بنجاح!'),
+            'success'
           );
+          onOpenChange(false);
           onSuccess(initialData.id);
         },
         onError: (err: any) => {
@@ -191,10 +188,11 @@ export function CatalogCreateSheet({
         onSuccess: (data) => {
           queryClient.invalidateQueries({ queryKey: getListCatalogItemsQueryKey(orgId) });
           queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey(orgId) });
-          showAlert.success(
-            t('Item Created!', 'تم إنشاء الصنف!'),
-            t('New product/service saved successfully to catalog.', 'تمت إضافة الصنف بنجاح إلى الكتالوج.')
+          showAlert.toast(
+            t('Item Created Successfully!', 'تم إنشاء الصنف بنجاح!'),
+            'success'
           );
+          onOpenChange(false);
           onSuccess(data.id);
         },
         onError: (err: any) => {
