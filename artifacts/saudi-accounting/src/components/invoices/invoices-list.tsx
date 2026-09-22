@@ -8,7 +8,7 @@ import {
 } from '@workspace/api-client-react';
 import type { Invoice } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
-import { ShieldCheck, Plus, Search, Filter, Receipt, Eye, CheckCircle2, XCircle, ArrowRight, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, Plus, Search, Filter, Receipt, Eye, CheckCircle2, XCircle, ArrowRight, ArrowLeft, Clock } from 'lucide-react';
 import { InvoiceCreateSheet } from './invoice-create-sheet';
 import { SkeletonTable } from '@/components/ui/platform-loader';
 

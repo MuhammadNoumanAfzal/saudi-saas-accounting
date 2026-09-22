@@ -13,6 +13,7 @@ import {
 import { useTranslation } from '@/lib/utils';
 import { showAlert } from '@/lib/alerts';
 import { queryClient } from '@/lib/queryClient';
+import { prefetchSalesModule } from '@/lib/sales-prefetch';
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -244,6 +245,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                               <Link
                                 key={child.href}
                                 href={child.href}
+                                onMouseEnter={() => prefetchSalesModule(orgId, child.href)}
                                 onClick={() => setMobileOpen(false)}
                                 className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
                                   active

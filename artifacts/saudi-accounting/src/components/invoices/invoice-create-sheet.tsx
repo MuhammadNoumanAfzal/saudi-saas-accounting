@@ -22,6 +22,7 @@ import {
 import { Plus, Trash2, Receipt, Calculator, User, Calendar, Tag, Percent, ShieldCheck } from 'lucide-react';
 import { showAlert } from '@/lib/alerts';
 import type { InvoiceInput, InvoiceItemInput } from '@workspace/api-client-react';
+import { InvoiceTaxSummary } from './invoice-tax-summary';
 
 export interface InvoiceCreateSheetProps {
   open: boolean;
@@ -555,19 +556,8 @@ export function InvoiceCreateSheet({
           </div>
 
           {/* Financial Totals Calculation Box */}
-          <div className="p-4 rounded-xl bg-muted/30 border border-border/80 space-y-2 max-w-xs ms-auto">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{t('Subtotal (Excl. VAT)', 'المجموع الفرعي (غير شامل الضريبة)')}:</span>
-              <span className="font-mono font-semibold text-foreground">{subtotal.toFixed(2)} SAR</span>
-            </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{t('15% VAT Tax Amount', 'ضريبة القيمة المضافة 15٪')}:</span>
-              <span className="font-mono font-semibold text-foreground">{taxAmount.toFixed(2)} SAR</span>
-            </div>
-            <div className="flex justify-between text-sm font-bold text-primary pt-2 border-t border-border">
-              <span>{t('Grand Total', 'المبلغ الإجمالي')}:</span>
-              <span className="font-mono text-base">{totalAmount.toFixed(2)} SAR</span>
-            </div>
+          <div className="max-w-sm ms-auto">
+            <InvoiceTaxSummary subtotal={subtotal} taxAmount={taxAmount} totalAmount={totalAmount} />
           </div>
 
           {/* Terms & Notes Section */}
