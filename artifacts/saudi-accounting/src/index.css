@@ -28,54 +28,54 @@
 }
 
 :root {
-  --background: 42 33% 96%;
-  --foreground: 205 42% 17%;
-  --card: 42 40% 99%;
-  --card-foreground: 205 42% 17%;
-  --border: 37 25% 87%;
-  --input: 37 25% 87%;
-  --ring: 165 61% 28%;
-  --primary: 165 61% 28%;
-  --primary-foreground: 42 40% 99%;
-  --secondary: 38 34% 91%;
-  --secondary-foreground: 205 42% 17%;
-  --muted: 39 25% 92%;
-  --muted-foreground: 205 16% 46%;
-  --accent: 43 89% 51%;
-  --accent-foreground: 205 42% 17%;
-  --destructive: 3 64% 47%;
-  --destructive-foreground: 42 40% 99%;
+  --background: 210 40% 98%;          /* Clean Alabaster Platinum #f8fafc */
+  --foreground: 222 47% 11%;          /* Rich Midnight Charcoal #0f172a */
+  --card: 0 0% 100%;                  /* Pure Pristine White #ffffff */
+  --card-foreground: 222 47% 11%;
+  --border: 214 32% 91%;              /* Soft Slate Border #e2e8f0 */
+  --input: 214 32% 91%;
+  --ring: 160 84% 30%;                /* Saudi Forest Emerald #047857 */
+  --primary: 160 84% 30%;             /* Saudi Forest Emerald #047857 */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 40% 96%;           /* Muted Soft Slate #f1f5f9 */
+  --secondary-foreground: 222 47% 11%;
+  --muted: 210 40% 94%;
+  --muted-foreground: 215 16% 47%;    /* Medium Slate Gray #64748b */
+  --accent: 43 96% 56%;               /* Warm Saudi Gold #fbbf24 */
+  --accent-foreground: 222 47% 11%;
+  --destructive: 3 75% 55%;
+  --destructive-foreground: 0 0% 100%;
   --app-font-sans: 'DM Sans', 'IBM Plex Sans Arabic', sans-serif;
   --app-font-mono: 'IBM Plex Mono', ui-monospace, monospace;
-  --radius: 0.9rem;
+  --radius: 0.95rem;
 }
 
 .dark {
-  --background: 168 45% 8%;       /* Deep Dark Emerald Slate #0a1513 */
-  --foreground: 160 20% 96%;       /* High-contrast crisp white #f1f5f9 */
-  --card: 168 35% 12%;             /* Soft dark card #11201d */
-  --card-foreground: 160 20% 96%;
-  --border: 168 25% 18%;           /* Elegant dark border #192f2a */
-  --input: 168 25% 18%;
-  --ring: 160 84% 39%;             /* Glowing emerald accent #10b981 */
-  --primary: 160 84% 39%;          /* Vibrant Emerald #10b981 */
-  --primary-foreground: 168 45% 8%;
-  --secondary: 168 30% 15%;        /* Muted secondary #162824 */
-  --secondary-foreground: 160 20% 96%;
-  --muted: 168 30% 14%;
-  --muted-foreground: 160 15% 68%; /* Clear readable muted text #94a3b8 */
-  --accent: 43 96% 56%;            /* Warm Saudi Gold #fbbf24 */
-  --accent-foreground: 168 45% 8%;
-  --destructive: 3 75% 55%;
-  --destructive-foreground: 160 20% 96%;
+  --background: 224 71% 4%;            /* Ultra-Sleek Obsidian Charcoal #030712 */
+  --foreground: 210 40% 98%;           /* Luminous Porcelain White #f8fafc */
+  --card: 222 47% 9%;                  /* Sleek Dark Card #0b1120 */
+  --card-foreground: 210 40% 98%;
+  --border: 217 33% 15%;               /* Subtle Border #1e293b */
+  --input: 217 33% 15%;
+  --ring: 160 84% 39%;                 /* Vibrant Saudi Emerald #10b981 */
+  --primary: 160 84% 39%;              /* Vibrant Saudi Emerald #10b981 */
+  --primary-foreground: 224 71% 4%;
+  --secondary: 217 33% 13%;            /* Muted Dark Button #161e31 */
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217 33% 12%;
+  --muted-foreground: 215 20% 65%;     /* Crisp Silver Muted Text #94a3b8 */
+  --accent: 43 96% 56%;                /* Warm Saudi Gold #fbbf24 */
+  --accent-foreground: 224 71% 4%;
+  --destructive: 3 85% 60%;
+  --destructive-foreground: 210 40% 98%;
 }
 
 .sidebar-bg {
-  background-color: hsl(165 61% 22%);
+  background-color: hsl(165 61% 16%);
 }
 .dark .sidebar-bg {
-  background-color: hsl(168 64% 9%);
-  border-right: 1px solid hsl(168 25% 16%);
+  background-color: #030712;
+  border-right: 1px solid #1e293b;
 }
 
 * { box-sizing: border-box; }
@@ -99,11 +99,11 @@ a { color: inherit; text-decoration: none; }
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: .025;
+  opacity: .015;
   z-index: 50;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
 }
-.dark .app-noise::after { opacity: .04; }
+.dark .app-noise::after { opacity: .03; }
 
 .fade-up { animation: fade-up .45s ease both; }
 .fade-up-2 { animation: fade-up .45s .08s ease both; }
@@ -120,11 +120,17 @@ a { color: inherit; text-decoration: none; }
 .soft-card { 
   background: hsl(var(--card)); 
   border: 1px solid hsl(var(--border)); 
-  border-radius: 18px; 
-  box-shadow: 0 10px 30px hsl(205 42% 17% / .035); 
+  border-radius: 20px; 
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
 }
 .dark .soft-card {
-  box-shadow: 0 10px 30px hsl(0 0% 0% / .2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  background: #0b1120;
+  border: 1px solid #1e293b;
+}
+.soft-card:hover {
+  border-color: hsl(var(--primary) / 0.35);
 }
 
 .field {
@@ -132,39 +138,48 @@ a { color: inherit; text-decoration: none; }
   border: 1px solid hsl(var(--border)); 
   background: hsl(var(--card));
   color: hsl(var(--foreground)); 
-  border-radius: 11px; 
-  padding: 10px 12px; 
+  border-radius: 12px; 
+  padding: 10px 14px; 
   outline: none;
   transition: border .2s, box-shadow .2s, background .2s;
 }
 .field:focus { 
   border-color: hsl(var(--primary)); 
-  box-shadow: 0 0 0 3px hsl(var(--primary) / .12); 
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.2); 
 }
-.field::placeholder { color: hsl(var(--muted-foreground) / .65); }
+.field::placeholder { color: hsl(var(--muted-foreground) / 0.6); }
 
 .btn-primary { 
-  background: hsl(var(--primary)); 
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(160 84% 28%)); 
   color: hsl(var(--primary-foreground)); 
-  border-radius: 11px; 
-  padding: 10px 16px; 
-  font-weight: 600; 
-  transition: transform .2s, background .2s, box-shadow .2s; 
+  border-radius: 12px; 
+  padding: 10px 18px; 
+  font-weight: 700; 
+  transition: transform .2s, opacity .2s, box-shadow .2s; 
+}
+.dark .btn-primary {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #0b0f17;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
 }
 .btn-primary:hover { 
-  opacity: 0.9;
+  opacity: 0.95;
   transform: translateY(-1px); 
-  box-shadow: 0 7px 16px hsl(var(--primary) / .16); 
+  box-shadow: 0 8px 20px hsl(var(--primary) / 0.25); 
 }
 .btn-secondary { 
   background: hsl(var(--secondary)); 
   color: hsl(var(--secondary-foreground)); 
   border: 1px solid hsl(var(--border)); 
-  border-radius: 11px; 
-  padding: 10px 16px; 
+  border-radius: 12px; 
+  padding: 10px 18px; 
   font-weight: 600; 
+  transition: background .2s, border-color .2s;
 }
-.btn-secondary:hover { background: hsl(var(--muted)); }
+.btn-secondary:hover { 
+  background: hsl(var(--muted)); 
+  border-color: hsl(var(--primary) / 0.3);
+}
 
 .eyebrow { 
   color: hsl(var(--primary)); 
