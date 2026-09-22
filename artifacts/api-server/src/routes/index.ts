@@ -11,6 +11,7 @@ import accountingRouter from "./accounting";
 import reportsRouter from "./reports";
 import dashboardRouter from "./dashboard";
 import auditLogsRouter from "./auditLogs";
+import zatcaRouter from "./zatca";
 
 const router: IRouter = Router();
 
@@ -25,6 +26,7 @@ router.use(accountingRouter);
 router.use(reportsRouter);
 router.use(dashboardRouter);
 router.use(auditLogsRouter);
+router.use(zatcaRouter);
 router.use(storageRouter);
 
 

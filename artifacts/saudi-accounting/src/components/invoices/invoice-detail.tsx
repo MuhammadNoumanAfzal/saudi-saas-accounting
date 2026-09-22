@@ -96,6 +96,146 @@ export function InvoiceDetail({ id }: { id: string }) {
     window.print();
   };
 
+  const handleDownloadXml = () => {
+    const invNum = invoice?.invoiceNumber || 'INV-00001';
+    const issueDt = invoice?.issueDate ? String(invoice.issueDate).split('T')[0] : '2026-09-22';
+    const sub = invoice?.subtotal || '1500.00';
+    const tax = invoice?.taxAmount || '225.00';
+    const tot = invoice?.totalAmount || '1725.00';
+    const sellerVat = org?.vatNumber || '300123456700003';
+    const sellerName = org?.legalNameEnglish || org?.legalNameArabic || 'Al-Riyadh Modern Trading Co.';
+    const buyerVat = invoice?.customerVatNumber || '310123456780003';
+    const buyerName = invoice?.customerName || 'Al-Rajhi Trading Est.';
+
+    const items = invoice?.items && invoice.items.length > 0 ? invoice.items : [
+      { id: '1', itemName: 'Dell Laptop', quantity: 1, unitPrice: sub, taxAmount: tax, lineTotal: tot }
+    ];
+
+    const invoiceLinesXml = items.map((item: any, idx: number) => {
+      const lineSub = item.lineTotal ? (parseFloat(item.lineTotal) - parseFloat(item.taxAmount || '0')).toFixed(2) : sub;
+      const lineTax = item.taxAmount || tax;
+      const lineTot = item.lineTotal || tot;
+      const q = item.quantity || 1;
+      const p = item.unitPrice || sub;
+
+      return `    <cac:InvoiceLine>
+        <cbc:ID>${idx + 1}</cbc:ID>
+        <cbc:InvoicedQuantity unitCode="PCE">${parseFloat(q).toFixed(2)}</cbc:InvoicedQuantity>
+        <cbc:LineExtensionAmount currencyID="SAR">${lineSub}</cbc:LineExtensionAmount>
+        <cac:TaxTotal>
+            <cbc:TaxAmount currencyID="SAR">${lineTax}</cbc:TaxAmount>
+            <cbc:RoundingAmount currencyID="SAR">${lineTot}</cbc:RoundingAmount>
+        </cac:TaxTotal>
+        <cac:Item>
+            <cbc:Name>${item.itemName || 'Item'}</cbc:Name>
+            <cac:ClassifiedTaxCategory>
+                <cbc:ID>S</cbc:ID>
+                <cbc:Percent>15.00</cbc:Percent>
+                <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
+            </cac:ClassifiedTaxCategory>
+        </cac:Item>
+        <cac:Price>
+            <cbc:PriceAmount currencyID="SAR">${parseFloat(p).toFixed(2)}</cbc:PriceAmount>
+        </cac:Price>
+    </cac:InvoiceLine>`;
+    }).join('\n');
+
+    const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+         xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+         xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+    <cbc:ProfileID>reporting:1.0</cbc:ProfileID>
+    <cbc:ID>${invNum}</cbc:ID>
+    <cbc:UUID>3c10b42f-87d2-4307-8bc1-${(invoice?.id || '123456789012').substring(0, 12)}</cbc:UUID>
+    <cbc:IssueDate>${issueDt}</cbc:IssueDate>
+    <cbc:IssueTime>12:00:00</cbc:IssueTime>
+    <cbc:InvoiceTypeCode name="0100000">388</cbc:InvoiceTypeCode>
+    <cbc:DocumentCurrencyCode>SAR</cbc:DocumentCurrencyCode>
+    <cbc:TaxCurrencyCode>SAR</cbc:TaxCurrencyCode>
+    <cac:AdditionalDocumentReference>
+        <cbc:ID>ICV</cbc:ID>
+        <cbc:UUID>1</cbc:UUID>
+    </cac:AdditionalDocumentReference>
+    <cac:AdditionalDocumentReference>
+        <cbc:ID>PIH</cbc:ID>
+        <cac:Attachment>
+            <cbc:EmbeddedDocumentBinaryObject mimeCode="text/plain">NWZlY2ViNjZmZmM4NmUzOGgxZDYzYTFhZjJlZjcxYzE=</cbc:EmbeddedDocumentBinaryObject>
+        </cac:Attachment>
+    </cac:AdditionalDocumentReference>
+    <cac:AccountingSupplierParty>
+        <cac:Party>
+            <cac:PartyIdentification>
+                <cbc:ID schemeID="CRN">1010123456</cbc:ID>
+            </cac:PartyIdentification>
+            <cac:PostalAddress>
+                <cbc:StreetName>King Fahd Road</cbc:StreetName>
+                <cbc:BuildingNumber>1234</cbc:BuildingNumber>
+                <cbc:CitySubdivisionName>Al Olaya</cbc:CitySubdivisionName>
+                <cbc:CityName>Riyadh</cbc:CityName>
+                <cbc:PostalZone>12345</cbc:PostalZone>
+                <cac:Country><cbc:IdentificationCode>SA</cbc:IdentificationCode></cac:Country>
+            </cac:PostalAddress>
+            <cac:PartyTaxScheme>
+                <cbc:CompanyID>${sellerVat}</cbc:CompanyID>
+                <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
+            </cac:PartyTaxScheme>
+            <cac:PartyLegalEntity>
+                <cbc:RegistrationName>${sellerName}</cbc:RegistrationName>
+            </cac:PartyLegalEntity>
+        </cac:Party>
+    </cac:AccountingSupplierParty>
+    <cac:AccountingCustomerParty>
+        <cac:Party>
+            <cac:PostalAddress>
+                <cbc:StreetName>Olaya Street</cbc:StreetName>
+                <cbc:BuildingNumber>4321</cbc:BuildingNumber>
+                <cbc:CitySubdivisionName>Al Malaz</cbc:CitySubdivisionName>
+                <cbc:CityName>Riyadh</cbc:CityName>
+                <cbc:PostalZone>54321</cbc:PostalZone>
+                <cac:Country><cbc:IdentificationCode>SA</cbc:IdentificationCode></cac:Country>
+            </cac:PostalAddress>
+            <cac:PartyTaxScheme>
+                <cbc:CompanyID>${buyerVat}</cbc:CompanyID>
+                <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
+            </cac:PartyTaxScheme>
+            <cac:PartyLegalEntity>
+                <cbc:RegistrationName>${buyerName}</cbc:RegistrationName>
+            </cac:PartyLegalEntity>
+        </cac:Party>
+    </cac:AccountingCustomerParty>
+    <cac:Delivery>
+        <cbc:ActualDeliveryDate>${issueDt}</cbc:ActualDeliveryDate>
+    </cac:Delivery>
+    <cac:TaxTotal>
+        <cbc:TaxAmount currencyID="SAR">${tax}</cbc:TaxAmount>
+        <cac:TaxSubtotal>
+            <cbc:TaxableAmount currencyID="SAR">${sub}</cbc:TaxableAmount>
+            <cbc:TaxAmount currencyID="SAR">${tax}</cbc:TaxAmount>
+            <cac:TaxCategory>
+                <cbc:ID>S</cbc:ID>
+                <cbc:Percent>15.00</cbc:Percent>
+                <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
+            </cac:TaxCategory>
+        </cac:TaxSubtotal>
+    </cac:TaxTotal>
+    <cac:LegalMonetaryTotal>
+        <cbc:LineExtensionAmount currencyID="SAR">${sub}</cbc:LineExtensionAmount>
+        <cbc:TaxExclusiveAmount currencyID="SAR">${sub}</cbc:TaxExclusiveAmount>
+        <cbc:TaxInclusiveAmount currencyID="SAR">${tot}</cbc:TaxInclusiveAmount>
+        <cbc:PayableAmount currencyID="SAR">${tot}</cbc:PayableAmount>
+    </cac:LegalMonetaryTotal>
+${invoiceLinesXml}
+</Invoice>`;
+
+    const blob = new Blob([xmlContent], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${invNum}-ZATCA.xml`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (isLoading) {
     return (
       <div className="p-12 text-center text-muted-foreground fade-up">
@@ -194,6 +334,15 @@ export function InvoiceDetail({ id }: { id: string }) {
           >
             <Printer size={16} />
             {t('Print / Save PDF', 'طباعة / حفظ PDF')}
+          </Button>
+
+          <Button 
+            variant="secondary" 
+            onClick={handleDownloadXml} 
+            className="gap-2 text-xs py-2 px-4 font-semibold hover:bg-emerald-500/10 hover:text-emerald-600 transition-colors border-emerald-500/30"
+          >
+            <FileText size={16} className="text-emerald-500" />
+            {t('Download ZATCA XML', 'تحميل XML (زكاة)')}
           </Button>
 
           {invoice.status !== 'PAID' && invoice.status !== 'CANCELLED' && (

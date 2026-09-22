@@ -24,7 +24,11 @@ const permission = (role: string, action: string) => `${role}s.${action}` as any
 const now = () => new Date();
 const clean = (v: any) => v === "" ? null : v;
 function name(v: any) { return v.businessNameEnglish || v.legalNameEnglish || [v.firstName, v.lastName].filter(Boolean).join(" ") || v.businessNameArabic || v.legalNameArabic || v.arabicName || "Unnamed party"; }
-function validVat(v: any) { return !v.vatRegistered || !v.vatNumber || (/^\d{15}$/.test(v.vatNumber) && v.vatNumber.startsWith("3") && v.vatNumber.endsWith("3")); }
+function validVat(v: any) { 
+  if (!v.vatRegistered || !v.vatNumber) return true;
+  const trimmed = String(v.vatNumber).trim();
+  return /^\d{15}$/.test(trimmed) && trimmed.startsWith("3") && trimmed.endsWith("3");
+}
 function safe(v: any) { const out = { ...v }; delete out.objectPath; delete out.bytes; delete out.size; return out; }
 async function audit(req: any, action: string, entityType: string, entityId: string | undefined, previousValues?: any, newValues?: any) {
   await writeAuditLog({ organizationId: org(req), userId: req.res?.locals?.partyUser?.id, action, entityType, entityId, previousValues: safe(previousValues), newValues: safe(newValues), req });
@@ -60,6 +64,7 @@ function parse(schema: any, body: any, res: any) {
 async function create(req: any, res: any, role: string) {
   const body = parse(role === "customer" ? CreateCustomerBody : CreateSupplierBody, req.body, res);
   if (!body) return;
+  if (body.vatNumber) body.vatNumber = String(body.vatNumber).trim();
   if (!validVat(body)) return res.status(400).json({ error: "VAT number must contain 15 digits and start and end with 3" });
   const organizationId = org(req);
   const partyNumber = await nextNumber(organizationId, role);

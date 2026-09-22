@@ -27,11 +27,12 @@ export function BranchesSettings() {
 export function ZatcaSettings() {
   const { t } = useTranslation();
   const { data: session } = useGetCurrentSession();
-  const org = session?.organization;
+  const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization.id || '';
+  const org = session?.organizations?.find(o => o.organization.id === orgId)?.organization || session?.organizations?.[0]?.organization;
 
   const [envMode, setEnvMode] = useState<'sandbox' | 'production'>('sandbox');
-  const [vatNumber, setVatNumber] = useState(org?.vatNumber || '');
-  const [companyName, setCompanyName] = useState(org?.legalNameEnglish || org?.legalNameArabic || '');
+  const [vatNumber, setVatNumber] = useState(org?.vatNumber || '300123456700003');
+  const [companyName, setCompanyName] = useState(org?.legalNameEnglish || org?.legalNameArabic || 'Al-Riyadh Modern Trading Co.');
   const [otpCode, setOtpCode] = useState('123456');
 
   useEffect(() => {
@@ -41,29 +42,95 @@ export function ZatcaSettings() {
         setCompanyName(org.legalNameEnglish || org.legalNameArabic || '');
       }
     }
-  }, [org]);
-  const [loading, setLoading] = useState(false);
-  const [csidActive, setCsidActive] = useState(true);
-  const [testResult, setTestResult] = useState<{ status: 'idle' | 'testing' | 'success'; message?: string }>({ status: 'idle' });
+    if (orgId) {
+      fetch(`/api/organizations/${orgId}/zatca/status`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.csidActive) {
+            setCsidActive(true);
+            if (data.envMode) setEnvMode(data.envMode);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [org, orgId]);
 
-  const handleOnboard = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const [csidActive, setCsidActive] = useState(false);
+  const [testResult, setTestResult] = useState<{ status: 'idle' | 'testing' | 'success' | 'error'; message?: string }>({ status: 'idle' });
+
+  const handleOnboard = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!otpCode || otpCode.trim().length !== 6) {
+      alert(t('Please enter a valid 6-digit ZATCA OTP code.', 'يرجى إدخال رمز التحقق ZATCA المكون من 6 أرقام.'));
+      return;
+    }
+
+    const activeOrgId = orgId || 'current';
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch(`/api/organizations/${activeOrgId}/zatca/onboard`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          otpCode,
+          vatNumber,
+          companyName,
+          envMode,
+        }),
+      });
+      const data = await res.json();
       setLoading(false);
-      setCsidActive(true);
-      alert(t('ZATCA Compliance CSID Certificate successfully issued and verified!', 'تم إصدار شهادة CSID وتوثيقها بنجاح من هيئة الزكاة!'));
-    }, 1200);
+
+      if (res.ok && data.success) {
+        setCsidActive(true);
+        alert(t(data.message || 'ZATCA Compliance CSID Certificate successfully issued!', 'تم إصدار شهادة CSID وتوثيقها بنجاح!'));
+      } else {
+        alert(data.error || 'ZATCA Onboarding failed');
+      }
+    } catch (err: any) {
+      setLoading(false);
+      alert(err.message || 'Failed to connect to ZATCA endpoint');
+    }
   };
 
-  const handleRunComplianceTest = () => {
-    setTestResult({ status: 'testing' });
-    setTimeout(() => {
+  const handleRunComplianceTest = async () => {
+    const activeOrgId = orgId || 'current';
+    if (!csidActive) {
       setTestResult({
-        status: 'success',
-        message: 'Invoice #INV-2026-TEST verified by ZATCA Sandbox API #2 (Clearance API). UUID & ECDSA secp256k1 Cryptographic stamp generated successfully.'
+        status: 'error',
+        message: t('CSID Certificate required! Please enter a 6-digit OTP code below and click "Request ZATCA CSID Certificate" first.', 'شهادة CSID مطلوبة! يرجى إدخال رمز OTP أولاً وإصدار الشهادة.')
       });
-    }, 1000);
+      return;
+    }
+
+    setTestResult({ status: 'testing' });
+    try {
+      const res = await fetch(`/api/organizations/${activeOrgId}/zatca/compliance-test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setTestResult({
+          status: 'success',
+          message: data.message || 'Invoice Clearance Simulation Passed!',
+        });
+      } else {
+        setTestResult({
+          status: 'error',
+          message: data.error || 'Compliance test failed',
+        });
+      }
+    } catch (err: any) {
+      setTestResult({
+        status: 'error',
+        message: err.message || 'Network error executing compliance test',
+      });
+    }
   };
 
   return (
@@ -126,6 +193,16 @@ export function ZatcaSettings() {
             <CheckCircle2 size={16} className="text-emerald-500 shrink-0 mt-0.5" />
             <div>
               <div className="font-bold">STATUS 200 OK — ZATCA CLEARANCE API SIMULATION PASSED</div>
+              <div className="mt-0.5 opacity-90">{testResult.message}</div>
+            </div>
+          </div>
+        )}
+
+        {testResult.status === 'error' && (
+          <div className="mt-4 p-3.5 rounded-xl border border-red-500/30 bg-red-500/10 text-xs font-mono text-red-700 dark:text-red-300 flex items-start gap-2.5 animate-in fade-in">
+            <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+            <div>
+              <div className="font-bold">STATUS 400 BAD REQUEST — CSID CERTIFICATE REQUIRED</div>
               <div className="mt-0.5 opacity-90">{testResult.message}</div>
             </div>
           </div>
