@@ -218,6 +218,9 @@ export function InvoiceDetail({ id }: { id: string }) {
             </cac:TaxCategory>
         </cac:TaxSubtotal>
     </cac:TaxTotal>
+    <cac:TaxTotal>
+        <cbc:TaxAmount currencyID="SAR">${tax}</cbc:TaxAmount>
+    </cac:TaxTotal>
     <cac:LegalMonetaryTotal>
         <cbc:LineExtensionAmount currencyID="SAR">${sub}</cbc:LineExtensionAmount>
         <cbc:TaxExclusiveAmount currencyID="SAR">${sub}</cbc:TaxExclusiveAmount>
