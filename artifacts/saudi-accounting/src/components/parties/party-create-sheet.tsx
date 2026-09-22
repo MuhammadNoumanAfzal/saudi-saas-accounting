@@ -127,18 +127,57 @@ export function PartyCreateSheet({
 
     const newErrors: Record<string, string> = {};
     if (type === 'organization') {
-      if (!finalNameEn) newErrors.nameEn = t('Business Name (English) is required', 'اسم المنشأة بالإنجليزية مطلوب');
+      if (!finalNameEn && !finalNameAr) {
+        newErrors.nameEn = t('Business Name (English or Arabic) is required (min 2 chars)', 'اسم المنشأة مطلوب بالإنجليزي أو العربي (حرفين على الأقل)');
+        newErrors.nameAr = t('Business Name (English or Arabic) is required (min 2 chars)', 'اسم المنشأة مطلوب بالإنجليزي أو العربي (حرفين على الأقل)');
+      } else {
+        if (finalNameEn && finalNameEn.length < 2) {
+          newErrors.nameEn = t('Business Name must be at least 2 characters', 'اسم المنشأة يجب أن يكون حرفين على الأقل');
+        }
+        if (finalNameAr && finalNameAr.length < 2) {
+          newErrors.nameAr = t('Business Name must be at least 2 characters', 'اسم المنشأة يجب أن يكون حرفين على الأقل');
+        }
+      }
     } else {
-      if (!firstName.trim()) newErrors.firstName = t('First name is required', 'الاسم الأول مطلوب');
+      if (!firstName.trim()) {
+        newErrors.firstName = t('First name is required', 'الاسم الأول مطلوب');
+      } else if (firstName.trim().length < 2) {
+        newErrors.firstName = t('First name must be at least 2 characters', 'الاسم الأول يجب أن يكون حرفين على الأقل');
+      }
     }
     
+    // VAT Number: If checked, must be trimmed and exactly 15 digits starting and ending with 3
     if (vatRegistered) {
-      if (!vatNumber.trim()) newErrors.vatNumber = t('VAT number is required', 'الرقم الضريبي مطلوب');
-      else if (!/^\d{15}$/.test(vatNumber.trim())) newErrors.vatNumber = t('ZATCA VAT Number must be exactly 15 digits', 'الرقم الضريبي يجب أن يتكون من 15 رقماً');
+      const trimmedVat = vatNumber.trim();
+      if (!trimmedVat) {
+        newErrors.vatNumber = t('VAT registration number is required when VAT registered', 'الرقم الضريبي مطلوب للمنشآت المسجلة ضريبياً');
+      } else if (!/^3\d{13}3$/.test(trimmedVat)) {
+        newErrors.vatNumber = t('ZATCA VAT number must be 15 digits starting and ending with 3 (e.g. 310123456780003)', 'الرقم الضريبي ZATCA يجب أن يتكون من 15 رقماً يبدأ وينتهي بـ 3');
+      }
+    }
+
+    // Commercial Registration (CR): If provided, must be 10 numeric digits
+    if (crNumber.trim()) {
+      const trimmedCr = crNumber.trim();
+      if (!/^\d{10}$/.test(trimmedCr)) {
+        newErrors.crNumber = t('Commercial Registration (CR) must be exactly 10 digits', 'رقم السجل التجاري يجب أن يتكون من 10 أرقام بالضبط');
+      }
+    }
+
+    // Email format validation
+    if (email.trim()) {
+      const trimmedEmail = email.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+        newErrors.email = t('Please enter a valid email address', 'يرجى أدخال بريد إلكتروني صحيح');
+      }
     }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      showAlert.error(
+        t('Validation Error', 'خطأ في البيانات'),
+        t('Please correct the highlighted errors before saving.', 'يرجى تصحيح الأخطاء المحددة قبل الحفظ.')
+      );
       // Auto-scroll container to top to reveal error fields
       const container = document.getElementById('party-form-container');
       if (container) container.scrollTop = 0;
@@ -149,19 +188,19 @@ export function PartyCreateSheet({
       partyType: type,
       businessNameEnglish: type === 'organization' ? finalNameEn : null,
       businessNameArabic: type === 'organization' ? (finalNameAr || null) : null,
-      firstName: type === 'individual' ? firstName : null,
-      lastName: type === 'individual' ? lastName : null,
-      arabicName: type === 'individual' ? arabicName : null,
+      firstName: type === 'individual' ? firstName.trim() : null,
+      lastName: type === 'individual' ? (lastName.trim() || null) : null,
+      arabicName: type === 'individual' ? (arabicName.trim() || null) : null,
       vatRegistered,
-      vatNumber: vatRegistered ? vatNumber : null,
-      commercialRegistrationNumber: crNumber || null,
-      primaryEmail: email || null,
-      primaryPhone: phone || null,
-      city: city || null,
-      legalNameEnglish: legalEn || finalNameEn || null,
-      legalNameArabic: legalAr || finalNameAr || null,
-      website: website || null,
-      notes: notes || null
+      vatNumber: vatRegistered ? vatNumber.trim() : null,
+      commercialRegistrationNumber: crNumber.trim() || null,
+      primaryEmail: email.trim() || null,
+      primaryPhone: phone.trim() || null,
+      city: city.trim() || null,
+      legalNameEnglish: legalEn.trim() || finalNameEn || null,
+      legalNameArabic: legalAr.trim() || finalNameAr || null,
+      website: website.trim() || null,
+      notes: notes.trim() || null
     };
 
     const mutation = isCustomer ? createCustomer : createSupplier;
@@ -208,8 +247,15 @@ export function PartyCreateSheet({
         <div id="party-form-container" className="flex-1 overflow-y-auto p-6 scrollbar-hide">
           <form id="party-form" onSubmit={handleSubmit} className="space-y-5">
             {errors.submit && (
-              <div className="p-3 bg-destructive/10 text-destructive rounded-lg text-sm border border-destructive/20 font-medium">
+              <div className="p-3 bg-red-500/10 text-red-500 dark:text-red-400 rounded-lg text-sm border border-red-500/20 font-medium">
                 {errors.submit}
+              </div>
+            )}
+
+            {Object.keys(errors).length > 0 && !errors.submit && (
+              <div className="p-3 bg-red-500/10 text-red-500 dark:text-red-400 rounded-lg text-sm border border-red-500/20 font-medium flex gap-2 items-center">
+                <AlertTriangle size={16} className="shrink-0" />
+                <span>{t('Please correct mandatory fields marked below.', 'يرجى تصحيح الحقول الإلزامية المحددة أدناه.')}</span>
               </div>
             )}
 
@@ -221,7 +267,7 @@ export function PartyCreateSheet({
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground uppercase">{t('Party Type', 'نوع الطرف')}</label>
+              <label className="text-xs font-bold text-muted-foreground uppercase">{t('Party Type', 'نوع الطرف')} <span className="text-red-500">*</span></label>
               <div className="flex bg-muted/50 p-1 rounded-xl">
                 <button type="button" onClick={() => setType('organization')} className={`flex-1 py-1.5 text-sm font-semibold rounded-lg transition-colors ${type === 'organization' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
                   {t('Organization', 'منشأة')}
@@ -235,21 +281,37 @@ export function PartyCreateSheet({
             {type === 'organization' ? (
               <>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold">{t('Business Name (English) *', 'اسم المنشأة (إنجليزي) *')}</label>
-                  <input className={`field ${errors.nameEn ? 'border-destructive' : ''}`} value={nameEn} onChange={e => setNameEn(e.target.value)} />
-                  {errors.nameEn && <p className="text-xs text-destructive">{errors.nameEn}</p>}
+                  <label className="text-sm font-semibold">{t('Business Name (English)', 'اسم المنشأة (إنجليزي)')} <span className="text-red-500">*</span></label>
+                  <input 
+                    className={`field ${errors.nameEn ? 'border-red-500 bg-red-500/5 focus:ring-red-500/20' : ''}`} 
+                    value={nameEn} 
+                    onChange={e => { setNameEn(e.target.value); if (errors.nameEn) setErrors(prev => ({ ...prev, nameEn: '' })); }} 
+                    placeholder="e.g. Al-Riyadh Technology Co."
+                  />
+                  {errors.nameEn && <p className="text-xs font-medium text-red-500">{errors.nameEn}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-semibold">{t('Business Name (Arabic)', 'اسم المنشأة (عربي)')}</label>
-                  <input className="field arabic" value={nameAr} onChange={e => setNameAr(e.target.value)} dir="rtl" />
+                  <input 
+                    className={`field arabic ${errors.nameAr ? 'border-red-500 bg-red-500/5 focus:ring-red-500/20' : ''}`} 
+                    value={nameAr} 
+                    onChange={e => { setNameAr(e.target.value); if (errors.nameAr) setErrors(prev => ({ ...prev, nameAr: '' })); }} 
+                    dir="rtl" 
+                    placeholder="مثال: شركة تقنية الرياض"
+                  />
+                  {errors.nameAr && <p className="text-xs font-medium text-red-500">{errors.nameAr}</p>}
                 </div>
               </>
             ) : (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold">{t('First Name *', 'الاسم الأول *')}</label>
-                  <input className={`field ${errors.firstName ? 'border-destructive' : ''}`} value={firstName} onChange={e => setFirstName(e.target.value)} />
-                  {errors.firstName && <p className="text-xs text-destructive">{errors.firstName}</p>}
+                  <label className="text-sm font-semibold">{t('First Name', 'الاسم الأول')} <span className="text-red-500">*</span></label>
+                  <input 
+                    className={`field ${errors.firstName ? 'border-red-500 bg-red-500/5 focus:ring-red-500/20' : ''}`} 
+                    value={firstName} 
+                    onChange={e => { setFirstName(e.target.value); if (errors.firstName) setErrors(prev => ({ ...prev, firstName: '' })); }} 
+                  />
+                  {errors.firstName && <p className="text-xs font-medium text-red-500">{errors.firstName}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-semibold">{t('Last Name', 'اسم العائلة')}</label>
@@ -270,26 +332,44 @@ export function PartyCreateSheet({
               
               {vatRegistered && (
                 <div className="space-y-1.5 mb-4 fade-up">
-                  <label className="text-sm font-semibold">{t('VAT Registration Number', 'الرقم الضريبي')}</label>
-                  <input className={`field ${errors.vatNumber ? 'border-destructive' : ''}`} value={vatNumber} onChange={e => setVatNumber(e.target.value)} placeholder="3xxxxxxxxxxxxx3" />
+                  <label className="text-sm font-semibold">{t('VAT Registration Number', 'الرقم الضريبي')} <span className="text-red-500">*</span></label>
+                  <input 
+                    className={`field ${errors.vatNumber ? 'border-red-500 bg-red-500/5 focus:ring-red-500/20' : ''}`} 
+                    value={vatNumber} 
+                    onChange={e => { setVatNumber(e.target.value); if (errors.vatNumber) setErrors(prev => ({ ...prev, vatNumber: '' })); }} 
+                    placeholder="310123456780003" 
+                  />
                   {errors.vatNumber ? (
-                    <p className="text-xs text-destructive">{errors.vatNumber}</p>
-                  ) : vatNumber.length === 15 ? (
-                    <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{t('Format valid', 'الصيغة صحيحة')}</p>
+                    <p className="text-xs font-medium text-red-500">{errors.vatNumber}</p>
+                  ) : /^3\d{13}3$/.test(vatNumber.trim()) ? (
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{t('Valid ZATCA 15-digit TIN format', 'صيغة الرقم الضريبي ZATCA صحيحة (15 رقم)')}</p>
                   ) : null}
                 </div>
               )}
 
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold">{t('Commercial Registration Number', 'رقم السجل التجاري')}</label>
-                <input className="field" value={crNumber} onChange={e => setCrNumber(e.target.value)} />
+                <label className="text-sm font-semibold">{t('Commercial Registration Number', 'رقم السجل التجاري (CR)')}</label>
+                <input 
+                  className={`field ${errors.crNumber ? 'border-red-500 bg-red-500/5 focus:ring-red-500/20' : ''}`} 
+                  value={crNumber} 
+                  onChange={e => { setCrNumber(e.target.value); if (errors.crNumber) setErrors(prev => ({ ...prev, crNumber: '' })); }} 
+                  placeholder="1010123456"
+                />
+                {errors.crNumber && <p className="text-xs font-medium text-red-500">{errors.crNumber}</p>}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border">
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold">{t('Email', 'البريد الإلكتروني')}</label>
-                <input type="email" className="field" value={email} onChange={e => setEmail(e.target.value)} />
+                <input 
+                  type="email" 
+                  className={`field ${errors.email ? 'border-red-500 bg-red-500/5 focus:ring-red-500/20' : ''}`} 
+                  value={email} 
+                  onChange={e => { setEmail(e.target.value); if (errors.email) setErrors(prev => ({ ...prev, email: '' })); }} 
+                  placeholder="name@domain.com"
+                />
+                {errors.email && <p className="text-xs font-medium text-red-500">{errors.email}</p>}
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold">{t('Phone', 'رقم الهاتف')}</label>
@@ -339,7 +419,7 @@ export function PartyCreateSheet({
 
         <div className="p-6 border-t border-border bg-card/50 flex flex-col gap-3 mt-auto">
           {Object.keys(errors).length > 0 && (
-            <div className="p-2.5 bg-destructive/10 text-destructive text-xs font-semibold rounded-lg flex items-center gap-1.5">
+            <div className="p-2.5 bg-red-500/10 text-red-500 text-xs font-semibold rounded-lg flex items-center gap-1.5">
               <span>⚠️ {Object.values(errors)[0]}</span>
             </div>
           )}

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cairo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
@@ -45,8 +45,8 @@
   --accent-foreground: 222 47% 11%;
   --destructive: 3 75% 55%;
   --destructive-foreground: 0 0% 100%;
-  --app-font-sans: 'DM Sans', 'IBM Plex Sans Arabic', sans-serif;
-  --app-font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --app-font-sans: 'Plus Jakarta Sans', 'Cairo', sans-serif;
+  --app-font-mono: 'JetBrains Mono', ui-monospace, monospace;
   --radius: 0.95rem;
 }
 
@@ -87,12 +87,13 @@ body {
   color: hsl(var(--foreground));
   font-family: var(--app-font-sans);
   -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.011em;
 }
 button, input, textarea, select { font: inherit; }
 button { cursor: pointer; }
 a { color: inherit; text-decoration: none; }
 
-.arabic { font-family: 'IBM Plex Sans Arabic', var(--app-font-sans); }
+.arabic { font-family: 'Cairo', var(--app-font-sans); }
 
 .app-noise::after {
   content: '';

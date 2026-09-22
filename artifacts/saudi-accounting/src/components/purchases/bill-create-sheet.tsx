@@ -57,7 +57,7 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess }: BillCreateShe
   const [items, setItems] = useState<ItemRow[]>([
     { description: '', quantity: 1, unitPrice: 0, discountAmount: 0, taxCategory: 'STANDARD', taxRate: 15 }
   ]);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (suppliers.length > 0 && !supplierId) {
@@ -114,16 +114,46 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess }: BillCreateShe
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg('');
+    const newErrors: Record<string, string> = {};
 
+    // Supplier Selection: Mandatory
     if (!supplierId) {
-      setErrorMsg(isRtl ? 'الرجاء اختيار المورد' : 'Please select a supplier');
-      return;
+      newErrors.supplierId = isRtl ? 'الرجاء اختيار المورد' : 'Please select a supplier';
     }
 
-    const invalidItem = items.find(it => !it.description.trim());
-    if (invalidItem) {
-      setErrorMsg(isRtl ? 'الرجاء إدخال الوصف لجميع البنود' : 'Please enter description for all items');
+    // Bill / Reference Number: Required
+    if (!supplierBillNumber.trim()) {
+      newErrors.supplierBillNumber = isRtl ? 'رقم فاتورة المورد / المرجع مطلوب' : 'Vendor Bill / Reference Number is required';
+    }
+
+    // Line Items: At least 1 with qty > 0 and price > 0
+    if (!items || items.length === 0) {
+      newErrors.items = isRtl ? 'يرجى إضافة بند واحد على الأقل' : 'Please add at least one line item';
+    } else {
+      let itemHasError = false;
+      items.forEach((it, idx) => {
+        if (!it.description.trim()) {
+          newErrors[`item_${idx}_desc`] = isRtl ? 'الوصف مطلوب' : 'Description is required';
+          itemHasError = true;
+        }
+        if (!it.quantity || it.quantity <= 0) {
+          newErrors[`item_${idx}_qty`] = isRtl ? 'الكمية يجب أن تكون أكبر من 0' : 'Quantity must be > 0';
+          itemHasError = true;
+        }
+        if (!it.unitPrice || it.unitPrice <= 0) {
+          newErrors[`item_${idx}_price`] = isRtl ? 'السعر يجب أن يكون أكبر من 0' : 'Price must be > 0';
+          itemHasError = true;
+        }
+      });
+      if (itemHasError && !newErrors.items) {
+        newErrors.items = isRtl ? 'جميع البنود يجب أن تحتوي على كمية وسعر أكبر من 0.' : 'All items must have quantity and unit price greater than 0.';
+      }
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      const firstErr = Object.values(newErrors)[0];
+      showAlert.error(isRtl ? 'خطأ في بيانات فاتورة الشراء' : 'Validation Error', firstErr);
       return;
     }
 
@@ -132,15 +162,15 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess }: BillCreateShe
         organizationId: orgId,
         data: {
           supplierId,
-          supplierBillNumber: supplierBillNumber || undefined,
+          supplierBillNumber: supplierBillNumber.trim(),
           issueDate: issueDate ? new Date(issueDate).toISOString() : undefined,
           dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
           currency,
-          notes: notes || undefined,
+          notes: notes.trim() || undefined,
           items: items.map(it => ({
             catalogItemId: it.catalogItemId || undefined,
             itemCode: it.itemCode || undefined,
-            description: it.description,
+            description: it.description.trim(),
             descriptionAr: it.descriptionAr || undefined,
             quantity: String(it.quantity),
             unitPrice: String(it.unitPrice),
@@ -160,7 +190,7 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess }: BillCreateShe
     } catch (err: any) {
       console.error(err);
       const msg = err?.message || (isRtl ? 'فشل إنشاء فاتورة الشراء' : 'Failed to create purchase bill');
-      setErrorMsg(msg);
+      setErrors({ submit: msg });
       showAlert.error(t('Error', 'خطأ'), msg);
     }
   };
@@ -189,9 +219,14 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess }: BillCreateShe
 
         {/* Content Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
-          {errorMsg && (
-            <div className="p-3 bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-lg text-sm">
-              {errorMsg}
+          {Object.keys(errors).length > 0 && (
+            <div className="p-3 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded-lg text-xs font-semibold space-y-1">
+              <div className="font-bold">⚠️ {isRtl ? 'يرجى تصحيح الأخطاء التالية:' : 'Please fix highlighted errors:'}</div>
+              <ul className="list-disc list-inside font-normal">
+                {Object.values(errors).map((err, i) => (
+                  <li key={i}>{err}</li>
+                ))}
+              </ul>
             </div>
           )}
 
@@ -199,13 +234,12 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess }: BillCreateShe
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {isRtl ? 'المورد *' : 'Supplier / Vendor *'}
+                {isRtl ? 'المورد' : 'Supplier / Vendor'} <span className="text-red-500">*</span>
               </label>
               <select
                 value={supplierId}
-                onChange={(e) => setSupplierId(e.target.value)}
-                required
-                className="w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-900 dark:text-slate-100"
+                onChange={(e) => { setSupplierId(e.target.value); if (errors.supplierId) setErrors(prev => ({ ...prev, supplierId: '' })); }}
+                className={`w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border ${errors.supplierId ? 'border-red-500 bg-red-500/5' : 'border-slate-200 dark:border-slate-700'} rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-900 dark:text-slate-100`}
               >
                 <option value="">{isRtl ? 'اختر المورد' : 'Select Supplier'}</option>
                 {suppliers.map((s) => (
@@ -214,19 +248,21 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess }: BillCreateShe
                   </option>
                 ))}
               </select>
+              {errors.supplierId && <p className="text-[11px] font-medium text-red-500 mt-1">{errors.supplierId}</p>}
             </div>
 
             <div>
               <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {isRtl ? 'رقم فاتورة المورد' : 'Vendor Bill Ref #'}
+                {isRtl ? 'رقم فاتورة المورد' : 'Vendor Bill Ref #'} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={supplierBillNumber}
-                onChange={(e) => setSupplierBillNumber(e.target.value)}
-                placeholder={isRtl ? 'مثال: INV-9982' : 'e.g. INV-9982'}
-                className="w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-900 dark:text-slate-100"
+                onChange={(e) => { setSupplierBillNumber(e.target.value); if (errors.supplierBillNumber) setErrors(prev => ({ ...prev, supplierBillNumber: '' })); }}
+                placeholder={isRtl ? 'مثال: BILL-9901' : 'e.g. BILL-9901'}
+                className={`w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border ${errors.supplierBillNumber ? 'border-red-500 bg-red-500/5' : 'border-slate-200 dark:border-slate-700'} rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-900 dark:text-slate-100`}
               />
+              {errors.supplierBillNumber && <p className="text-[11px] font-medium text-red-500 mt-1">{errors.supplierBillNumber}</p>}
             </div>
 
             <div>
@@ -259,7 +295,7 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess }: BillCreateShe
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
               <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Calculator className="w-4 h-4 text-indigo-600" />
-                {isRtl ? 'بنود الفاتورة' : 'Bill Items'}
+                {isRtl ? 'بنود الفاتورة' : 'Bill Items'} <span className="text-red-500">*</span>
               </h3>
               <Button
                 type="button"
@@ -272,12 +308,14 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess }: BillCreateShe
               </Button>
             </div>
 
+            {errors.items && <p className="text-xs font-semibold text-red-500">{errors.items}</p>}
+
             {/* Line Items Table */}
             <div className="space-y-3">
               {items.map((item, idx) => (
                 <div 
                   key={idx} 
-                  className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3"
+                  className={`p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border ${errors[`item_${idx}_desc`] || errors[`item_${idx}_qty`] || errors[`item_${idx}_price`] ? 'border-red-500 bg-red-500/5' : 'border-slate-200 dark:border-slate-700'} space-y-3`}
                 >
                   {/* Item catalog selection */}
                   {catalogItems.length > 0 && (
@@ -300,16 +338,16 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess }: BillCreateShe
                     <div className="sm:col-span-5">
                       <input
                         type="text"
-                        placeholder={isRtl ? 'الوصف (مثال: توريد أحبار طابعات)' : 'Description (e.g. Printer Toner Supply)'}
+                        placeholder={isRtl ? 'الوصف (مثال: توريد أحبار طابعات) *' : 'Description (e.g. Printer Toner Supply) *'}
                         value={item.description}
                         onChange={(e) => {
                           const copy = [...items];
                           copy[idx].description = e.target.value;
                           setItems(copy);
                         }}
-                        required
-                        className="w-full py-1.5 px-2.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
+                        className={`w-full py-1.5 px-2.5 text-xs bg-white dark:bg-slate-900 border ${errors[`item_${idx}_desc`] ? 'border-red-500 bg-red-500/5' : 'border-slate-200 dark:border-slate-700'} rounded-lg text-slate-900 dark:text-slate-100`}
                       />
+                      {errors[`item_${idx}_desc`] && <p className="text-[10px] font-medium text-red-500">{errors[`item_${idx}_desc`]}</p>}
                     </div>
 
                     <div className="sm:col-span-2">
@@ -317,15 +355,16 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess }: BillCreateShe
                         type="number"
                         step="0.0001"
                         min="0.0001"
-                        placeholder={isRtl ? 'الكمية' : 'Qty'}
+                        placeholder={isRtl ? 'الكمية *' : 'Qty *'}
                         value={item.quantity}
                         onChange={(e) => {
                           const copy = [...items];
                           copy[idx].quantity = parseFloat(e.target.value) || 0;
                           setItems(copy);
                         }}
-                        className="w-full py-1.5 px-2.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
+                        className={`w-full py-1.5 px-2.5 text-xs bg-white dark:bg-slate-900 border ${errors[`item_${idx}_qty`] ? 'border-red-500 bg-red-500/5' : 'border-slate-200 dark:border-slate-700'} rounded-lg text-slate-900 dark:text-slate-100`}
                       />
+                      {errors[`item_${idx}_qty`] && <p className="text-[10px] font-medium text-red-500">{errors[`item_${idx}_qty`]}</p>}
                     </div>
 
                     <div className="sm:col-span-2">
@@ -333,15 +372,16 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess }: BillCreateShe
                         type="number"
                         step="0.01"
                         min="0"
-                        placeholder={isRtl ? 'السعر' : 'Unit Price'}
+                        placeholder={isRtl ? 'السعر *' : 'Unit Price *'}
                         value={item.unitPrice}
                         onChange={(e) => {
                           const copy = [...items];
                           copy[idx].unitPrice = parseFloat(e.target.value) || 0;
                           setItems(copy);
                         }}
-                        className="w-full py-1.5 px-2.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
+                        className={`w-full py-1.5 px-2.5 text-xs bg-white dark:bg-slate-900 border ${errors[`item_${idx}_price`] ? 'border-red-500 bg-red-500/5' : 'border-slate-200 dark:border-slate-700'} rounded-lg text-slate-900 dark:text-slate-100`}
                       />
+                      {errors[`item_${idx}_price`] && <p className="text-[10px] font-medium text-red-500">{errors[`item_${idx}_price`]}</p>}
                     </div>
 
                     <div className="sm:col-span-2">

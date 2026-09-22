@@ -176,9 +176,60 @@ export function QuotationCreateSheet({
 
   totalAmount = subtotal + taxAmount;
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerId || items.some((it) => !it.description.trim())) return;
+    const newErrors: Record<string, string> = {};
+
+    // Customer Selection: Mandatory
+    if (!customerId) {
+      newErrors.customerId = t('Please select a customer', 'يرجى اختيار العميل');
+    }
+
+    // Expiry / Valid Until Date: Must be in the future
+    if (!issueDate) {
+      newErrors.issueDate = t('Issue date is required', 'تاريخ الإصدار مطلوب');
+    }
+    if (!validUntilDate) {
+      newErrors.validUntilDate = t('Valid until date is required', 'تاريخ انتهاء الصلاحية مطلوب');
+    } else if (issueDate && new Date(validUntilDate) < new Date(issueDate)) {
+      newErrors.validUntilDate = t('Valid until date must be after issue date', 'تاريخ انتهاء الصلاحية يجب أن يكون بعد تاريخ الإصدار');
+    }
+
+    // Line Items: At least 1 item with qty > 0 and price > 0
+    if (!items || items.length === 0) {
+      const msg = t('Please add at least one line item to create quotation.', 'يرجى إضافة بند واحد على الأقل لإصدار عرض السعر.');
+      newErrors.items = msg;
+    } else {
+      let itemHasError = false;
+      items.forEach((it, idx) => {
+        if (!it.description.trim()) {
+          newErrors[`item_${idx}_desc`] = t('Description is required', 'الوصف مطلوب');
+          itemHasError = true;
+        }
+        const qty = parseFloat(it.quantity || '0');
+        if (isNaN(qty) || qty <= 0) {
+          newErrors[`item_${idx}_qty`] = t('Quantity must be > 0', 'الكمية يجب أن تكون أكبر من 0');
+          itemHasError = true;
+        }
+        const price = parseFloat(it.unitPrice || '0');
+        if (isNaN(price) || price <= 0) {
+          newErrors[`item_${idx}_price`] = t('Unit price must be > 0', 'سعر الوحدة يجب أن يكون أكبر من 0');
+          itemHasError = true;
+        }
+      });
+      if (itemHasError && !newErrors.items) {
+        newErrors.items = t('Line item quantity and unit price must be greater than 0.', 'الكمية وسعر الوحدة لبنود عرض السعر يجب أن تكون أكبر من 0.');
+      }
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      const firstError = Object.values(newErrors)[0];
+      showAlert.error(t('Validation Error', 'خطأ في بيانات عرض السعر'), firstError);
+      return;
+    }
 
     const payload: QuotationInput = {
       customerId,
@@ -206,6 +257,10 @@ export function QuotationCreateSheet({
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListQuotationsQueryKey(orgId) });
             queryClient.invalidateQueries({ queryKey: getGetQuotationQueryKey(orgId, quotationId) });
+            showAlert.success(
+              isRtl ? 'تم تحديث عرض السعر!' : 'Quotation Updated Successfully!',
+              isRtl ? 'تم حفظ التعديلات بنجاح.' : 'Quotation details updated successfully.'
+            );
             handleOpenChange(false);
             if (onSuccess) onSuccess();
           },
@@ -217,6 +272,10 @@ export function QuotationCreateSheet({
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListQuotationsQueryKey(orgId) });
+            showAlert.success(
+              isRtl ? 'تم إنشاء عرض السعر!' : 'Quotation Created Successfully!',
+              isRtl ? 'تم حفظ عرض السعر بنجاح.' : 'New quotation saved successfully.'
+            );
             handleOpenChange(false);
             if (onSuccess) onSuccess();
           },
@@ -255,6 +314,19 @@ export function QuotationCreateSheet({
 
         {/* Scrollable Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+          {Object.keys(errors).length > 0 && (
+            <div className="p-3 bg-red-500/10 text-red-500 dark:text-red-400 rounded-xl text-xs font-semibold border border-red-500/20 flex flex-col gap-1">
+              <span className="font-bold flex items-center gap-1.5">
+                ⚠️ {t('Please fix the following validation errors:', 'يرجى تصحيح أخطاء التحقق التالية:')}
+              </span>
+              <ul className="list-disc list-inside space-y-0.5 ps-2 font-normal">
+                {Object.values(errors).filter((v, i, a) => a.indexOf(v) === i).map((err, i) => (
+                  <li key={i}>{err}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Customer & Dates Section Card */}
           <div className="p-4 rounded-xl bg-card border border-border/80 shadow-2xs space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -263,13 +335,12 @@ export function QuotationCreateSheet({
               <div className="space-y-1.5 md:col-span-1">
                 <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
                   <User size={12} className="text-primary" />
-                  {t('Customer', 'العميل')} *
+                  {t('Customer', 'العميل')} <span className="text-red-500">*</span>
                 </label>
                 <select
-                  required
-                  className="w-full px-3 py-2 bg-background border border-input rounded-lg text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className={`w-full px-3 py-2 bg-background border ${errors.customerId ? 'border-red-500 bg-red-500/5' : 'border-input'} rounded-lg text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20`}
                   value={customerId}
-                  onChange={(e) => setCustomerId(e.target.value)}
+                  onChange={(e) => { setCustomerId(e.target.value); if (errors.customerId) setErrors(prev => ({ ...prev, customerId: '' })); }}
                 >
                   <option value="">-- {t('Select Customer', 'اختر العميل')} --</option>
                   {customers?.map((c) => (
@@ -278,35 +349,37 @@ export function QuotationCreateSheet({
                     </option>
                   ))}
                 </select>
+                {errors.customerId && <p className="text-[11px] font-medium text-red-500">{errors.customerId}</p>}
               </div>
 
               {/* Issue Date */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
                   <Calendar size={12} className="text-primary" />
-                  {t('Issue Date', 'تاريخ الإصدار')} *
+                  {t('Issue Date', 'تاريخ الإصدار')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="date"
-                  required
-                  className="w-full px-3 py-2 bg-background border border-input rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className={`w-full px-3 py-2 bg-background border ${errors.issueDate ? 'border-red-500 bg-red-500/5' : 'border-input'} rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20`}
                   value={issueDate}
-                  onChange={(e) => setIssueDate(e.target.value)}
+                  onChange={(e) => { setIssueDate(e.target.value); if (errors.issueDate) setErrors(prev => ({ ...prev, issueDate: '' })); }}
                 />
+                {errors.issueDate && <p className="text-[11px] font-medium text-red-500">{errors.issueDate}</p>}
               </div>
 
               {/* Valid Until Date */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
                   <Calendar size={12} className="text-primary" />
-                  {t('Valid Until', 'صالح حتى')}
+                  {t('Valid Until', 'صالح حتى')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="date"
-                  className="w-full px-3 py-2 bg-background border border-input rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className={`w-full px-3 py-2 bg-background border ${errors.validUntilDate ? 'border-red-500 bg-red-500/5' : 'border-input'} rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20`}
                   value={validUntilDate}
-                  onChange={(e) => setValidUntilDate(e.target.value)}
+                  onChange={(e) => { setValidUntilDate(e.target.value); if (errors.validUntilDate) setErrors(prev => ({ ...prev, validUntilDate: '' })); }}
                 />
+                {errors.validUntilDate && <p className="text-[11px] font-medium text-red-500">{errors.validUntilDate}</p>}
               </div>
 
             </div>
@@ -317,7 +390,7 @@ export function QuotationCreateSheet({
             <div className="flex items-center justify-between border-b border-border/80 pb-2">
               <h3 className="font-bold text-sm text-foreground flex items-center gap-2">
                 <Calculator size={16} className="text-primary" />
-                <span>{t('Line Items & Services', 'بنود عرض السعر والخدمات')}</span>
+                <span>{t('Line Items & Services', 'بنود عرض السعر والخدمات')} <span className="text-red-500">*</span></span>
               </h3>
               <Button type="button" variant="secondary" onClick={addItemRow} className="gap-1.5 text-xs py-1.5 px-3">
                 <Plus size={14} />
@@ -325,9 +398,11 @@ export function QuotationCreateSheet({
               </Button>
             </div>
 
+            {errors.items && <p className="text-xs font-semibold text-red-500">{errors.items}</p>}
+
             <div className="space-y-3">
               {items.map((item, idx) => (
-                <div key={idx} className="p-4 rounded-xl border border-border/80 bg-card shadow-2xs space-y-3 relative group">
+                <div key={idx} className={`p-4 rounded-xl border ${errors[`item_${idx}_desc`] || errors[`item_${idx}_qty`] || errors[`item_${idx}_price`] ? 'border-red-500 bg-red-500/5' : 'border-border/80 bg-card'} shadow-2xs space-y-3 relative group`}>
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
                     
                     {/* Catalog Item Quick Selector */}
@@ -353,15 +428,15 @@ export function QuotationCreateSheet({
                     {/* Description */}
                     <div className="md:col-span-7 space-y-1">
                       <label className="text-[10px] font-bold text-muted-foreground uppercase">
-                        {t('Description', 'الوصف')} *
+                        {t('Description', 'الوصف')} <span className="text-red-500">*</span>
                       </label>
                       <input
-                        required
-                        className="w-full px-2.5 py-1.5 bg-background border border-input rounded-lg text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className={`w-full px-2.5 py-1.5 bg-background border ${errors[`item_${idx}_desc`] ? 'border-red-500 bg-red-500/5' : 'border-input'} rounded-lg text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20`}
                         placeholder={t('Item description', 'وصف المنتج أو الخدمة')}
                         value={item.description}
                         onChange={(e) => updateItemRow(idx, 'description', e.target.value)}
                       />
+                      {errors[`item_${idx}_desc`] && <p className="text-[10px] font-medium text-red-500">{errors[`item_${idx}_desc`]}</p>}
                     </div>
 
                     {/* Delete Row Button */}
@@ -381,32 +456,32 @@ export function QuotationCreateSheet({
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-border/40">
                     <div>
                       <label className="text-[10px] font-bold text-muted-foreground uppercase">
-                        {t('Quantity', 'الكمية')}
+                        {t('Quantity', 'الكمية')} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="number"
                         step="0.0001"
                         min="0.0001"
-                        required
-                        className="w-full px-2.5 py-1.5 bg-background border border-input rounded-lg text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className={`w-full px-2.5 py-1.5 bg-background border ${errors[`item_${idx}_qty`] ? 'border-red-500 bg-red-500/5' : 'border-input'} rounded-lg text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20`}
                         value={item.quantity}
                         onChange={(e) => updateItemRow(idx, 'quantity', e.target.value)}
                       />
+                      {errors[`item_${idx}_qty`] && <p className="text-[10px] font-medium text-red-500">{errors[`item_${idx}_qty`]}</p>}
                     </div>
 
                     <div>
                       <label className="text-[10px] font-bold text-muted-foreground uppercase">
-                        {t('Unit Price (SAR)', 'سعر الوحدة')}
+                        {t('Unit Price (SAR)', 'سعر الوحدة')} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="number"
                         step="0.01"
                         min="0"
-                        required
-                        className="w-full px-2.5 py-1.5 bg-background border border-input rounded-lg text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className={`w-full px-2.5 py-1.5 bg-background border ${errors[`item_${idx}_price`] ? 'border-red-500 bg-red-500/5' : 'border-input'} rounded-lg text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20`}
                         value={item.unitPrice}
                         onChange={(e) => updateItemRow(idx, 'unitPrice', e.target.value)}
                       />
+                      {errors[`item_${idx}_price`] && <p className="text-[10px] font-medium text-red-500">{errors[`item_${idx}_price`]}</p>}
                     </div>
 
                     <div>

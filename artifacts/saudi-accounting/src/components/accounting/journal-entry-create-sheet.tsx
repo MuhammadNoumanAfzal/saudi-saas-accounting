@@ -44,6 +44,8 @@ export function JournalEntryCreateSheet({ open, onOpenChange, onSuccess }: Journ
   ]);
   const [errorMsg, setErrorMsg] = useState('');
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   useEffect(() => {
     if (accounts.length >= 2 && (!lines[0].accountId || !lines[1].accountId)) {
       const cashAcc = accounts.find(a => a.code === '10100') || accounts[0];
@@ -68,7 +70,7 @@ export function JournalEntryCreateSheet({ open, onOpenChange, onSuccess }: Journ
       { accountId: cashAcc?.id || '', description: 'إيداع نقدي بالحساب الرئيسي', debit: 50000, credit: 0 },
       { accountId: capitalAcc?.id || '', description: 'حساب رأس المال المساهم', debit: 0, credit: 50000 }
     ]);
-    setErrorMsg('');
+    setErrors({});
   };
 
   const fillRentSample = () => {
@@ -84,7 +86,7 @@ export function JournalEntryCreateSheet({ open, onOpenChange, onSuccess }: Journ
       { accountId: vatAcc?.id || '', description: 'ضريبة مدخلات قابلة للاسترداد (15%)', debit: 1500, credit: 0 },
       { accountId: cashAcc?.id || '', description: 'سداد نقدي من الصندوق', debit: 0, credit: 11500 }
     ]);
-    setErrorMsg('');
+    setErrors({});
   };
 
   const handleAddLine = () => {
@@ -111,21 +113,33 @@ export function JournalEntryCreateSheet({ open, onOpenChange, onSuccess }: Journ
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg('');
+    const newErrors: Record<string, string> = {};
 
     if (!description.trim()) {
-      setErrorMsg(isRtl ? 'الرجاء إدخال البيان الرئيسي للقيد' : 'Main description is required');
-      return;
+      newErrors.description = isRtl ? 'الرجاء إدخال البيان الرئيسي للقيد' : 'Main description is required';
     }
 
-    if (!isBalanced) {
-      setErrorMsg(isRtl ? `القيد غير متوازن! الفارق بين المدين والدائن (${diff.toFixed(2)} ر.س)` : `Unbalanced entry! Debit and Credit must be equal (diff: ${diff.toFixed(2)})`);
-      return;
+    if (!entryDate) {
+      newErrors.entryDate = isRtl ? 'تاريخ القيد مطلوب' : 'Entry date is required';
+    }
+
+    if (lines.length < 2) {
+      newErrors.lines = isRtl ? 'يجب أن يحتوي القيد على سطرين محاسبيين على الأقل' : 'At least 2 account lines required';
     }
 
     const invalidLine = lines.find((l) => !l.accountId);
     if (invalidLine) {
-      setErrorMsg(isRtl ? 'الرجاء اختيار الحساب المحاسبي لجميع البنود' : 'Please select an account for all lines');
+      newErrors.lines = isRtl ? 'الرجاء اختيار الحساب المحاسبي لجميع البنود' : 'Please select an account for all lines';
+    }
+
+    if (!isBalanced) {
+      newErrors.balance = isRtl ? `القيد غير متوازن! الفارق بين المدين والدائن (${diff.toFixed(2)} ر.س)` : `Unbalanced entry! Out of balance by SAR ${diff.toFixed(2)}`;
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      const firstErr = Object.values(newErrors)[0];
+      showAlert.error(isRtl ? 'خطأ في توازن/بيانات القيد' : 'Validation Error', firstErr);
       return;
     }
 
@@ -133,14 +147,14 @@ export function JournalEntryCreateSheet({ open, onOpenChange, onSuccess }: Journ
       await createMutation.mutateAsync({
         organizationId: orgId,
         data: {
-          description,
-          descriptionAr: descriptionAr || undefined,
-          referenceNumber: referenceNumber || undefined,
+          description: description.trim(),
+          descriptionAr: descriptionAr.trim() || undefined,
+          referenceNumber: referenceNumber.trim() || undefined,
           entryDate: entryDate ? new Date(entryDate).toISOString() : undefined,
           postingDate: entryDate ? new Date(entryDate).toISOString() : undefined,
           lines: lines.map((l) => ({
             accountId: l.accountId,
-            description: l.description || undefined,
+            description: l.description.trim() || undefined,
             debit: String(l.debit || 0),
             credit: String(l.credit || 0),
           }))
@@ -154,7 +168,7 @@ export function JournalEntryCreateSheet({ open, onOpenChange, onSuccess }: Journ
       onSuccess();
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || (isRtl ? 'فشل حفظ القيد المحاسبي' : 'Failed to save journal entry'));
+      setErrors({ submit: err.message || (isRtl ? 'فشل حفظ القيد المحاسبي' : 'Failed to save journal entry') });
     }
   };
 
@@ -206,9 +220,14 @@ export function JournalEntryCreateSheet({ open, onOpenChange, onSuccess }: Journ
             </div>
           </div>
 
-          {errorMsg && (
-            <div className="p-3 bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-xl text-sm font-medium">
-              {errorMsg}
+          {Object.keys(errors).length > 0 && (
+            <div className="p-3 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded-xl text-xs font-semibold space-y-1">
+              <div className="font-bold">⚠️ {isRtl ? 'يرجى تصحيح الأخطاء التالية:' : 'Please fix highlighted errors:'}</div>
+              <ul className="list-disc list-inside font-normal">
+                {Object.values(errors).map((err, i) => (
+                  <li key={i}>{err}</li>
+                ))}
+              </ul>
             </div>
           )}
 
@@ -216,28 +235,29 @@ export function JournalEntryCreateSheet({ open, onOpenChange, onSuccess }: Journ
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                {isRtl ? 'البيان الرئيسي للقيد (Voucher Description) *' : 'Voucher Description *'}
+                {isRtl ? 'البيان الرئيسي للقيد (Voucher Description)' : 'Voucher Description'} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => { setDescription(e.target.value); if (errors.description) setErrors(prev => ({ ...prev, description: '' })); }}
                 placeholder={isRtl ? 'مثال: إثبات إيداع رأس المال / تسوية إيجار المكتب' : 'e.g. Monthly Office Rent Adjustment'}
-                required
-                className="w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20"
+                className={`w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border ${errors.description ? 'border-red-500 bg-red-500/5' : 'border-slate-200 dark:border-slate-700'} rounded-xl text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20`}
               />
+              {errors.description && <p className="text-[11px] font-medium text-red-500 mt-1">{errors.description}</p>}
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                {isRtl ? 'تاريخ القيد (Entry Date)' : 'Entry Date'}
+                {isRtl ? 'تاريخ القيد (Entry Date)' : 'Entry Date'} <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 value={entryDate}
-                onChange={(e) => setIssueDate(e.target.value)}
-                className="w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
+                onChange={(e) => { setIssueDate(e.target.value); if (errors.entryDate) setErrors(prev => ({ ...prev, entryDate: '' })); }}
+                className={`w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border ${errors.entryDate ? 'border-red-500 bg-red-500/5' : 'border-slate-200 dark:border-slate-700'} rounded-xl text-slate-900 dark:text-slate-100`}
               />
+              {errors.entryDate && <p className="text-[11px] font-medium text-red-500 mt-1">{errors.entryDate}</p>}
             </div>
 
             <div>
@@ -259,7 +279,7 @@ export function JournalEntryCreateSheet({ open, onOpenChange, onSuccess }: Journ
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
               <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Calculator className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                {isRtl ? 'أطراف القيد (الجانب المدين والجانب الدائن)' : 'Journal Lines (Debits & Credits)'}
+                {isRtl ? 'أطراف القيد (الجانب المدين والجانب الدائن)' : 'Journal Lines (Debits & Credits)'} <span className="text-red-500">*</span>
               </h3>
               <Button
                 type="button"
@@ -272,17 +292,19 @@ export function JournalEntryCreateSheet({ open, onOpenChange, onSuccess }: Journ
               </Button>
             </div>
 
+            {errors.lines && <p className="text-xs font-semibold text-red-500">{errors.lines}</p>}
+
             {/* Lines Table */}
             <div className="space-y-3">
               {lines.map((line, idx) => (
                 <div 
                   key={idx} 
-                  className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2.5"
+                  className={`p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border ${!line.accountId ? 'border-red-500 bg-red-500/5' : 'border-slate-200 dark:border-slate-700'} space-y-2.5`}
                 >
                   <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
                     <div className="sm:col-span-5">
                       <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-                        {isRtl ? 'الحساب المحاسبي' : 'Account'}
+                        {isRtl ? 'الحساب المحاسبي' : 'Account'} <span className="text-red-500">*</span>
                       </label>
                       <select
                         value={line.accountId}
@@ -291,7 +313,7 @@ export function JournalEntryCreateSheet({ open, onOpenChange, onSuccess }: Journ
                           copy[idx].accountId = e.target.value;
                           setLines(copy);
                         }}
-                        className="w-full py-2 px-2.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-semibold"
+                        className={`w-full py-2 px-2.5 text-xs bg-white dark:bg-slate-900 border ${!line.accountId ? 'border-red-500 bg-red-500/5' : 'border-slate-200 dark:border-slate-700'} rounded-lg text-slate-900 dark:text-slate-100 font-semibold`}
                       >
                         <option value="">{isRtl ? '-- اختر الحساب --' : '-- Select Account --'}</option>
                         {accounts.map((a) => (
@@ -364,20 +386,20 @@ export function JournalEntryCreateSheet({ open, onOpenChange, onSuccess }: Journ
           <div className={`p-4 rounded-xl border space-y-2 text-sm transition-colors ${
             isBalanced 
               ? 'bg-emerald-50/60 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' 
-              : 'bg-amber-50/60 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'
+              : 'bg-red-500/10 dark:bg-red-950/30 border-red-500/30'
           }`}>
             <div className="flex items-center justify-between">
               <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                 {isBalanced ? (
                   <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 ) : (
-                  <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                  <AlertCircle className="w-5 h-5 text-red-500" />
                 )}
                 {isBalanced 
                   ? (isRtl ? 'القيد متوازن 100% وجاهز للترحيل' : 'Journal entry is 100% balanced')
-                  : (isRtl ? 'القيد غير متوازن! يجب أن يتساوى المدين مع الدائن' : 'Unbalanced entry! Debits must equal Credits')}
+                  : (isRtl ? `غير متوازن! الفارق: SAR ${diff.toFixed(2)}` : `Out of balance by SAR ${diff.toFixed(2)}`)}
               </span>
-              <span className="font-mono text-xs font-bold text-slate-500">
+              <span className={`font-mono text-xs font-bold ${isBalanced ? 'text-emerald-600' : 'text-red-500'}`}>
                 Diff: {diff.toFixed(2)} SAR
               </span>
             </div>
@@ -406,7 +428,7 @@ export function JournalEntryCreateSheet({ open, onOpenChange, onSuccess }: Journ
             <Button
               type="submit"
               disabled={createMutation.isPending || !isBalanced}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-36 font-semibold"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-36 font-semibold disabled:opacity-50"
             >
               {createMutation.isPending ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

@@ -38,7 +38,7 @@ export function ExpenseCreateSheet({ open, onOpenChange, onSuccess }: ExpenseCre
   const [expenseDate, setExpenseDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [referenceNumber, setReferenceNumber] = useState('');
   const [notes, setNotes] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Auto-calculate 15% VAT when amount changes if hasVat is checked
   useEffect(() => {
@@ -56,15 +56,31 @@ export function ExpenseCreateSheet({ open, onOpenChange, onSuccess }: ExpenseCre
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg('');
+    const newErrors: Record<string, string> = {};
 
-    if (!description.trim()) {
-      setErrorMsg(isRtl ? 'الرجاء إدخال البيان / اسم المستفيد' : 'Please enter payee/description');
-      return;
+    if (!category) {
+      newErrors.category = isRtl ? 'الرجاء اختيار تصنيف المصروف' : 'Expense category is required';
     }
 
-    if (!amount || parseFloat(amount) <= 0) {
-      setErrorMsg(isRtl ? 'الرجاء إدخال مبلغ صحيح' : 'Please enter a valid amount');
+    if (!description.trim()) {
+      newErrors.description = isRtl ? 'البيان / اسم المستفيد مطلوب' : 'Payee / Description is required';
+    } else if (description.trim().length < 3) {
+      newErrors.description = isRtl ? 'البيان / اسم المستفيد يجب أن يتكون من 3 أحرف على الأقل' : 'Payee / Description must be at least 3 characters';
+    }
+
+    const numAmount = parseFloat(amount);
+    if (!amount || isNaN(numAmount) || numAmount <= 0) {
+      newErrors.amount = isRtl ? 'المبلغ الإجمالي يجب أن يكون أكبر من 0.00' : 'Total amount must be greater than 0.00';
+    }
+
+    if (!expenseDate) {
+      newErrors.expenseDate = isRtl ? 'تاريخ المصروف مطلوب' : 'Expense date is required';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      const firstErr = Object.values(newErrors)[0];
+      showAlert.error(isRtl ? 'خطأ في بيانات المصروف' : 'Validation Error', firstErr);
       return;
     }
 
@@ -73,21 +89,25 @@ export function ExpenseCreateSheet({ open, onOpenChange, onSuccess }: ExpenseCre
         organizationId: orgId,
         data: {
           category,
-          description,
+          description: description.trim(),
           supplierId: supplierId || undefined,
           amount,
           taxAmount: taxAmount || '0.00',
           paymentMethod,
           expenseDate: expenseDate ? new Date(expenseDate).toISOString() : undefined,
-          referenceNumber: referenceNumber || undefined,
-          notes: notes || undefined,
+          referenceNumber: referenceNumber.trim() || undefined,
+          notes: notes.trim() || undefined,
         }
       });
 
+      showAlert.success(
+        isRtl ? 'تم تسجيل المصروف!' : 'Expense Recorded!',
+        isRtl ? 'تم حفظ المصروف في السجلات بنجاح.' : 'Expense recorded successfully.'
+      );
       onSuccess();
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || (isRtl ? 'فشل تسجيل المصروف' : 'Failed to record expense'));
+      setErrors({ submit: err.message || (isRtl ? 'فشل تسجيل المصروف' : 'Failed to record expense') });
     }
   };
 
@@ -115,20 +135,25 @@ export function ExpenseCreateSheet({ open, onOpenChange, onSuccess }: ExpenseCre
 
         {/* Content Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
-          {errorMsg && (
-            <div className="p-3 bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-lg text-sm">
-              {errorMsg}
+          {Object.keys(errors).length > 0 && (
+            <div className="p-3 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded-lg text-xs font-semibold space-y-1">
+              <div className="font-bold">⚠️ {isRtl ? 'يرجى تصحيح الأخطاء التالية:' : 'Please fix highlighted errors:'}</div>
+              <ul className="list-disc list-inside font-normal">
+                {Object.values(errors).map((err, i) => (
+                  <li key={i}>{err}</li>
+                ))}
+              </ul>
             </div>
           )}
 
           <div>
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-              {isRtl ? 'التصنيف *' : 'Category *'}
+              {isRtl ? 'التصنيف' : 'Category'} <span className="text-red-500">*</span>
             </label>
             <select
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
+              onChange={(e) => { setCategory(e.target.value); if (errors.category) setErrors(prev => ({ ...prev, category: '' })); }}
+              className={`w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border ${errors.category ? 'border-red-500 bg-red-500/5' : 'border-slate-200 dark:border-slate-700'} rounded-lg text-slate-900 dark:text-slate-100`}
             >
               <option value="RENT">{isRtl ? 'إيجار المكاتب / العقارات' : 'Office Rent'}</option>
               <option value="UTILITIES">{isRtl ? 'مرافق (كهرباء، ماء، إنترنت)' : 'Utilities (Electricity, Internet)'}</option>
@@ -138,20 +163,21 @@ export function ExpenseCreateSheet({ open, onOpenChange, onSuccess }: ExpenseCre
               <option value="MARKETING">{isRtl ? 'تسويق وإعلان وشبكات' : 'Marketing & Ads'}</option>
               <option value="OTHER">{isRtl ? 'مصروفات متنوعة أخرى' : 'Other General Expense'}</option>
             </select>
+            {errors.category && <p className="text-[11px] font-medium text-red-500 mt-1">{errors.category}</p>}
           </div>
 
           <div>
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-              {isRtl ? 'البيان / المستفيد *' : 'Payee / Description *'}
+              {isRtl ? 'البيان / المستفيد' : 'Payee / Description'} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => { setDescription(e.target.value); if (errors.description) setErrors(prev => ({ ...prev, description: '' })); }}
               placeholder={isRtl ? 'مثال: سداد فاتورة كهرباء الفرع' : 'e.g. Electricity Bill Payment'}
-              required
-              className="w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
+              className={`w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border ${errors.description ? 'border-red-500 bg-red-500/5' : 'border-slate-200 dark:border-slate-700'} rounded-lg text-slate-900 dark:text-slate-100`}
             />
+            {errors.description && <p className="text-[11px] font-medium text-red-500 mt-1">{errors.description}</p>}
           </div>
 
           {suppliers.length > 0 && (
@@ -177,18 +203,18 @@ export function ExpenseCreateSheet({ open, onOpenChange, onSuccess }: ExpenseCre
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {isRtl ? 'المبلغ الإجمالي (ر.س) *' : 'Total Amount (SAR) *'}
+                {isRtl ? 'المبلغ الإجمالي (ر.س)' : 'Total Amount (SAR)'} <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
                 step="0.01"
                 min="0.01"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => { setAmount(e.target.value); if (errors.amount) setErrors(prev => ({ ...prev, amount: '' })); }}
                 placeholder="0.00"
-                required
-                className="w-full py-2 px-3 text-sm font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
+                className={`w-full py-2 px-3 text-sm font-semibold bg-slate-50 dark:bg-slate-800 border ${errors.amount ? 'border-red-500 bg-red-500/5' : 'border-slate-200 dark:border-slate-700'} rounded-lg text-slate-900 dark:text-slate-100`}
               />
+              {errors.amount && <p className="text-[11px] font-medium text-red-500 mt-1">{errors.amount}</p>}
             </div>
 
             <div>
@@ -239,14 +265,15 @@ export function ExpenseCreateSheet({ open, onOpenChange, onSuccess }: ExpenseCre
 
             <div>
               <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {isRtl ? 'تاريخ المصروف' : 'Expense Date'}
+                {isRtl ? 'تاريخ المصروف' : 'Expense Date'} <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 value={expenseDate}
-                onChange={(e) => setExpenseDate(e.target.value)}
-                className="w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
+                onChange={(e) => { setExpenseDate(e.target.value); if (errors.expenseDate) setErrors(prev => ({ ...prev, expenseDate: '' })); }}
+                className={`w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border ${errors.expenseDate ? 'border-red-500 bg-red-500/5' : 'border-slate-200 dark:border-slate-700'} rounded-lg text-slate-900 dark:text-slate-100`}
               />
+              {errors.expenseDate && <p className="text-[11px] font-medium text-red-500 mt-1">{errors.expenseDate}</p>}
             </div>
           </div>
 
