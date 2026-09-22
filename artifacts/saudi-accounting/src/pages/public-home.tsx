@@ -13,7 +13,7 @@ import {
   ChevronRight,
   CheckCircle2,
   Receipt,
-  FileCheck2,
+  FileCheck,
   WalletCards,
   Clock3,
   Building2,
@@ -49,9 +49,10 @@ export function PublicHome() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-[#f8f6f0] flex items-center justify-center">
-        <div className="w-7 h-7 border-3 border-[#176752] border-t-transparent rounded-full animate-spin" />
-      </div>
+      <PlatformLoader
+        title="Saudi SaaS Accounting"
+        subtitle="Verifying session security & cryptographic credentials..."
+      />
     );
   }
 

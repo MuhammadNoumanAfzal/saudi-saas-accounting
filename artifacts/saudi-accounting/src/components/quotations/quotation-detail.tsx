@@ -12,6 +12,7 @@ import {
   getListInvoicesQueryKey
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { PlatformLoader } from '@/components/ui/platform-loader';
 import { 
   ArrowLeft, 
   ArrowRight, 
@@ -95,10 +96,10 @@ export function QuotationDetail({ id }: { id: string }) {
 
   if (isLoading) {
     return (
-      <div className="p-12 text-center text-muted-foreground fade-up">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mb-2"></div>
-        <p>{t('Loading quotation details...', 'جاري تحميل تفاصيل عرض السعر...')}</p>
-      </div>
+      <PlatformLoader
+        title={t('Retrieving Commercial Quotation', 'جاري جلب عرض السعر التجاري')}
+        subtitle={t('Preparing tax specifications & line item breakdown...', 'تحضير المواصفات الضريبية وتفاصيل الأصناف...')}
+      />
     );
   }
 

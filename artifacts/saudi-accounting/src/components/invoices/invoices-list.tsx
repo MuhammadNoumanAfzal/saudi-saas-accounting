@@ -8,8 +8,9 @@ import {
 } from '@workspace/api-client-react';
 import type { Invoice } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
-import { Search, Plus, Filter, Receipt, Eye, CheckCircle2, XCircle, Clock, ShieldCheck, ArrowRight, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, Plus, Search, Filter, Receipt, Eye, CheckCircle2, XCircle, ArrowRight, ArrowLeft } from 'lucide-react';
 import { InvoiceCreateSheet } from './invoice-create-sheet';
+import { SkeletonTable } from '@/components/ui/platform-loader';
 
 interface InvoicesListProps {
   onSelectInvoice?: (id: string) => void;
@@ -208,9 +209,12 @@ export function InvoicesList({ onSelectInvoice }: InvoicesListProps) {
       {/* Table Section */}
       <div className="soft-card overflow-hidden">
         {isLoading ? (
-          <div className="p-12 text-center text-muted-foreground">
-            <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent mb-2"></div>
-            <p className="text-sm">{t('Loading invoices...', 'جاري تحميل الفواتير...')}</p>
+          <div className="p-4 space-y-4">
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 px-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+              <span>{t('Fetching ZATCA Phase 2 E-Invoices & Base64 QR Stamps...', 'جاري تحميل الفواتير الضريبية والأختام الرقمية ZATCA...')}</span>
+            </div>
+            <SkeletonTable rows={5} />
           </div>
         ) : invoices.length === 0 ? (
           <div className="p-12 text-center">

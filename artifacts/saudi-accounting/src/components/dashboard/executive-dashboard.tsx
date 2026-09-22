@@ -9,6 +9,7 @@ import {
   Plus, ArrowUpRight, ArrowDownRight, Clock, ShieldCheck, FileText, ChevronRight, ArrowRight,
   Wallet, Scale
 } from 'lucide-react';
+import { SkeletonKpiGrid, SkeletonTable } from '@/components/ui/platform-loader';
 
 export function ExecutiveDashboard() {
   const { t, isRtl } = useTranslation();
@@ -62,7 +63,14 @@ export function ExecutiveDashboard() {
       </div>
 
       {isLoading ? (
-        <Card className="p-8 text-center text-muted-foreground border-border bg-card">{t('Loading executive analytics...', 'جاري تحميل التحليلات المباشرة...')}</Card>
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+            <span>{t('Syncing Real-Time Financial Intelligence, Revenue Trends & ZATCA Tax Returns...', 'جاري مزامنة الذكاء المالي المباشر، اتجاهات الإيرادات والإقرارات الضريبية...')}</span>
+          </div>
+          <SkeletonKpiGrid />
+          <SkeletonTable rows={4} />
+        </div>
       ) : (
         <div className="space-y-6">
           {/* Executive KPI Header Cards (Unified Saudi Emerald Theme) */}

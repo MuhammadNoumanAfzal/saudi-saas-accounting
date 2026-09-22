@@ -10,6 +10,7 @@ import type { Quotation } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
 import { Search, Plus, Filter, FileText, Eye, CheckCircle2, XCircle, Clock, ArrowRight, ArrowLeft } from 'lucide-react';
 import { QuotationCreateSheet } from './quotation-create-sheet';
+import { SkeletonTable } from '@/components/ui/platform-loader';
 
 interface QuotationsListProps {
   onSelectQuotation?: (id: string) => void;
@@ -199,9 +200,12 @@ export function QuotationsList({ onSelectQuotation }: QuotationsListProps) {
       {/* Table Section */}
       <div className="soft-card overflow-hidden">
         {isLoading ? (
-          <div className="p-12 text-center text-muted-foreground">
-            <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent mb-2"></div>
-            <p className="text-sm">{t('Loading quotations...', 'جاري تحميل عروض الأسعار...')}</p>
+          <div className="p-4 space-y-4">
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 px-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+              <span>{t('Fetching Commercial Quotations & Proposals...', 'جاري تحميل عروض الأسعار والمقترحات التجارية...')}</span>
+            </div>
+            <SkeletonTable rows={5} />
           </div>
         ) : quotations.length === 0 ? (
           <div className="p-12 text-center">

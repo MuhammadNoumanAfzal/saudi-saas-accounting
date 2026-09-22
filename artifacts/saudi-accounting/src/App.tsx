@@ -71,14 +71,14 @@ const clerkPubKey = clerkProxyUrl ? publishableKeyFromHost(window.location.hostn
 
 if (!clerkPubKey) throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
 
+import { PlatformLoader, SkeletonPage } from './components/ui/platform-loader';
+
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useAuth();
   
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
+      <PlatformLoader fullScreen message="Authenticating User Session..." messageAr="جاري التحقق من الهوية والصلوحية..." />
     );
   }
   if (!isSignedIn) return <Redirect to="/" />;
@@ -94,12 +94,7 @@ function SessionGuard({ children }: { children: React.ReactNode }) {
   
   if (isLoading && !session) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-7 h-7 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs font-semibold text-muted-foreground">Loading KHANBAS NEXUS...</span>
-        </div>
-      </div>
+      <PlatformLoader fullScreen message="Loading Saudi Fintech Environment..." messageAr="جاري إعداد البيئة المالية السعودية..." />
     );
   }
 
@@ -145,7 +140,7 @@ function ModuleGuard({
     });
 
   if ((sessionLoading && !session) || (modulesLoading && !modules)) {
-    return <div className="min-h-[40vh] rounded-2xl bg-muted/30 animate-pulse" />;
+    return <SkeletonPage titleEn="Verifying Organization Entitlements..." titleAr="جاري التحقق من تراخيص المنشأة..." />;
   }
 
   const enabled = modules?.some(

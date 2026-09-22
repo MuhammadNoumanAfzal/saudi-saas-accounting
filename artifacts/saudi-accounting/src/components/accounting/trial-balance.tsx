@@ -18,6 +18,7 @@ import {
   Layers,
   FileSpreadsheet
 } from 'lucide-react';
+import { SkeletonTable } from '@/components/ui/platform-loader';
 
 export function TrialBalance() {
   const { t, isRtl } = useTranslation();
@@ -285,9 +286,12 @@ export function TrialBalance() {
       {/* Main Trial Balance Table */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs print:border-none print:shadow-none print:rounded-none">
         {isLoading ? (
-          <div className="p-16 text-center text-slate-500 dark:text-slate-400">
-            <div className="inline-block animate-spin w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full mb-3"></div>
-            <p className="text-sm font-medium">{isRtl ? 'جاري احتساب أرصدة ميزان المراجعة...' : 'Calculating Trial Balance ledger accounts...'}</p>
+          <div className="p-4 space-y-4">
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 px-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+              <span>{isRtl ? 'جاري احتساب وموازنة أرصدة ميزان المراجعة SOCPA...' : 'Calculating & balancing SOCPA Trial Balance ledger accounts...'}</span>
+            </div>
+            <SkeletonTable rows={7} />
           </div>
         ) : filteredItems.length === 0 ? (
           <div className="p-16 text-center text-slate-500 dark:text-slate-400">

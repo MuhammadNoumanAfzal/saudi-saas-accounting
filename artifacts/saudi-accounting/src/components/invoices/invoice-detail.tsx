@@ -10,6 +10,7 @@ import {
   getListInvoicesQueryKey
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { PlatformLoader } from '@/components/ui/platform-loader';
 import { QRCodeSVG } from 'qrcode.react';
 import { 
   ArrowLeft, 
@@ -241,10 +242,10 @@ ${invoiceLinesXml}
 
   if (isLoading) {
     return (
-      <div className="p-12 text-center text-muted-foreground fade-up">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mb-2"></div>
-        <p>{t('Loading invoice details...', 'جاري تحميل تفاصيل الفاتورة...')}</p>
-      </div>
+      <PlatformLoader
+        title={t('Retrieving ZATCA E-Invoice', 'جاري جلب الفاتورة الضريبية ZATCA')}
+        subtitle={t('Decrypting cryptographic stamp & verifying QR payload...', 'فك تشفير الختم الرقمي والتحقق من رمز الاستجابة السريعة...')}
+      />
     );
   }
 

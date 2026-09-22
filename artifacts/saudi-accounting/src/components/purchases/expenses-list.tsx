@@ -9,8 +9,9 @@ import {
 import type { Expense } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useDebounce } from '@/hooks/use-debounce';
-import { Search, Plus, Filter, CreditCard, Calendar, Trash2, Tag, Building2 } from 'lucide-react';
+import { CreditCard, Plus, Search, Filter, Tag, Trash2 } from 'lucide-react';
 import { ExpenseCreateSheet } from './expense-create-sheet';
+import { SkeletonTable } from '@/components/ui/platform-loader';
 
 export function ExpensesList() {
   const { t, isRtl } = useTranslation();
@@ -169,9 +170,12 @@ export function ExpensesList() {
       {/* Main Expenses Table */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
         {isLoading ? (
-          <div className="p-12 text-center text-slate-500 dark:text-slate-400">
-            <div className="inline-block animate-spin w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full mb-2"></div>
-            <p className="text-sm">{isRtl ? 'جاري تحميل المصروفات...' : 'Loading expenses...'}</p>
+          <div className="p-4 space-y-4">
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 px-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+              <span>{isRtl ? 'جاري تحميل سجل المصروفات التشغيلية والخصم الضريبي...' : 'Loading Operational Expenses & Input Tax Deduction...'}</span>
+            </div>
+            <SkeletonTable rows={5} />
           </div>
         ) : expenses.length === 0 ? (
           <div className="p-12 text-center text-slate-500 dark:text-slate-400">

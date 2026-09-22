@@ -14,6 +14,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { Search, Plus, Filter, MoreHorizontal, User, Building2, UploadCloud, DownloadCloud, ChevronRight, ChevronLeft, Eye } from 'lucide-react';
 import { PartyCreateSheet } from './party-create-sheet';
 import { PartyImportSheet } from './party-import-sheet';
+import { SkeletonTable } from '@/components/ui/platform-loader';
 
 export function PartyList({ role }: { role: 'customer' | 'supplier' }) {
   const { t, isRtl } = useTranslation();
@@ -153,8 +154,12 @@ export function PartyList({ role }: { role: 'customer' | 'supplier' }) {
         </div>
 
         {isLoading ? (
-          <div className="p-8 space-y-4">
-            {[1,2,3,4].map(i => <div key={i} className="shimmer h-14 w-full rounded-xl" />)}
+          <div className="p-4 space-y-4">
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 px-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+              <span>{isCustomer ? t('Loading Customer Profiles & ZATCA Tax IDs...', 'جاري تحميل ملفات العملاء والأرقام الضريبية...') : t('Loading Supplier Profiles & CR Numbers...', 'جاري تحميل ملفات الموردين والسجلات التجارية...')}</span>
+            </div>
+            <SkeletonTable rows={5} />
           </div>
         ) : !data?.items.length ? (
           <div className="p-12 text-center flex flex-col items-center justify-center border-dashed">

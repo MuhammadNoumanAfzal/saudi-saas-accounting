@@ -6,6 +6,7 @@ import {
   getGetJournalEntryQueryKey
 } from '@workspace/api-client-react';
 import { ArrowLeft, ArrowRight, Printer, FileSpreadsheet, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { PlatformLoader } from '@/components/ui/platform-loader';
 
 interface JournalEntryDetailProps {
   entryId?: string;
@@ -29,10 +30,10 @@ export function JournalEntryDetail({ entryId }: JournalEntryDetailProps) {
 
   if (isLoading) {
     return (
-      <div className="p-16 text-center text-slate-500 dark:text-slate-400">
-        <div className="inline-block animate-spin w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full mb-3" />
-        <p className="text-sm font-medium">{isRtl ? 'جاري تحميل تفاصيل سند القيد المحاسبي...' : 'Loading journal voucher details...'}</p>
-      </div>
+      <PlatformLoader
+        title={t('Retrieving Journal Voucher Detail', 'جاري جلب تفاصيل القيد المحاسبي')}
+        subtitle={t('Verifying double-entry debit & credit equilibrium...', 'التحقق من التوازن المحاسبي للمدين والدائن...')}
+      />
     );
   }
 

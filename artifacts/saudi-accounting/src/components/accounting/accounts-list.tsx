@@ -8,8 +8,9 @@ import {
 } from '@workspace/api-client-react';
 import type { Account } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
-import { Search, Plus, Filter, Landmark, Tag, CheckCircle2, XCircle, PlusCircle, Building2, FolderTree } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { Landmark, Plus, Search, Filter, FolderTree } from 'lucide-react';
+import { SkeletonTable } from '@/components/ui/platform-loader';
 
 export function AccountsList() {
   const { t, isRtl } = useTranslation();
@@ -153,9 +154,12 @@ export function AccountsList() {
       {/* Main Accounts Table */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
         {isLoading ? (
-          <div className="p-12 text-center text-slate-500 dark:text-slate-400">
-            <div className="inline-block animate-spin w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full mb-2"></div>
-            <p className="text-sm">{isRtl ? 'جاري تحميل شجرة الحسابات...' : 'Loading Chart of Accounts...'}</p>
+          <div className="p-4 space-y-4">
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 px-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+              <span>{isRtl ? 'جاري تحميل شجرة الحسابات السعودية المعتمدة (SOCPA)...' : 'Loading Saudi SOCPA Standardized Chart of Accounts...'}</span>
+            </div>
+            <SkeletonTable rows={6} />
           </div>
         ) : accounts.length === 0 ? (
           <div className="p-12 text-center text-slate-500 dark:text-slate-400">

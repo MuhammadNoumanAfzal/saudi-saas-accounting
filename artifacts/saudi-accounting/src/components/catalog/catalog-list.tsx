@@ -14,6 +14,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { Search, Plus, Filter, MoreHorizontal, Package, FileCode2, UploadCloud, DownloadCloud, Eye } from 'lucide-react';
 import { CatalogCreateSheet } from './catalog-create-sheet';
 import { CatalogImportSheet } from './catalog-import-sheet';
+import { SkeletonTable } from '@/components/ui/platform-loader';
 import type { CatalogItemType, CatalogItemStatus } from '@workspace/api-client-react';
 
 export function CatalogList() {
@@ -162,8 +163,12 @@ export function CatalogList() {
         </div>
 
         {isLoading ? (
-          <div className="p-8 space-y-4">
-            {[1,2,3,4].map(i => <div key={i} className="shimmer h-14 w-full rounded-xl" />)}
+          <div className="p-4 space-y-4">
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 px-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+              <span>{t('Fetching Master Catalog, Products & Services Pricing...', 'جاري تحميل الكتالوج الرئيسي والأسعار...')}</span>
+            </div>
+            <SkeletonTable rows={5} />
           </div>
         ) : !data?.items.length ? (
           <div className="p-12 text-center flex flex-col items-center justify-center border-dashed">

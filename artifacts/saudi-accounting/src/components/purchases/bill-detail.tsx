@@ -11,6 +11,7 @@ import {
   getListPurchaseBillsQueryKey
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { PlatformLoader } from '@/components/ui/platform-loader';
 import { 
   ArrowLeft, ArrowRight, Building2, Calendar, FileText, CheckCircle2, Clock, Trash2, Printer, ShieldCheck, ShoppingBag, MapPin, Hash, XCircle
 } from 'lucide-react';
@@ -41,10 +42,10 @@ export function BillDetail({ billId }: BillDetailProps) {
 
   if (isLoading) {
     return (
-      <div className="p-12 text-center text-muted-foreground fade-up">
-        <div className="inline-block animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mb-2" />
-        <p className="text-sm">{t('Loading bill details...', 'جاري تحميل تفاصيل الفاتورة...')}</p>
-      </div>
+      <PlatformLoader
+        title={t('Retrieving Vendor Purchase Bill', 'جاري جلب فاتورة المشتريات')}
+        subtitle={t('Verifying supplier VAT TIN & Input Tax Claimable...', 'التحقق من الرقم الضريبي للمورد والضريبة المستردة...')}
+      />
     );
   }
 

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useTranslation, formatCurrency } from '@/lib/utils';
 import { Printer, Calendar, TrendingUp, TrendingDown, DollarSign, Building2, FileText, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { PlatformLoader } from '@/components/ui/platform-loader';
 
 export function ProfitLossReport() {
   const { t, isRtl } = useTranslation();
@@ -96,10 +97,10 @@ export function ProfitLossReport() {
       </div>
 
       {isLoading ? (
-        <div className="p-12 text-center text-muted-foreground fade-up">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mb-2"></div>
-          <p>{t('Loading income statement...', 'جاري تحميل قائمة الدخل...')}</p>
-        </div>
+        <PlatformLoader
+          title={t('Calculating Income Statement (P&L)', 'جاري حساب قائمة الدخل والأرباح والخسائر')}
+          subtitle={t('Aggregating Operating Revenues, COGS & Tax Deductions...', 'تجميع الإيرادات التشغيلية وتكلفة المبيعات والمصروفات...')}
+        />
       ) : (
         /* Printable Official Income Statement Document Container */
         <div className="print-document soft-card p-6 sm:p-10 bg-card border shadow-lg rounded-2xl space-y-8 print:shadow-none print:border-none print:p-0 print:m-0 print:space-y-6">

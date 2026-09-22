@@ -8,8 +8,9 @@ import {
 } from '@workspace/api-client-react';
 import type { JournalEntry } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
-import { Search, Plus, Filter, FileSpreadsheet, Eye, CheckCircle2, Clock, ArrowRight, ArrowLeft, Building2 } from 'lucide-react';
+import { FileSpreadsheet, Plus, Search, Filter, CheckCircle2, Eye, ArrowRight, ArrowLeft } from 'lucide-react';
 import { JournalEntryCreateSheet } from './journal-entry-create-sheet';
+import { SkeletonTable } from '@/components/ui/platform-loader';
 
 interface JournalEntriesListProps {
   onSelectEntry?: (id: string) => void;
@@ -141,9 +142,12 @@ export function JournalEntriesList({ onSelectEntry }: JournalEntriesListProps) {
       {/* Main Journal Entries Table */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
         {isLoading ? (
-          <div className="p-12 text-center text-slate-500 dark:text-slate-400">
-            <div className="inline-block animate-spin w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full mb-2"></div>
-            <p className="text-sm">{isRtl ? 'جاري تحميل القيود المحاسبية...' : 'Loading journal entries...'}</p>
+          <div className="p-4 space-y-4">
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 px-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+              <span>{isRtl ? 'جاري مزامنة دفتر الأستاذ العام والقيود اليدوية...' : 'Syncing General Ledger & Manual Journal Vouchers...'}</span>
+            </div>
+            <SkeletonTable rows={5} />
           </div>
         ) : entries.length === 0 ? (
           <div className="p-12 text-center text-slate-500 dark:text-slate-400">

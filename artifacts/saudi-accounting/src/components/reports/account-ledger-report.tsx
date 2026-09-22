@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useTranslation, formatCurrency } from '@/lib/utils';
 import { Printer, BookOpen, Filter, TrendingUp, TrendingDown, Layers, ShieldCheck } from 'lucide-react';
+import { SkeletonTable } from '@/components/ui/platform-loader';
 
 export function AccountLedgerReport() {
   const { t, isRtl } = useTranslation();
@@ -161,10 +162,13 @@ export function AccountLedgerReport() {
 
       {/* Ledger Entries Table */}
       {isLoading ? (
-        <Card className="p-16 text-center text-slate-500 dark:text-slate-400">
-          <div className="inline-block animate-spin w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full mb-3" />
-          <p className="text-sm font-medium">{t('Loading account statement...', 'جاري تجميع حركات كشف الحساب...')}</p>
-        </Card>
+        <div className="p-4 space-y-4 soft-card">
+          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 px-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+            <span>{t('Compiling General Ledger Statement & Running Balances...', 'جاري تجميع حركات كشف الحساب والأرصدة التراكمية...')}</span>
+          </div>
+          <SkeletonTable rows={6} />
+        </div>
       ) : (
         <Card className="border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs print:border-none print:shadow-none">
           <CardHeader className="bg-slate-50 dark:bg-slate-800/70 pb-3 border-b border-slate-200 dark:border-slate-800 print:bg-slate-100">

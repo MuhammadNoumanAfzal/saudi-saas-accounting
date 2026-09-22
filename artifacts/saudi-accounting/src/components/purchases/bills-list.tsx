@@ -8,8 +8,9 @@ import {
 } from '@workspace/api-client-react';
 import type { PurchaseBill } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
-import { Search, Plus, Filter, FileText, Eye, CheckCircle2, Clock, ArrowRight, ArrowLeft, Building2 } from 'lucide-react';
+import { FileText, Plus, Search, Filter, Building2, Eye, ArrowRight, ArrowLeft } from 'lucide-react';
 import { BillCreateSheet } from './bill-create-sheet';
+import { SkeletonTable } from '@/components/ui/platform-loader';
 
 interface BillsListProps {
   onSelectBill?: (id: string) => void;
@@ -172,9 +173,12 @@ export function BillsList({ onSelectBill }: BillsListProps) {
       {/* Main Bills Table */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
         {isLoading ? (
-          <div className="p-12 text-center text-slate-500 dark:text-slate-400">
-            <div className="inline-block animate-spin w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full mb-2"></div>
-            <p className="text-sm">{isRtl ? 'جاري تحميل فواتير الشراء...' : 'Loading purchase bills...'}</p>
+          <div className="p-4 space-y-4">
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 px-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+              <span>{isRtl ? 'جاري تحميل فواتير الشراء وحساب ضريبة المدخلات...' : 'Retrieving Purchase Bills & Input VAT...'}</span>
+            </div>
+            <SkeletonTable rows={5} />
           </div>
         ) : bills.length === 0 ? (
           <div className="p-12 text-center text-slate-500 dark:text-slate-400">
