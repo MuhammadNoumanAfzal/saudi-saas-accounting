@@ -4,13 +4,16 @@ import { useTranslation, Button } from '@/lib/utils';
 import { 
   useGetCurrentSession, 
   useListQuotations,
-  getListQuotationsQueryKey
+  getListQuotationsQueryKey,
+  customFetch
 } from '@workspace/api-client-react';
 import type { Quotation } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
-import { Search, Plus, Filter, FileText, Eye, CheckCircle2, XCircle, Clock, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Search, Plus, Filter, FileText, Eye, CheckCircle2, XCircle, Clock, ArrowRight, ArrowLeft, Trash2 } from 'lucide-react';
 import { QuotationCreateSheet } from './quotation-create-sheet';
 import { SkeletonTable } from '@/components/ui/platform-loader';
+import { queryClient } from '@/lib/queryClient';
+import { showAlert } from '@/lib/alerts';
 
 interface QuotationsListProps {
   onSelectQuotation?: (id: string) => void;
@@ -51,13 +54,49 @@ export function QuotationsList({ onSelectQuotation }: QuotationsListProps) {
   const pageSize = data?.pageSize || 20;
   const totalPages = Math.ceil(totalItems / pageSize) || 1;
 
-  // Calculate local KPI summary metrics from response
   const summary = {
     total: totalItems,
     draft: quotations.filter(q => q.status === 'DRAFT').length,
     sent: quotations.filter(q => q.status === 'SENT').length,
     accepted: quotations.filter(q => q.status === 'ACCEPTED').length,
     totalValue: quotations.reduce((acc, q) => acc + (parseFloat(q.totalAmount) || 0), 0)
+  };
+
+  const handleDeleteQuotation = async (id: string, number: string) => {
+    if (!orgId) return;
+    const confirmed = await showAlert.confirm(
+      t(`Delete Quotation ${number}?`, `حذف عرض السعر ${number}؟`),
+      t(`Are you sure you want to delete quotation ${number}? This action cannot be undone.`, `هل أنت تأكد من رغبتك في حذف عرض السعر ${number}؟ لا يمكن التراجع عن هذا الإجراء.`),
+      t('Yes, Delete', 'نعم، حذف'),
+      t('Cancel', 'إلغاء')
+    );
+
+    if (!confirmed) return;
+
+    // Optimistically update React Query cache for 0ms instant UI removal
+    const queryKey = getListQuotationsQueryKey(orgId, queryParams as any);
+    queryClient.setQueryData(queryKey, (oldData: any) => {
+      if (!oldData || !oldData.items) return oldData;
+      return {
+        ...oldData,
+        items: oldData.items.filter((item: any) => item.id !== id),
+        total: Math.max(0, (oldData.total || 1) - 1),
+      };
+    });
+
+    showAlert.toast(
+      t('Quotation Deleted Successfully!', 'تم حذف عرض السعر بنجاح!'),
+      'success'
+    );
+
+    try {
+      await customFetch(`/api/organizations/${orgId}/quotations/${id}`, {
+        method: 'DELETE'
+      });
+      queryClient.invalidateQueries({ queryKey: getListQuotationsQueryKey(orgId) });
+    } catch {
+      queryClient.invalidateQueries({ queryKey: getListQuotationsQueryKey(orgId) });
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -263,14 +302,24 @@ export function QuotationsList({ onSelectQuotation }: QuotationsListProps) {
                       {getStatusBadge(qt.status)}
                     </td>
                     <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
-                      <Button
-                        variant="secondary"
-                        onClick={() => handleRowClick(qt.id)}
-                        className="gap-1 text-xs py-1 px-2.5"
-                      >
-                        <Eye size={14} />
-                        {t('View', 'عرض')}
-                      </Button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Button
+                          variant="secondary"
+                          onClick={() => handleRowClick(qt.id)}
+                          className="gap-1 text-xs py-1 px-2.5"
+                        >
+                          <Eye size={14} />
+                          {t('View', 'عرض')}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          onClick={() => handleDeleteQuotation(qt.id, qt.quotationNumber)}
+                          className="gap-1 text-xs py-1 px-2 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
+                          title={t('Delete', 'حذف')}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -314,6 +363,7 @@ export function QuotationsList({ onSelectQuotation }: QuotationsListProps) {
         open={createOpen}
         onOpenChange={setCreateOpen}
         onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: getListQuotationsQueryKey(orgId) });
           refetch();
         }}
       />

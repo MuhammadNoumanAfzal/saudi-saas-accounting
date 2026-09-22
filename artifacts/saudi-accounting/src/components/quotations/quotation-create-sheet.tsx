@@ -20,6 +20,7 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet';
 import { Plus, Trash2, FileText, Calculator, User, Calendar, Tag, Percent } from 'lucide-react';
+import { showAlert } from '@/lib/alerts';
 import type { QuotationInput, QuotationItemInput } from '@workspace/api-client-react';
 
 export interface QuotationCreateSheetProps {
@@ -56,11 +57,11 @@ export function QuotationCreateSheet({
   };
 
   const { data: customers } = useFindParties(orgId, { q: '' }, {
-    query: { enabled: open && !!orgId, queryKey: getFindPartiesQueryKey(orgId, { q: '' }) }
+    query: { enabled: !!orgId, queryKey: getFindPartiesQueryKey(orgId, { q: '' }), staleTime: 5 * 60 * 1000 }
   });
 
   const { data: catalogData } = useListCatalogItems(orgId, { pageSize: 100, status: 'ACTIVE' }, {
-    query: { enabled: open && !!orgId, queryKey: getListCatalogItemsQueryKey(orgId, { pageSize: 100, status: 'ACTIVE' }) }
+    query: { enabled: !!orgId, queryKey: getListCatalogItemsQueryKey(orgId, { pageSize: 100, status: 'ACTIVE' }), staleTime: 5 * 60 * 1000 }
   });
 
   const [customerId, setCustomerId] = useState('');

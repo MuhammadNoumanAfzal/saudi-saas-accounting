@@ -58,11 +58,11 @@ export function InvoiceCreateSheet({
   };
 
   const { data: customers } = useFindParties(orgId, { q: '' }, {
-    query: { enabled: open && !!orgId, queryKey: getFindPartiesQueryKey(orgId, { q: '' }) }
+    query: { enabled: !!orgId, queryKey: getFindPartiesQueryKey(orgId, { q: '' }), staleTime: 5 * 60 * 1000 }
   });
 
   const { data: catalogData } = useListCatalogItems(orgId, { pageSize: 100, status: 'ACTIVE' }, {
-    query: { enabled: open && !!orgId, queryKey: getListCatalogItemsQueryKey(orgId, { pageSize: 100, status: 'ACTIVE' }) }
+    query: { enabled: !!orgId, queryKey: getListCatalogItemsQueryKey(orgId, { pageSize: 100, status: 'ACTIVE' }), staleTime: 5 * 60 * 1000 }
   });
 
   const [invoiceType, setInvoiceType] = useState<'STANDARD' | 'SIMPLIFIED'>('STANDARD');
