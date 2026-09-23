@@ -98,7 +98,7 @@ router.post("/organizations/:organizationId/zatca/onboard", async (req, res) => 
       action: "ZATCA_CSID_ONBOARDED",
       entityType: "ZATCA_SETTING",
       entityId: orgId,
-      metadata: { envMode, liveSuccess },
+      newValues: { envMode, liveSuccess },
     });
 
     res.json({

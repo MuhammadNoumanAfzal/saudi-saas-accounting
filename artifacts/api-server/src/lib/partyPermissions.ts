@@ -19,6 +19,14 @@ export type PartyPermission =
   | "contacts.manage"
   | "party_documents.manage";
 
+export type CatalogPermission =
+  | "products.view"
+  | "products.create"
+  | "products.edit"
+  | "products.deactivate"
+  | "products.import"
+  | "products.export";
+
 const rolePermissions: Record<string, Set<PartyPermission>> = {
   owner: new Set([
     "customers.view", "customers.create", "customers.edit", "customers.deactivate", "customers.delete", "customers.export", "customers.import",

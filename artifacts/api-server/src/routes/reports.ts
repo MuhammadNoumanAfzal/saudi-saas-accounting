@@ -654,7 +654,7 @@ router.get(
         const subtotal = Number(inv.subtotal || 0);
         const taxAmount = Number(inv.taxAmount || 0);
         const total = Number(inv.totalAmount || 0);
-        const paidAmount = Number(inv.paidAmount || (inv.status === 'PAID' ? total : 0));
+        const paidAmount = Number((inv as any).paidAmount || (inv.status === 'PAID' ? total : 0));
         const unpaidAmount = Math.max(0, total - paidAmount);
 
         if (account.code === '40100' && subtotal > 0) {
@@ -720,7 +720,7 @@ router.get(
         const subtotal = Number(bill.subtotal || 0);
         const taxAmount = Number(bill.taxAmount || 0);
         const total = Number(bill.totalAmount || 0);
-        const paidAmount = Number(bill.paidAmount || (bill.status === 'PAID' ? total : 0));
+        const paidAmount = Number((bill as any).paidAmount || (bill.status === 'PAID' ? total : 0));
         const unpaidAmount = Math.max(0, total - paidAmount);
 
         if (account.code === '50100' && subtotal > 0) {

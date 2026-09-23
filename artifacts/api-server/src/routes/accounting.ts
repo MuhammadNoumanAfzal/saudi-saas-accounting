@@ -556,7 +556,7 @@ router.get("/organizations/:organizationId/accounting/trial-balance", async (req
       const subtotal = Number(inv.subtotal || 0);
       const taxAmount = Number(inv.taxAmount || 0);
       const total = Number(inv.totalAmount || 0);
-      const paidAmount = Number(inv.paidAmount || (inv.status === 'PAID' ? total : 0));
+      const paidAmount = Number((inv as any).paidAmount || (inv.status === 'PAID' ? total : 0));
       const unpaidAmount = Math.max(0, total - paidAmount);
 
       // Revenue (40100) -> Credit subtotal
@@ -584,7 +584,7 @@ router.get("/organizations/:organizationId/accounting/trial-balance", async (req
       const subtotal = Number(bill.subtotal || 0);
       const taxAmount = Number(bill.taxAmount || 0);
       const total = Number(bill.totalAmount || 0);
-      const paidAmount = Number(bill.paidAmount || (bill.status === 'PAID' ? total : 0));
+      const paidAmount = Number((bill as any).paidAmount || (bill.status === 'PAID' ? total : 0));
       const unpaidAmount = Math.max(0, total - paidAmount);
 
       // Cost of Goods Sold / Expense (50100) -> Debit subtotal
