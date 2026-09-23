@@ -1,3 +1,8 @@
+import dns from "node:dns";
+try {
+  dns.setDefaultResultOrder("ipv4first");
+} catch {}
+
 import fs from "fs";
 import path from "path";
 import app from "./app";
@@ -34,13 +39,15 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-await synchronizeModuleRegistry();
-
 app.listen(port, (err) => {
   if (err) {
     logger.error({ err }, "Error listening on port");
     process.exit(1);
   }
 
-  logger.info({ port }, "Server listening");
+  logger.info({ port }, `Server listening on port ${port}`);
+
+  synchronizeModuleRegistry().catch((err) => {
+    logger.warn({ err }, "Failed to synchronize module registry on startup");
+  });
 });
