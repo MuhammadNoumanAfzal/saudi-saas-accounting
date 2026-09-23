@@ -1,5 +1,8 @@
 {
   "buildCommand": "pnpm --filter @workspace/saudi-accounting run build",
   "outputDirectory": "artifacts/saudi-accounting/dist/public",
-  "installCommand": "pnpm install --no-frozen-lockfile"
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
