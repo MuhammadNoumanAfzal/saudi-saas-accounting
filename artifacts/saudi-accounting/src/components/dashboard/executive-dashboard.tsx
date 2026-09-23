@@ -17,7 +17,11 @@ export function ExecutiveDashboard() {
   const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization.id || '';
 
   const { data: analytics, isLoading } = useGetDashboardAnalytics(orgId, {
-    query: { enabled: !!orgId }
+    query: {
+      enabled: !!orgId,
+      staleTime: 5 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+    }
   });
 
   return (

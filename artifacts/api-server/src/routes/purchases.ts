@@ -166,23 +166,6 @@ router.get("/organizations/:organizationId/purchase-bills", async (req, res) => 
 
     const total = Number(totalCountResult[0]?.count || 0);
 
-    // Fetch items for each bill
-    const itemsByBillId = new Map<string, any[]>();
-    if (bills.length > 0) {
-      const billIds = bills.map((b) => b.id);
-      const allItems = await db
-        .select()
-        .from(purchaseBillItemsTable)
-        .where(sql`${purchaseBillItemsTable.billId} IN ${billIds}`)
-        .orderBy(purchaseBillItemsTable.sortOrder);
-
-      for (const item of allItems) {
-        const list = itemsByBillId.get(item.billId) || [];
-        list.push(item);
-        itemsByBillId.set(item.billId, list);
-      }
-    }
-
     const formattedBills = bills.map((b) => ({
       id: b.id,
       organizationId: b.organizationId,
@@ -200,7 +183,7 @@ router.get("/organizations/:organizationId/purchase-bills", async (req, res) => 
       totalAmount: b.totalAmount,
       status: b.status,
       notes: b.notes,
-      items: itemsByBillId.get(b.id) || [],
+      items: [],
       createdAt: b.createdAt.toISOString(),
       updatedAt: b.updatedAt.toISOString(),
     }));

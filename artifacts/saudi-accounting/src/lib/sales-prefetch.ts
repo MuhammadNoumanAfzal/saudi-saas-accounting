@@ -3,13 +3,20 @@ import {
   getListInvoicesQueryKey,
   getListQuotationsQueryKey,
   getGetCustomersQueryKey,
+  getGetDashboardAnalyticsQueryKey,
   customFetch
 } from '@workspace/api-client-react';
 
 export function prefetchSalesModule(orgId: string, moduleHref: string) {
   if (!orgId) return;
 
-  if (moduleHref.includes('/finance/invoices')) {
+  if (moduleHref === '/finance' || moduleHref === '/finance/overview') {
+    queryClient.prefetchQuery({
+      queryKey: getGetDashboardAnalyticsQueryKey(orgId),
+      queryFn: () => customFetch(`/api/v1/organizations/${orgId}/dashboard/analytics`),
+      staleTime: 5 * 60 * 1000,
+    });
+  } else if (moduleHref.includes('/finance/invoices')) {
     const params = { page: 1, pageSize: 20, search: undefined, status: undefined, invoiceType: undefined };
     queryClient.prefetchQuery({
       queryKey: getListInvoicesQueryKey(orgId, params as any),

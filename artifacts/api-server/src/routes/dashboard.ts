@@ -26,21 +26,39 @@ router.get(
       const currentYear = now.getFullYear();
       const yearStart = new Date(currentYear, 0, 1);
 
-      // Fetch all invoices, bills, expenses for org
-      const invoicesList = await db
-        .select()
-        .from(invoicesTable)
-        .where(eq(invoicesTable.organizationId, organizationId));
+      // Execute optimized parallel queries fetching ONLY necessary fields
+      const [invoicesList, billsList, expensesList] = await Promise.all([
+        db
+          .select({
+            status: invoicesTable.status,
+            subtotal: invoicesTable.subtotal,
+            taxAmount: invoicesTable.taxAmount,
+            totalAmount: invoicesTable.totalAmount,
+            issueDate: invoicesTable.issueDate,
+          })
+          .from(invoicesTable)
+          .where(eq(invoicesTable.organizationId, organizationId)),
 
-      const billsList = await db
-        .select()
-        .from(purchaseBillsTable)
-        .where(eq(purchaseBillsTable.organizationId, organizationId));
+        db
+          .select({
+            status: purchaseBillsTable.status,
+            subtotal: purchaseBillsTable.subtotal,
+            taxAmount: purchaseBillsTable.taxAmount,
+            totalAmount: purchaseBillsTable.totalAmount,
+            billDate: purchaseBillsTable.billDate,
+          })
+          .from(purchaseBillsTable)
+          .where(eq(purchaseBillsTable.organizationId, organizationId)),
 
-      const expensesList = await db
-        .select()
-        .from(expensesTable)
-        .where(eq(expensesTable.organizationId, organizationId));
+        db
+          .select({
+            subtotal: expensesTable.subtotal,
+            taxAmount: expensesTable.taxAmount,
+            expenseDate: expensesTable.expenseDate,
+          })
+          .from(expensesTable)
+          .where(eq(expensesTable.organizationId, organizationId)),
+      ]);
 
       // Calculate YTD totals
       let totalRevenueYtd = 0;
@@ -264,12 +282,13 @@ router.get(
         });
       }
 
+      // Fire and forget non-blocking audit log execution
       writeAuditLog({
         req,
         action: "dashboard.analytics_viewed",
         entityType: "dashboard",
         organizationId,
-      });
+      }).catch(() => {});
 
       return res.json({
         currency: "SAR",

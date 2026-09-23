@@ -35,6 +35,8 @@ export function ExpensesList() {
   const { data, isLoading, refetch } = useListExpenses(orgId, queryParams as any, {
     query: { 
       enabled: !!orgId, 
+      staleTime: 5 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
       queryKey: getListExpensesQueryKey(orgId, queryParams as any) 
     }
   });

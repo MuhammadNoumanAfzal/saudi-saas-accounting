@@ -44,6 +44,7 @@ export function BillsList({ onSelectBill }: BillsListProps) {
     query: { 
       enabled: !!orgId, 
       staleTime: 5 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
       queryKey: getListPurchaseBillsQueryKey(orgId, queryParams as any) 
     }
   });
