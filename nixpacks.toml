@@ -7,7 +7,7 @@ nixPkgs = ['nodejs_20', 'pnpm']
 cmds = ['npm install -g pnpm@9.15.3', 'pnpm install --no-frozen-lockfile']
 
 [phases.build]
-cmds = ['pnpm --filter @workspace/api-server run build']
+cmds = ['pnpm --filter @workspace/api-server run build', 'node -e "require(\"fs\").mkdirSync(\"dist\", {recursive: true}); require(\"fs\").cpSync(\"artifacts/api-server/dist\", \"dist\", {recursive: true});"']
 
 [start]
 cmd = 'node --enable-source-maps ./artifacts/api-server/dist/index.mjs'
