@@ -1,4 +1,3 @@
-skipDetect = true
 providers = ['node']
 
 [phases.setup]
