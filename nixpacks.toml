@@ -1,3 +1,4 @@
+# Force Nixpacks regeneration
 providers = ['node']
 
 [phases.setup]
