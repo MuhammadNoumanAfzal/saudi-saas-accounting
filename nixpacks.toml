@@ -4,7 +4,7 @@ providers = ['node']
 nixPkgs = ['nodejs_20', 'pnpm']
 
 [phases.install]
-cmds = ['corepack enable', 'pnpm install --no-frozen-lockfile']
+cmds = ['npm install -g pnpm@9.15.3', 'pnpm install --no-frozen-lockfile']
 
 [phases.build]
 cmds = ['pnpm --filter @workspace/api-server run build']
