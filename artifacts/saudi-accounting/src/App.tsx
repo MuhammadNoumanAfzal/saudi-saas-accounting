@@ -36,6 +36,11 @@ import { AuditLogSettings } from './pages/settings/audit-log';
 import { BranchesSettings, ZatcaSettings } from './pages/settings/placeholders';
 import { LanguageSettings } from './pages/settings/language';
 import { PublicHome } from './pages/public-home';
+import { AboutPage } from './pages/about';
+import { ContactPage } from './pages/contact';
+import { PricingPage } from './pages/pricing';
+import { SecurityPage } from './pages/security';
+import { ZatcaGuidePage } from './pages/zatca-guide';
 import NotFound from '@/pages/not-found';
 import { ErrorBoundary } from '@/components/error-boundary';
 
@@ -403,6 +408,11 @@ export default function App() {
           <QueryClientProvider client={queryClient}>
           <Switch>
             <Route path="/" component={PublicHome} />
+            <Route path="/about" component={AboutPage} />
+            <Route path="/contact" component={ContactPage} />
+            <Route path="/pricing" component={PricingPage} />
+            <Route path="/security" component={SecurityPage} />
+            <Route path="/zatca-guide" component={ZatcaGuidePage} />
             <Route path="/sign-in/*?" component={SignInPage} />
             <Route path="/sign-up/*?" component={SignUpPage} />
             

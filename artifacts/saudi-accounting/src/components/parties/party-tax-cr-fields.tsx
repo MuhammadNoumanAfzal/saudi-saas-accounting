@@ -26,9 +26,9 @@ export function PartyTaxCrFields({
     <div className="p-4 bg-muted/20 rounded-xl border border-border/70 space-y-4">
       <div className="flex items-center justify-between">
         <label className="flex items-center gap-2 text-xs font-bold text-foreground cursor-pointer">
-          <input 
-            type="checkbox" 
-            checked={vatRegistered} 
+          <input
+            type="checkbox"
+            checked={vatRegistered}
             onChange={(e) => setVatRegistered(e.target.checked)}
             className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
           />
