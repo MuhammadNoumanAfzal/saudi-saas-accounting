@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@clerk/react';
 import { Redirect, Link } from 'wouter';
+import { PlatformLoader } from '@/components/ui/platform-loader';
 import { 
   ArrowRight, 
   Sparkles, 
@@ -50,8 +51,9 @@ export function PublicHome() {
   if (!isLoaded) {
     return (
       <PlatformLoader
-        title="Saudi SaaS Accounting"
-        subtitle="Verifying session security & cryptographic credentials..."
+        fullScreen
+        message="Verifying session security & cryptographic credentials..."
+        messageAr="جاري التحقق من الهوية والصلوحية..."
       />
     );
   }
