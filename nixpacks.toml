@@ -1,8 +1,8 @@
-# Force Nixpacks regeneration
+# Regenerated 2026-09-23
 providers = ['node']
 
 [phases.setup]
-nixPkgs = ['nodejs-20_x', 'pnpm-9_x']
+nixPkgs = ['nodejs_20_x', 'pnpm-9_x']
 
 [phases.install]
 cmds = ['corepack enable', 'pnpm install --no-frozen-lockfile']
