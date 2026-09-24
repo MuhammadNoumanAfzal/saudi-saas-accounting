@@ -10,25 +10,21 @@ import {
   QrCode, 
   Scale, 
   Zap,
-  TrendingUp,
-  ChevronRight,
   CheckCircle2,
   Receipt,
-  WalletCards,
-  Clock3,
   Building2,
   BarChart3,
   Check,
   Globe2,
   Activity,
   Calculator,
-  HelpCircle,
   ChevronDown
 } from 'lucide-react';
 
 export function PublicHome() {
   const { isSignedIn, isLoaded } = useAuth();
   const [activeTab, setActiveTab] = useState<'invoice' | 'ledger' | 'vat'>('invoice');
+  const [annualBilling, setAnnualBilling] = useState(true);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   // Live VAT Calculator State
@@ -48,22 +44,127 @@ export function PublicHome() {
 
   if (isSignedIn) return <Redirect to="/home" />;
 
+  const packages = [
+    {
+      id: "starter",
+      name: "Starter Package",
+      nameAr: "الباقة الأساسية",
+      subtitle: "Ideal for freelancers, small shops & single stores.",
+      subtitleAr: "مثالية للمحلات الصغيرة والأنشطة التجارية الفردية.",
+      monthlyPrice: 99,
+      annualPrice: 79,
+      popular: false,
+      ctaEn: "Start Free Account",
+      ctaAr: "ابدأ مجاناً الآن",
+      featuresEn: [
+        "1 Organization User",
+        "Up to 100 E-Invoices / Month",
+        "ZATCA Phase 1 TLV QR Code",
+        "Automatic 15% Saudi VAT",
+        "Customer & Supplier Directory",
+        "Double-Entry General Ledger",
+        "Standard Email & Chat Support"
+      ],
+      featuresAr: [
+        "مستخدم واحد للمنشأة",
+        "حتى 100 فاتورة إلكترونية شهرياً",
+        "رمز QR المعتمد لـ ZATCA المرحلة 1",
+        "احتساب ضريبة القيمة المضافة 15%",
+        "دليل العملاء والموردين",
+        "دفتر الأستاذ العام المزدوج",
+        "دعم فني عبر البريد والمحادثة"
+      ]
+    },
+    {
+      id: "professional",
+      name: "Professional Package",
+      nameAr: "الباقة الاحترافية",
+      subtitle: "Designed for growing Saudi SMEs & VAT registrants.",
+      subtitleAr: "مصممة للشركات المتوسطة والمنشآت المسجلة في الضريبة.",
+      monthlyPrice: 299,
+      annualPrice: 239,
+      popular: true,
+      ctaEn: "Get Started Now",
+      ctaAr: "اشترك بالباقة الاحترافية",
+      featuresEn: [
+        "Up to 5 Team Members",
+        "Unlimited Invoices & Quotations",
+        "ZATCA Phase 2 Fatoora API Integration",
+        "Official Form 21 VAT Declaration Report",
+        "SOCPA Compliant Double-Entry Accounting",
+        "Profit & Loss + Balance Sheet Reports",
+        "Full Audit Log & History Tracking",
+        "24/7 Priority Support & Setup Assistance"
+      ],
+      featuresAr: [
+        "حتى 5 مستخدمين للمنشأة",
+        "فواتير وعروض أسعار غير محدودة",
+        "الربط المباشر مع هيئة الزكاة (ZATCA Phase 2)",
+        "الإقرار الضريبي المعتمد (نموذج 21)",
+        "المحاسبة المزدوجة وفق معايير SOCPA",
+        "تقارير الأرباح والخسائر والميزانية",
+        "سجل مراجعة كامل وتتبع العمليات",
+        "دعم فني أولوية على مدار 24/7"
+      ]
+    },
+    {
+      id: "enterprise",
+      name: "Enterprise Package",
+      nameAr: "باقة المؤسسات والفروع",
+      subtitle: "Full multi-branch suite for corporate & high-volume trading.",
+      subtitleAr: "حلول شاملة للمؤسسات المتعددة الفروع والتجارة الكبيرة.",
+      monthlyPrice: 599,
+      annualPrice: 479,
+      popular: false,
+      ctaEn: "Contact Enterprise Sales",
+      ctaAr: "تواصل مع المبيعات",
+      featuresEn: [
+        "Unlimited Team Members",
+        "Multi-Branch & Multi-CR Support",
+        "Real-Time ZATCA Clearance & Clearance API",
+        "Automated Nightly Backups & 99.99% Uptime",
+        "Custom Roles & Granular RBAC Permissions",
+        "Dedicated Saudi Account Manager",
+        "Custom API Integration & Webhooks",
+        "SLA Guarantee & Onboarding Training"
+      ],
+      featuresAr: [
+        "عدد غير محدود من الموظفين",
+        "إدارة الفروع والسجلات التجارية المتعددة",
+        "تطهير واعتماد الفواتير الفوري مع الزكاة",
+        "نسخ احتياطي آلي يومي وضمان تشغيل 99.99%",
+        "صلاحيات مخصصة ومتقدمة لكل موظف",
+        "مدير حساب سعودي مخصص",
+        "ربط API مخصص مع الأنظمة الأخرى",
+        "تدريب كامل وضمان مستوى الخدمة SLA"
+      ]
+    }
+  ];
+
   const faqs = [
     {
-      q: "Is KHANBAS NEXUS fully certified for ZATCA Phase 2 E-Invoicing?",
-      a: "Yes. Our platform generates 100% compliant Base64 TLV QR codes for Phase 1 and includes cryptographic ECDSA stamp signatures, SHA-256 previous invoice hash (PIH) chaining, and UBL 2.1 XML clearance APIs for ZATCA Phase 2."
+      qEn: "Is KHANBAS NEXUS certified for ZATCA E-Invoicing Phase 1 & 2?",
+      qAr: "هل منصة نكسس معتمدة للفوترة الإلكترونية المرحلة الأولى والثانية؟",
+      aEn: "Yes. Our platform generates 100% compliant Base64 TLV QR codes for Phase 1 and includes cryptographic ECDSA stamp signatures, SHA-256 previous invoice hash (PIH) chaining, and UBL 2.1 XML clearance APIs for ZATCA Phase 2.",
+      aAr: "نعم بالكامل. المنصة تولد رموز QR بصيغة Base64 TLV المعتمدة للمرحلة الأولى، وتتضمن التوقيع الرقمي المشفر ECDSA، وسلسلة التشفير SHA-256، وملفات UBL 2.1 XML الجاهزة للربط المباشر مع منصة فاتورة (ZATCA Phase 2)."
     },
     {
-      q: "Can I manage multiple Saudi business branches under one account?",
-      a: "Absolutely. You can add multiple branches, commercial registration (CR) numbers, and location profiles under a single organization session and switch between them instantly."
+      qEn: "Can I manage multiple Saudi business branches under one subscription?",
+      qAr: "هل يمكنني إدارة عدة فروع بسجلات تجارية مختلفة في حساب واحد؟",
+      aEn: "Yes. The Enterprise package allows you to add multiple branches, commercial registration (CR) numbers, and location profiles under a single organization session and switch between them instantly.",
+      aAr: "نعم، تتيح لك باقة المؤسسات إضافة عدة فروع وسجلات تجارية متعددة وعناوين مختلفة تحت منشأة واحدة والتنقل بينها بسهولة."
     },
     {
-      q: "Does the system calculate Saudi 15% VAT and Form 21 automatically?",
-      a: "Yes. All sales invoices, purchase bills, and operational expenses automatically compute Output VAT and Input VAT, generating an official ZATCA Form 21 Tax Return report ready for submission."
+      qEn: "Does the system calculate Saudi 15% VAT and Form 21 automatically?",
+      qAr: "هل يقوم النظام بحساب ضريبة القيمة المضافة 15% وإعداد الإقرار الضريبي نموذج 21 تلقائياً؟",
+      aEn: "Yes. All sales invoices, purchase bills, and operational expenses automatically compute Output VAT and Input VAT, generating an official ZATCA Form 21 Tax Return report ready for submission.",
+      aAr: "نعم، جميع الفواتير والمشتريات والمصاريف تحسب ضريبة المخرجات والمدخلات تلقائياً، وتولد تقرير الإقرار الضريبي الرسمي (نموذج 21) الجاهز للتقديم لهيئة الزكاة."
     },
     {
-      q: "Is my financial data stored securely in accordance with KSA regulations?",
-      a: "Your data is stored in bank-grade encrypted Saudi cloud servers with 256-bit AES encryption at rest and TLS 1.3 in transit, backed up nightly with 99.99% uptime guarantee."
+      qEn: "Is my financial data stored securely in accordance with KSA regulations?",
+      qAr: "هل يتم حفظ البيانات المالية بشكل آمن وفق الأنظمة السعودية؟",
+      aEn: "Your data is stored in bank-grade encrypted Saudi cloud servers with 256-bit AES encryption at rest and TLS 1.3 in transit, backed up nightly with 99.99% uptime guarantee.",
+      aAr: "يتم حفظ بياناتك في خوادم سحابية مخصصة ومحمية بتشفير 256-bit AES في الراحة وTLS 1.3 أثناء النقل، مع نسخ احتياطي يومي آلي وضمان تشغيل 99.99%."
     }
   ];
 
@@ -73,32 +174,36 @@ export function PublicHome() {
       {/* HERO SECTION */}
       <section className="mx-auto grid max-w-[1280px] items-center gap-12 px-6 py-12 lg:grid-cols-[1fr_1fr] lg:px-10 lg:py-20">
         <div className="fade-up">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#176752]/25 bg-white/80 backdrop-blur-md px-4 py-1.5 text-xs font-bold text-[#176752] shadow-sm mb-6">
+          <div className="inline-flex items-center gap-2.5 rounded-full border border-[#176752]/25 bg-white/90 backdrop-blur-md px-4 py-1.5 text-xs font-bold text-[#176752] shadow-sm mb-6">
             <span className="flex h-2 w-2 rounded-full bg-[#10b981] animate-ping" />
             <Sparkles size={14} className="text-[#d4af37]" />
-            <span>Saudi Enterprise Accounting Platform</span>
+            <span>KHANBAS NEXUS | منصة نكسس المالية المحاسبية</span>
           </div>
 
-          <h1 className="text-[clamp(2.5rem,4.5vw,4.5rem)] font-black leading-[1.04] tracking-tight text-[#071f19]">
+          <h1 className="text-[clamp(2.3rem,4.2vw,4.2rem)] font-black leading-[1.08] tracking-tight text-[#071f19]">
             Saudi Enterprise Accounting. <br />
             <span className="bg-gradient-to-r from-[#176752] via-[#b8800b] to-[#d4af37] bg-clip-text text-transparent">
               Smarter, Faster & ZATCA Compliant.
             </span>
           </h1>
 
-          <p className="mt-5 text-base leading-relaxed text-[#485d56] max-w-[540px]">
+          <p className="mt-3 text-lg font-bold text-[#176752] dir-rtl font-arabic">
+            المنصة السحابية المعتمدة للمحاسبة والفوترة الإلكترونية في المملكة العربية السعودية (ZATCA & SOCPA)
+          </p>
+
+          <p className="mt-4 text-sm leading-relaxed text-[#485d56] max-w-[540px]">
             Unified double-entry financial ledger, instant Base64 TLV e-invoicing, automatic 15% VAT Form 21 reporting, and multi-branch operations designed strictly to SOCPA & ZATCA FATOORA standards.
           </p>
 
           {/* CTAs */}
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link href="/sign-up" className="btn-primary flex items-center gap-2 px-7 py-3.5 text-sm font-bold shadow-xl shadow-[#176752]/25 hover:scale-[1.03] transition-all cursor-pointer" data-testid="link-hero-start">
-              <span>Start Free Account</span>
+              <span>Start Free Account / ابدأ مجاناً</span>
               <ArrowRight size={16} />
             </Link>
-            <a href="#preview" className="flex items-center gap-2 rounded-xl border border-[#d6cfbe] bg-white px-6 py-3.5 text-sm font-bold text-[#0a2620] hover:bg-[#ede7d8] transition-colors cursor-pointer">
-              <Activity size={16} className="text-[#176752]" />
-              <span>Interactive Live Demo</span>
+            <a href="#packages" className="flex items-center gap-2 rounded-xl border border-[#d6cfbe] bg-white px-6 py-3.5 text-sm font-bold text-[#0a2620] hover:bg-[#ede7d8] transition-colors cursor-pointer">
+              <Receipt size={16} className="text-[#176752]" />
+              <span>View Packages / باقات الأسعار</span>
             </a>
           </div>
 
@@ -244,28 +349,154 @@ export function PublicHome() {
         <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-6 overflow-x-auto text-xs font-extrabold text-[#071f19] lg:px-10">
           <div className="flex items-center gap-2 whitespace-nowrap">
             <ShieldCheck size={16} className="text-[#176752]" />
-            <span>100% ZATCA Compliant</span>
+            <span>100% ZATCA Compliant / هيئة الزكاة والضريبة</span>
           </div>
           <span className="text-[#c5bea9]">|</span>
           <div className="flex items-center gap-2 whitespace-nowrap">
             <Receipt size={16} className="text-[#b8800b]" />
-            <span>Automated 15% VAT Form 21</span>
+            <span>15% Saudi VAT Form 21 / الإقرار الضريبي</span>
           </div>
           <span className="text-[#c5bea9]">|</span>
           <div className="flex items-center gap-2 whitespace-nowrap">
             <Scale size={16} className="text-[#176752]" />
-            <span>SOCPA GAAP Standard</span>
+            <span>SOCPA Standard / معايير المحاسبة السعودية</span>
           </div>
           <span className="text-[#c5bea9]">|</span>
           <div className="flex items-center gap-2 whitespace-nowrap">
             <Zap size={16} className="text-[#b8800b]" />
-            <span>Instant TLV Base64 QR</span>
+            <span>Instant Base64 QR / رمز كيو آر الفوري</span>
           </div>
           <span className="text-[#c5bea9]">|</span>
           <div className="flex items-center gap-2 whitespace-nowrap">
             <Globe2 size={16} className="text-[#176752]" />
-            <span>Arabic & English Bilingual</span>
+            <span>Arabic & English / دعم اللغة العربية والإنجليزية</span>
           </div>
+        </div>
+      </section>
+
+      {/* NEW BILINGUAL PACKAGES & PRICING SECTION */}
+      <section id="packages" className="py-20 lg:py-24 bg-[#f8f5ee] border-b border-[#e2dcce]">
+        <div className="mx-auto max-w-[1280px] px-6 lg:px-10">
+          
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#176752]/25 bg-white px-4 py-1.5 text-xs font-bold text-[#176752] shadow-sm mb-4">
+              <Sparkles size={14} className="text-[#d4af37]" />
+              <span>Packages & Subscription Plans | باقات الاشتراك والأسعار</span>
+            </div>
+            
+            <h2 className="text-3xl font-black text-[#071f19] sm:text-4xl">
+              Choose the Right Package for Your Business <br />
+              <span className="bg-gradient-to-r from-[#176752] via-[#b8800b] to-[#d4af37] bg-clip-text text-transparent">
+                اختر الباقة المناسبة لمنشأتك بدون مصاريف خفية
+              </span>
+            </h2>
+            
+            <p className="mt-4 text-sm text-[#485d56]">
+              All packages include 15% Saudi VAT calculation, SOCPA double-entry accounting, Base64 TLV QR codes, and bilingual Arabic & English interface.
+            </p>
+
+            {/* Billing Cycle Toggle */}
+            <div className="mt-8 flex items-center justify-center gap-4">
+              <span className={`text-xs font-bold uppercase tracking-wider ${!annualBilling ? 'text-[#176752]' : 'text-[#78938a]'}`}>
+                Monthly / شهري
+              </span>
+              <button
+                onClick={() => setAnnualBilling(!annualBilling)}
+                className="relative h-7 w-14 rounded-full bg-[#176752] p-1 transition-colors cursor-pointer"
+              >
+                <div className={`h-5 w-5 rounded-full bg-white transition-transform ${annualBilling ? 'translate-x-7' : 'translate-x-0'}`} />
+              </button>
+              <div className="flex items-center gap-1.5">
+                <span className={`text-xs font-bold uppercase tracking-wider ${annualBilling ? 'text-[#176752]' : 'text-[#78938a]'}`}>
+                  Annual Billing / سنوي
+                </span>
+                <span className="rounded-full bg-[#d4af37]/20 border border-[#d4af37] px-2.5 py-0.5 text-[10px] font-extrabold text-[#b8800b]">
+                  Save 20% / خصم 20%
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Package Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+            {packages.map((pkg) => {
+              const price = annualBilling ? pkg.annualPrice : pkg.monthlyPrice;
+              return (
+                <div
+                  key={pkg.id}
+                  className={`relative flex flex-col justify-between rounded-3xl p-8 transition-all duration-300 cursor-pointer ${
+                    pkg.popular
+                      ? 'bg-[#071f19] text-white ring-2 ring-[#176752] shadow-2xl scale-[1.03] z-10'
+                      : 'bg-white border border-[#e2dcce] text-[#0a2620] shadow-sm hover:shadow-xl hover:border-[#176752]/40'
+                  }`}
+                >
+                  {pkg.popular && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-[#176752] to-[#d4af37] px-4 py-1 text-[11px] font-extrabold uppercase tracking-widest text-white shadow-md flex items-center gap-1.5">
+                      <Sparkles size={12} className="text-[#fde68a]" />
+                      <span>Most Popular / الأكثر طلباً</span>
+                    </div>
+                  )}
+
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <h3 className={`text-2xl font-black ${pkg.popular ? 'text-white' : 'text-[#071f19]'}`}>{pkg.name}</h3>
+                      <span className={`text-xs font-bold ${pkg.popular ? 'text-[#d4af37]' : 'text-[#176752]'}`}>{pkg.nameAr}</span>
+                    </div>
+
+                    <p className={`mt-2 text-xs leading-relaxed ${pkg.popular ? 'text-[#a3b8b0]' : 'text-[#5c726a]'}`}>
+                      {pkg.subtitle}
+                    </p>
+                    <p className={`mt-1 text-xs font-semibold ${pkg.popular ? 'text-[#6ee7b7]' : 'text-[#176752]'}`}>
+                      {pkg.subtitleAr}
+                    </p>
+
+                    <div className="mt-6 flex items-baseline gap-1.5">
+                      <span className="text-4xl font-black font-mono">{price}</span>
+                      <span className={`text-xs font-bold ${pkg.popular ? 'text-[#6ee7b7]' : 'text-[#176752]'}`}>
+                        SAR / Month (ر.س / شهرياً)
+                      </span>
+                    </div>
+                    <div className={`text-[10px] font-semibold mt-1 ${pkg.popular ? 'text-[#78938a]' : 'text-[#94a3b8]'}`}>
+                      {annualBilling ? 'Billed annually (خصم الفوترة السنوية)' : 'Billed monthly (مفوترة شهرياً)'}
+                    </div>
+
+                    <hr className={`my-6 ${pkg.popular ? 'border-white/10' : 'border-[#e2dcce]'}`} />
+
+                    <div className="space-y-3">
+                      <div className="text-[10px] uppercase font-extrabold tracking-wider opacity-75">Package Features / مميزات الباقة:</div>
+                      <ul className="space-y-2.5 text-xs">
+                        {pkg.featuresEn.map((featEn, fIdx) => (
+                          <li key={fIdx} className="flex items-start gap-2.5">
+                            <Check size={15} className={pkg.popular ? 'text-[#6ee7b7] shrink-0 mt-0.5' : 'text-[#176752] shrink-0 mt-0.5'} />
+                            <div>
+                              <div className={pkg.popular ? 'text-[#e2e8f0] font-medium' : 'text-[#334155] font-medium'}>{featEn}</div>
+                              <div className={pkg.popular ? 'text-[#6ee7b7] text-[10px]' : 'text-[#176752] text-[10px]'}>{pkg.featuresAr[fIdx]}</div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="mt-8">
+                    <Link
+                      href="/sign-up"
+                      className={`w-full py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md ${
+                        pkg.popular
+                          ? 'btn-primary text-white shadow-[#176752]/40 hover:scale-[1.02]'
+                          : 'bg-[#f0ece1] text-[#0a2620] hover:bg-[#176752] hover:text-white'
+                      }`}
+                    >
+                      <span>{pkg.ctaEn} / {pkg.ctaAr}</span>
+                      <ArrowRight size={14} />
+                    </Link>
+                  </div>
+
+                </div>
+              );
+            })}
+          </div>
+
         </div>
       </section>
 
@@ -274,9 +505,10 @@ export function PublicHome() {
         <div className="mx-auto max-w-[1280px] px-6 lg:px-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
             <div>
-              <div className="eyebrow">Platform Capabilities</div>
+              <div className="eyebrow">Platform Capabilities | مميزات النظام</div>
               <h2 className="mt-2 text-3xl font-black text-[#071f19] sm:text-4xl">
-                Engineered for Saudi business requirements.
+                Engineered for Saudi business requirements. <br />
+                <span className="text-[#176752] font-bold text-2xl">مصمم خصيصاً لتلبية متطلبات الأعمال في المملكة</span>
               </h2>
             </div>
             <Link href="/sign-up" className="btn-primary inline-flex items-center gap-2 text-xs font-bold py-3 px-5 shadow-md cursor-pointer hover:scale-[1.03] transition-all">
@@ -292,6 +524,7 @@ export function PublicHome() {
                 <QrCode size={24} />
               </div>
               <h3 className="mt-6 text-lg font-bold text-[#071f19]">ZATCA E-Invoicing Phase 1 & 2</h3>
+              <p className="text-xs font-bold text-[#176752] mt-0.5">الفوترة الإلكترونية المرحلة الأولى والثانية</p>
               <p className="mt-2 text-xs leading-relaxed text-[#566861]">
                 Generates Base64 TLV QR Codes, cryptographic signatures, XML formatting, and direct ZATCA FATOORA portal sync.
               </p>
@@ -303,6 +536,7 @@ export function PublicHome() {
                 <Scale size={24} />
               </div>
               <h3 className="mt-6 text-lg font-bold text-[#071f19]">Double-Entry SOCPA Ledger</h3>
+              <p className="text-xs font-bold text-[#176752] mt-0.5">المحاسبة المزدوجة وفق معايير SOCPA</p>
               <p className="mt-2 text-xs leading-relaxed text-[#566861]">
                 Complete Chart of Accounts, Journal Vouchers, Account Ledgers, Trial Balance, Profit & Loss, and Balance Sheet.
               </p>
@@ -314,6 +548,7 @@ export function PublicHome() {
                 <Building2 size={24} />
               </div>
               <h3 className="mt-6 text-lg font-bold text-[#071f19]">Multi-Branch & Catalog</h3>
+              <p className="text-xs font-bold text-[#176752] mt-0.5">إدارة الفروع والسجلات التجارية المتعددة</p>
               <p className="mt-2 text-xs leading-relaxed text-[#566861]">
                 Manage multiple Saudi branches, CR numbers, commercial catalogs, VAT rates, customer and supplier directories.
               </p>
@@ -330,7 +565,7 @@ export function PublicHome() {
             <div className="lg:col-span-6 space-y-6">
               <div className="inline-flex items-center gap-2 rounded-full bg-[#176752]/10 border border-[#176752]/20 px-3.5 py-1 text-xs font-bold text-[#176752]">
                 <Calculator size={14} className="text-[#d4af37]" />
-                <span>Live Calculator Tool</span>
+                <span>Live Calculator Tool | حاسبة ضريبة القيمة المضافة</span>
               </div>
 
               <h2 className="text-3xl font-black text-[#071f19] sm:text-4xl">
@@ -343,7 +578,7 @@ export function PublicHome() {
               <div className="space-y-4 pt-2">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-[#3e524b] mb-2">
-                    Enter Invoice Subtotal (SAR)
+                    Enter Invoice Subtotal (SAR) / أدخل المبلغ قبل الضريبة
                   </label>
                   <input
                     type="number"
@@ -386,7 +621,7 @@ export function PublicHome() {
       <section id="faq" className="py-20 lg:py-24">
         <div className="mx-auto max-w-[1280px] px-6 lg:px-10">
           <div className="text-center max-w-2xl mx-auto mb-16">
-            <div className="eyebrow">Got Questions?</div>
+            <div className="eyebrow">Got Questions? | الأسئلة الشائعة</div>
             <h2 className="mt-2 text-3xl font-black text-[#071f19] sm:text-4xl">
               Frequently Asked Questions
             </h2>
@@ -402,15 +637,19 @@ export function PublicHome() {
                   onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
                   className="w-full flex items-center justify-between p-6 text-left cursor-pointer"
                 >
-                  <span className="text-base font-bold text-[#071f19]">{faq.q}</span>
+                  <div>
+                    <div className="text-base font-bold text-[#071f19]">{faq.qEn}</div>
+                    <div className="text-xs font-bold text-[#176752] mt-0.5">{faq.qAr}</div>
+                  </div>
                   <ChevronDown
                     size={20}
                     className={`text-[#176752] transition-transform duration-300 shrink-0 ${openFaq === idx ? 'rotate-180' : ''}`}
                   />
                 </button>
                 {openFaq === idx && (
-                  <div className="px-6 pb-6 text-xs leading-relaxed text-[#5c726a] border-t border-[#f0ece1] pt-4 animate-in fade-in duration-200">
-                    {faq.a}
+                  <div className="px-6 pb-6 text-xs leading-relaxed border-t border-[#f0ece1] pt-4 animate-in fade-in duration-200 space-y-2">
+                    <p className="text-[#5c726a]">{faq.aEn}</p>
+                    <p className="text-[#176752] font-semibold">{faq.aAr}</p>
                   </div>
                 )}
               </div>
@@ -424,20 +663,21 @@ export function PublicHome() {
       <section className="relative overflow-hidden bg-[#071f19] px-6 py-20 text-white lg:px-10">
         <div className="mx-auto flex max-w-[1280px] flex-col items-center text-center">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[#d4af37]/20 border border-[#d4af37]/30 px-3.5 py-1 text-xs font-bold text-[#fde68a]">
-            🇸🇦 Saudi Arabia Business Edition
+            🇸🇦 Saudi Arabia Enterprise SaaS Edition | المملكة العربية السعودية
           </span>
 
-          <h2 className="mt-6 max-w-[640px] text-3xl font-black text-white sm:text-4xl">
-            Ready to Streamline Your Saudi Business Accounting?
+          <h2 className="mt-6 max-w-[680px] text-3xl font-black text-white sm:text-4xl">
+            Ready to Streamline Your Saudi Business Accounting? <br />
+            <span className="text-[#d4af37]">جاهز لتطوير أعمالك ونظامك المحاسبي مع نكسس؟</span>
           </h2>
 
-          <p className="mt-3 text-sm text-[#a4c0b6] max-w-[480px]">
+          <p className="mt-3 text-sm text-[#a4c0b6] max-w-[520px]">
             Setup your organization, configure ZATCA e-invoicing, and generate SOCPA compliant reports in minutes.
           </p>
 
           <div className="mt-8 flex items-center gap-4">
             <Link href="/sign-up" className="btn-primary inline-flex items-center gap-2 px-8 py-4 text-sm font-bold bg-[#d4af37] text-[#071f19] hover:bg-[#ebd074] transition-all shadow-xl hover:scale-[1.03] cursor-pointer">
-              <span>Start Free Trial</span>
+              <span>Start Free Trial / ابدأ التجربة المجانية</span>
               <ArrowRight size={16} />
             </Link>
           </div>
