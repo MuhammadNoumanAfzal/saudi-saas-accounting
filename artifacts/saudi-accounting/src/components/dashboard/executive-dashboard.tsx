@@ -165,17 +165,21 @@ export function ExecutiveDashboard() {
               <CardContent className="p-6">
                 <div className="space-y-6">
                   {analytics?.monthlyTrends?.map((pt, idx) => {
-                    const maxVal = Math.max(Number(pt.revenue), Number(pt.expenses), 1);
-                    const revPct = Math.min(100, Math.max(5, (Number(pt.revenue) / maxVal) * 100));
-                    const expPct = Math.min(100, Math.max(5, (Number(pt.expenses) / maxVal) * 100));
+                    const revenue = Number(pt.revenue || 0);
+                    const expenses = Number(pt.expenses || pt.expense || 0);
+                    const maxVal = Math.max(revenue, expenses, 1);
+                    const revPct = Math.min(100, Math.max(5, (revenue / maxVal) * 100));
+                    const expPct = Math.min(100, Math.max(5, (expenses / maxVal) * 100));
+                    const label = (isRtl ? pt.monthNameAr : pt.monthNameEn) || pt.month || 'Month';
+                    const yearStr = pt.monthKey ? pt.monthKey.split('-')[0] : (typeof pt.month === 'string' && pt.month.includes(' ') ? pt.month.split(' ')[1] : '');
 
                     return (
                       <div key={idx} className="space-y-1.5">
                         <div className="flex justify-between text-xs font-semibold">
-                          <span className="text-foreground">{isRtl ? pt.monthNameAr : pt.monthNameEn} {pt.monthKey.split('-')[0]}</span>
+                          <span className="text-foreground">{label} {yearStr}</span>
                           <div className="flex gap-4 font-mono text-[11px]">
-                            <span className="text-primary font-bold">{t('Rev:', 'إيراد:')} {formatCurrency(Number(pt.revenue), 'SAR', isRtl ? 'ar-SA' : 'en-US')}</span>
-                            <span className="text-muted-foreground">{t('Exp:', 'مصروف:')} {formatCurrency(Number(pt.expenses), 'SAR', isRtl ? 'ar-SA' : 'en-US')}</span>
+                            <span className="text-primary font-bold">{t('Rev:', 'إيراد:')} {formatCurrency(revenue, 'SAR', isRtl ? 'ar-SA' : 'en-US')}</span>
+                            <span className="text-muted-foreground">{t('Exp:', 'مصروف:')} {formatCurrency(expenses, 'SAR', isRtl ? 'ar-SA' : 'en-US')}</span>
                           </div>
                         </div>
 
@@ -241,22 +245,28 @@ export function ExecutiveDashboard() {
               </CardHeader>
               <CardContent className="p-4">
                 <div className="divide-y divide-border">
-                  {analytics?.arAging?.map((bucket, idx) => (
-                    <div key={idx} className="py-3 flex items-center justify-between text-sm">
-                      <div className="space-y-1 flex-1 pr-4 rtl:pr-0 rtl:pl-4">
-                        <div className="flex justify-between text-xs font-semibold">
-                          <span className="text-foreground">{isRtl ? bucket.labelAr : bucket.labelEn}</span>
-                          <span className="text-muted-foreground font-mono">{bucket.count} {t('invoices', 'فواتير')}</span>
+                  {analytics?.arAging?.map((bucket, idx) => {
+                    const label = (isRtl ? bucket.labelAr : bucket.labelEn) || bucket.bucket || '0-30 Days';
+                    const count = bucket.count ?? 0;
+                    const pct = bucket.percentage ?? (bucket.amount ? 100 : 0);
+
+                    return (
+                      <div key={idx} className="py-3 flex items-center justify-between text-sm">
+                        <div className="space-y-1 flex-1 pr-4 rtl:pr-0 rtl:pl-4">
+                          <div className="flex justify-between text-xs font-semibold">
+                            <span className="text-foreground">{label}</span>
+                            <span className="text-muted-foreground font-mono">{count} {t('invoices', 'فواتير')}</span>
+                          </div>
+                          <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                            <div className="bg-primary h-full rounded-full" style={{ width: `${Math.max(5, pct)}%` }} />
+                          </div>
                         </div>
-                        <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                          <div className="bg-primary h-full rounded-full" style={{ width: `${Math.max(5, bucket.percentage)}%` }} />
+                        <div className="font-mono font-bold text-end shrink-0 w-28 text-foreground">
+                          {formatCurrency(Number(bucket.amount || 0), 'SAR', isRtl ? 'ar-SA' : 'en-US')}
                         </div>
                       </div>
-                      <div className="font-mono font-bold text-end shrink-0 w-28 text-foreground">
-                        {formatCurrency(Number(bucket.amount), 'SAR', isRtl ? 'ar-SA' : 'en-US')}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -276,22 +286,28 @@ export function ExecutiveDashboard() {
               </CardHeader>
               <CardContent className="p-4">
                 <div className="divide-y divide-border">
-                  {analytics?.apAging?.map((bucket, idx) => (
-                    <div key={idx} className="py-3 flex items-center justify-between text-sm">
-                      <div className="space-y-1 flex-1 pr-4 rtl:pr-0 rtl:pl-4">
-                        <div className="flex justify-between text-xs font-semibold">
-                          <span className="text-foreground">{isRtl ? bucket.labelAr : bucket.labelEn}</span>
-                          <span className="text-muted-foreground font-mono">{bucket.count} {t('bills', 'فواتير')}</span>
+                  {analytics?.apAging?.map((bucket, idx) => {
+                    const label = (isRtl ? bucket.labelAr : bucket.labelEn) || bucket.bucket || '0-30 Days';
+                    const count = bucket.count ?? 0;
+                    const pct = bucket.percentage ?? (bucket.amount ? 100 : 0);
+
+                    return (
+                      <div key={idx} className="py-3 flex items-center justify-between text-sm">
+                        <div className="space-y-1 flex-1 pr-4 rtl:pr-0 rtl:pl-4">
+                          <div className="flex justify-between text-xs font-semibold">
+                            <span className="text-foreground">{label}</span>
+                            <span className="text-muted-foreground font-mono">{count} {t('bills', 'فواتير')}</span>
+                          </div>
+                          <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                            <div className="bg-muted-foreground/40 h-full rounded-full" style={{ width: `${Math.max(5, pct)}%` }} />
+                          </div>
                         </div>
-                        <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                          <div className="bg-muted-foreground/40 h-full rounded-full" style={{ width: `${Math.max(5, bucket.percentage)}%` }} />
+                        <div className="font-mono font-bold text-end shrink-0 w-28 text-foreground">
+                          {formatCurrency(Number(bucket.amount || 0), 'SAR', isRtl ? 'ar-SA' : 'en-US')}
                         </div>
                       </div>
-                      <div className="font-mono font-bold text-end shrink-0 w-28 text-foreground">
-                        {formatCurrency(Number(bucket.amount), 'SAR', isRtl ? 'ar-SA' : 'en-US')}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
