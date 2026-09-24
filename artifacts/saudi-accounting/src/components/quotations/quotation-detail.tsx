@@ -30,7 +30,8 @@ import {
   MapPin,
   Phone,
   Mail,
-  Hash
+  Hash,
+  Pencil
 } from 'lucide-react';
 
 export function QuotationDetail({ id }: { id: string }) {
