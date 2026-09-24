@@ -548,6 +548,23 @@ function saveStoredMockItem(url: string, item: any): void {
     const existing = getStoredMockItems(url);
     const updated = [item, ...existing.filter((i) => i.id !== item.id)];
     localStorage.setItem(key, JSON.stringify(updated));
+
+    // Also sync to component-specific nexus_ keys
+    let nexusKey = "";
+    if (url.includes("customer")) nexusKey = "nexus_customers_demo_org_101";
+    else if (url.includes("supplier")) nexusKey = "nexus_suppliers_demo_org_101";
+    else if (url.includes("invoice")) nexusKey = "nexus_invoices_demo_org_101";
+    else if (url.includes("quotation")) nexusKey = "nexus_quotations_demo_org_101";
+    else if (url.includes("bill")) nexusKey = "nexus_bills_demo_org_101";
+    else if (url.includes("item") || url.includes("catalog")) nexusKey = "nexus_catalog_demo_org_101";
+    else if (url.includes("journal")) nexusKey = "nexus_journal_entries_demo_org_101";
+
+    if (nexusKey) {
+      const rawNexus = localStorage.getItem(nexusKey);
+      const nexusList = rawNexus ? JSON.parse(rawNexus) : [];
+      const updatedNexus = [item, ...nexusList.filter((i: any) => i.id !== item.id)];
+      localStorage.setItem(nexusKey, JSON.stringify(updatedNexus));
+    }
   } catch {}
 }
 
@@ -557,6 +574,22 @@ function removeStoredMockItem(url: string, id: string): void {
     const existing = getStoredMockItems(url);
     const updated = existing.filter((i) => i.id !== id);
     localStorage.setItem(key, JSON.stringify(updated));
+
+    let nexusKey = "";
+    if (url.includes("customer")) nexusKey = "nexus_customers_demo_org_101";
+    else if (url.includes("supplier")) nexusKey = "nexus_suppliers_demo_org_101";
+    else if (url.includes("invoice")) nexusKey = "nexus_invoices_demo_org_101";
+    else if (url.includes("quotation")) nexusKey = "nexus_quotations_demo_org_101";
+    else if (url.includes("bill")) nexusKey = "nexus_bills_demo_org_101";
+    else if (url.includes("item") || url.includes("catalog")) nexusKey = "nexus_catalog_demo_org_101";
+    else if (url.includes("journal")) nexusKey = "nexus_journal_entries_demo_org_101";
+
+    if (nexusKey) {
+      const rawNexus = localStorage.getItem(nexusKey);
+      const nexusList = rawNexus ? JSON.parse(rawNexus) : [];
+      const updatedNexus = nexusList.filter((i: any) => i.id !== id);
+      localStorage.setItem(nexusKey, JSON.stringify(updatedNexus));
+    }
   } catch {}
 }
 
@@ -583,36 +616,49 @@ function synthesizeMutationSuccess<T>(url: string, body: any, method: string): T
     return [] as unknown as T;
   }
 
-  const id = bodyObj.id || `rec_${Math.random().toString(36).substring(2, 9)}_${Date.now().toString(36)}`;
+  const cleanPath = url.split("?")[0].replace(/\/+$/, "");
+  const parts = cleanPath.split("/");
+  const lastPart = parts[parts.length - 1];
+  const listEndpoints = ["customers", "suppliers", "invoices", "quotations", "bills", "items", "catalog", "expenses", "journal-entries", "status", "convert", "export", "analytics", "summary", "parties", "units"];
+
+  const isDetailUrl = !listEndpoints.includes(lastPart);
+  const urlId = isDetailUrl ? lastPart : null;
+
+  const targetId = bodyObj.id || urlId || `rec_${Math.random().toString(36).substring(2, 9)}_${Date.now().toString(36)}`;
+
+  const existingItems = getStoredMockItems(url);
+  const existingRecord = targetId ? existingItems.find((i: any) => i.id === targetId || i.partyNumber === targetId || i.code === targetId || i.invoiceNumber === targetId || i.billNumber === targetId || i.quotationNumber === targetId) : null;
+
   const displayName =
     bodyObj.businessNameEnglish ||
     bodyObj.businessNameArabic ||
     bodyObj.displayName ||
     bodyObj.name ||
-    (bodyObj.firstName ? `${bodyObj.firstName} ${bodyObj.lastName || ""}`.trim() : "Record Created");
+    (bodyObj.firstName ? `${bodyObj.firstName} ${bodyObj.lastName || ""}`.trim() : existingRecord?.displayName || "Record Updated");
 
   const syntheticRecord = {
-    id,
     displayName,
-    partyNumber: bodyObj.partyNumber || `P-${Math.floor(1000 + Math.random() * 9000)}`,
-    invoiceNumber: bodyObj.invoiceNumber || `INV-${Math.floor(10000 + Math.random() * 90000)}`,
-    quotationNumber: bodyObj.quotationNumber || `QT-${Math.floor(10000 + Math.random() * 90000)}`,
-    billNumber: bodyObj.billNumber || `BILL-${Math.floor(10000 + Math.random() * 90000)}`,
-    entryNumber: bodyObj.entryNumber || `JE-${Math.floor(10000 + Math.random() * 90000)}`,
-    itemCode: bodyObj.itemCode || `ITEM-${Math.floor(1000 + Math.random() * 9000)}`,
-    code: bodyObj.code || `REF-${Math.floor(1000 + Math.random() * 9000)}`,
-    status: bodyObj.status || "active",
-    partyType: bodyObj.partyType || "organization",
-    vatRegistered: bodyObj.vatRegistered ?? false,
-    vatNumber: bodyObj.vatNumber || null,
-    commercialRegistrationNumber: bodyObj.commercialRegistrationNumber || null,
-    primaryEmail: bodyObj.primaryEmail || null,
-    primaryPhone: bodyObj.primaryPhone || null,
-    city: bodyObj.city || null,
-    createdAt: new Date().toISOString(),
+    partyNumber: existingRecord?.partyNumber || bodyObj.partyNumber || `P-${Math.floor(1000 + Math.random() * 9000)}`,
+    invoiceNumber: existingRecord?.invoiceNumber || bodyObj.invoiceNumber || `INV-${Math.floor(10000 + Math.random() * 90000)}`,
+    quotationNumber: existingRecord?.quotationNumber || bodyObj.quotationNumber || `QT-${Math.floor(10000 + Math.random() * 90000)}`,
+    billNumber: existingRecord?.billNumber || bodyObj.billNumber || `BILL-${Math.floor(10000 + Math.random() * 90000)}`,
+    entryNumber: existingRecord?.entryNumber || bodyObj.entryNumber || `JE-${Math.floor(10000 + Math.random() * 90000)}`,
+    itemCode: existingRecord?.itemCode || bodyObj.itemCode || `ITEM-${Math.floor(1000 + Math.random() * 9000)}`,
+    code: existingRecord?.code || bodyObj.code || `REF-${Math.floor(1000 + Math.random() * 9000)}`,
+    status: bodyObj.status || existingRecord?.status || "active",
+    partyType: bodyObj.partyType || existingRecord?.partyType || "organization",
+    vatRegistered: bodyObj.vatRegistered ?? existingRecord?.vatRegistered ?? false,
+    vatNumber: bodyObj.vatNumber ?? existingRecord?.vatNumber ?? null,
+    commercialRegistrationNumber: bodyObj.commercialRegistrationNumber ?? existingRecord?.commercialRegistrationNumber ?? null,
+    primaryEmail: bodyObj.primaryEmail ?? existingRecord?.primaryEmail ?? null,
+    primaryPhone: bodyObj.primaryPhone ?? existingRecord?.primaryPhone ?? null,
+    city: bodyObj.city ?? existingRecord?.city ?? null,
+    createdAt: existingRecord?.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    roles: bodyObj.roles || [{ partyNumber: `P-${Math.floor(1000 + Math.random() * 9000)}` }],
+    roles: bodyObj.roles || existingRecord?.roles || [{ partyNumber: `P-${Math.floor(1000 + Math.random() * 9000)}` }],
+    ...existingRecord,
     ...bodyObj,
+    id: targetId,
     success: true,
   };
 
