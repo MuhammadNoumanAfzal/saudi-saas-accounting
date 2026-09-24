@@ -1,5 +1,8 @@
+import { Link } from 'wouter';
 import { Check, Building2, ShieldCheck, MapPin, Sliders, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 interface StepItem {
   id: number;
@@ -30,10 +33,10 @@ export function OnboardingSidebar({ step, setStep, isRtl, t }: OnboardingSidebar
       <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-emerald-500/10 via-transparent to-black/30 pointer-events-none" />
 
       <div className="relative z-10">
-        {/* Logo & Platform Header */}
-        <div className="flex items-center gap-3.5 mb-10">
-          <div className="w-11 h-11 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center p-2 shadow-lg">
-            <img src="/logo.svg" alt="NEXUS" className="w-full h-full object-contain" />
+        {/* Logo & Platform Header - Links back to Home Page */}
+        <Link href="/" className="flex items-center gap-3.5 mb-10 group cursor-pointer hover:opacity-90 transition-opacity" title={t('Back to Home Page', 'العودة إلى الصفحة الرئيسية')}>
+          <div className="w-11 h-11 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center p-2 shadow-lg group-hover:scale-105 transition-transform">
+            <img src={`${basePath}/logo.svg`} alt="NEXUS" className="w-full h-full object-contain" />
           </div>
           <div>
             <div className="font-extrabold tracking-tight text-xl uppercase text-white">NEXUS</div>
@@ -41,7 +44,7 @@ export function OnboardingSidebar({ step, setStep, isRtl, t }: OnboardingSidebar
               <span>🇸🇦 Saudi Arabia ERP</span>
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* Stepper Vertical Timeline */}
         <div className="space-y-6 relative">

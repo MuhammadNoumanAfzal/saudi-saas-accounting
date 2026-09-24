@@ -167,13 +167,13 @@ function AuthLayout({ children, title, subtitle }: { children: React.ReactNode; 
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-accent/15 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 flex items-center gap-3">
-          <img src={`${basePath}/logo.svg`} className="h-10 w-10 rounded-xl shadow-md" alt="NEXUS" />
+        <Link href="/" className="relative z-10 flex items-center gap-3 group cursor-pointer hover:opacity-90 transition-opacity" title="Back to Home Page">
+          <img src={`${basePath}/logo.svg`} className="h-10 w-10 rounded-xl shadow-md group-hover:scale-105 transition-transform" alt="NEXUS" />
           <div>
             <div className="text-xl font-bold tracking-tight text-white">KHANBAS NEXUS</div>
             <div className="text-xs text-emerald-300 font-semibold uppercase tracking-wider">Saudi SaaS ERP & SOCPA Accounting</div>
           </div>
-        </div>
+        </Link>
 
         <div className="relative z-10 space-y-6 max-w-lg my-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 text-emerald-300 text-xs font-bold uppercase tracking-wider border border-white/15 backdrop-blur-sm">
@@ -220,10 +220,10 @@ function AuthLayout({ children, title, subtitle }: { children: React.ReactNode; 
       {/* Right Column: Clean Clerk Auth Form Card */}
       <div className="flex-1 flex flex-col justify-center items-center p-6 md:p-12 relative bg-card/30">
         <div className="w-full max-w-md flex flex-col items-center">
-          <div className="lg:hidden flex items-center gap-2 mb-6">
-            <img src={`${basePath}/logo.svg`} className="h-9 w-9 rounded-lg" alt="NEXUS" />
+          <Link href="/" className="lg:hidden flex items-center gap-2 mb-6 group cursor-pointer" title="Back to Home Page">
+            <img src={`${basePath}/logo.svg`} className="h-9 w-9 rounded-lg group-hover:scale-105 transition-transform" alt="NEXUS" />
             <span className="text-lg font-bold text-foreground">NEXUS ERP</span>
-          </div>
+          </Link>
 
           <div className="w-full flex justify-center">
             {children}
