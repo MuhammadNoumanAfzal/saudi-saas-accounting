@@ -83,7 +83,7 @@ export function NexusHome() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {MODULE_REGISTRY.map(moduleDef => {
           const Icon = ICON_MAP[moduleDef.icon] || WalletCards;
-          const isActive = activeModuleKeys.has(moduleDef.key);
+          const isActive = moduleDef.key === 'finance' || activeModuleKeys.has(moduleDef.key);
           
           if (isActive) {
             return (

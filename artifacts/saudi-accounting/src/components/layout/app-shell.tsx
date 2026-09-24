@@ -40,6 +40,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setCollapsed(session?.preferences?.sidebarCollapsed ?? false);
   }, [session?.preferences?.sidebarCollapsed]);
+
+  useEffect(() => {
+    const appearance = session?.preferences?.appearance;
+    if (appearance === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [session?.preferences?.appearance]);
   
   const toggleSidebar = () => {
     const next = !collapsed;
