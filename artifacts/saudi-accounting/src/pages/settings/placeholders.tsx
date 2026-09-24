@@ -3,6 +3,15 @@ import { useTranslation } from '@/lib/utils';
 import { useGetCurrentSession } from '@workspace/api-client-react';
 import { Store, Zap, ShieldCheck, QrCode, CheckCircle2, KeyRound, Building2, Send, RefreshCw, AlertCircle, Sparkles, Server } from 'lucide-react';
 
+async function readJsonResponse(res: Response) {
+  const text = await res.text();
+  if (!text.trim()) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(text.slice(0, 300) || `HTTP ${res.status}`);
+  }
+}
 export function BranchesSettings() {
   const { t } = useTranslation();
 
@@ -44,7 +53,7 @@ export function ZatcaSettings() {
     }
     if (orgId) {
       fetch(`/api/organizations/${orgId}/zatca/status`, { credentials: 'include' })
-        .then(res => res.json())
+        .then(readJsonResponse)
         .then(data => {
           if (data && data.csidActive) {
             setCsidActive(true);
@@ -80,7 +89,7 @@ export function ZatcaSettings() {
           envMode,
         }),
       });
-      const data = await res.json();
+      const data = await readJsonResponse(res);
       setLoading(false);
 
       if (res.ok && data.success) {
@@ -112,7 +121,7 @@ export function ZatcaSettings() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
       });
-      const data = await res.json();
+      const data = await readJsonResponse(res);
 
       if (res.ok && data.success) {
         setTestResult({

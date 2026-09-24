@@ -62,6 +62,8 @@ router.post("/organizations/:organizationId/zatca/onboard", async (req, res) => 
         `-----BEGIN CERTIFICATE REQUEST-----\nCN=${companyName || 'Saudi Business'},OU=Accounting,O=Business,C=SA\n-----END CERTIFICATE REQUEST-----`
       ).toString('base64');
 
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
       const response = await fetch(zatcaEndpoint, {
         method: "POST",
         headers: {
@@ -72,7 +74,9 @@ router.post("/organizations/:organizationId/zatca/onboard", async (req, res) => 
         body: JSON.stringify({
           csr: dummyCsrBase64,
         }),
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
 
       if (response.ok) {
         zatcaResponseData = await response.json();
@@ -92,14 +96,18 @@ router.post("/organizations/:organizationId/zatca/onboard", async (req, res) => 
       issuedAt: new Date().toISOString(),
     };
 
-    await writeAuditLog({
-      req,
-      organizationId: orgId,
-      action: "ZATCA_CSID_ONBOARDED",
-      entityType: "ZATCA_SETTING",
-      entityId: orgId,
-      newValues: { envMode, liveSuccess },
-    });
+    try {
+      await writeAuditLog({
+        req,
+        organizationId: orgId,
+        action: "ZATCA_CSID_ONBOARDED",
+        entityType: "ZATCA_SETTING",
+        entityId: orgId,
+        newValues: { envMode, liveSuccess },
+      });
+    } catch (auditError) {
+      console.warn("ZATCA onboarding audit log failed", auditError);
+    }
 
     res.json({
       success: true,
