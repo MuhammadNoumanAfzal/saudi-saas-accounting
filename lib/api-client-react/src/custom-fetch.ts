@@ -15,18 +15,17 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 // Module-level configuration
 // ---------------------------------------------------------------------------
 
-let _baseUrl: string | null = null;
+const DEFAULT_LIVE_BACKEND_URL = "https://saudi-saas-accounting-production.up.railway.app";
+
+let _baseUrl: string | null =
+  typeof import.meta !== "undefined" && (import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE_URL)
+    ? (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL).replace(/\/+$/, "")
+    : DEFAULT_LIVE_BACKEND_URL;
+
 let _authTokenGetter: AuthTokenGetter | null = null;
 
-/**
- * Set a base URL that is prepended to every relative request URL
- * (i.e. paths that start with `/`).
- *
- * Useful for Expo bundles that need to call a remote API server.
- * Pass `null` to clear the base URL.
- */
 export function setBaseUrl(url: string | null): void {
-  _baseUrl = url ? url.replace(/\/+$/, "") : null;
+  _baseUrl = url ? url.replace(/\/+$/, "") : DEFAULT_LIVE_BACKEND_URL;
 }
 
 /**
