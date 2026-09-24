@@ -33,19 +33,39 @@ export async function getOrCreateLocalUser(
     .limit(1);
   if (existing) return existing;
 
-  const clerkUser = await clerkClient.users.getUser(clerkUserId);
-  const email =
-    clerkUser.primaryEmailAddress?.emailAddress ??
-    clerkUser.emailAddresses[0]?.emailAddress;
-  if (!email) {
-    throw new Error("Authenticated Clerk user has no email address");
+  const auth = getAuth(req);
+  const claims = (auth.sessionClaims ?? {}) as Record<string, unknown>;
+  let email: string | undefined;
+  let displayName: string | undefined;
+
+  try {
+    const clerkUser = await clerkClient.users.getUser(clerkUserId);
+    email =
+      clerkUser.primaryEmailAddress?.emailAddress ??
+      clerkUser.emailAddresses[0]?.emailAddress;
+    displayName = clerkUser.fullName ?? clerkUser.username ?? undefined;
+  } catch (error) {
+    console.warn("Unable to fetch Clerk user profile; using verified session claims", {
+      clerkUserId,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 
-  const displayName =
-    clerkUser.fullName ??
-    clerkUser.username ??
-    email.split("@")[0] ??
-    "Workspace user";
+  email ??=
+    typeof claims.email === "string"
+      ? claims.email
+      : typeof claims.email_address === "string"
+        ? claims.email_address
+        : undefined;
+  email ??= `${clerkUserId}@clerk.local`;
+
+  displayName ??=
+    typeof claims.name === "string"
+      ? claims.name
+      : typeof claims.full_name === "string"
+        ? claims.full_name
+        : undefined;
+  displayName ??= email.includes("@") ? email.split("@")[0] : "Workspace user";
   const [created] = await db
     .insert(usersTable)
     .values({ clerkUserId, email, displayName })

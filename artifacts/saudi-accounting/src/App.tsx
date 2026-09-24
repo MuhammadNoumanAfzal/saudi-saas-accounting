@@ -134,13 +134,32 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
 function SessionGuard({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
-  const { data: session, isLoading } = useGetCurrentSession({
-    query: { queryKey: getGetCurrentSessionQueryKey(), staleTime: 10 * 60 * 1000 }
+  const { data: session, isLoading, isError, error, refetch } = useGetCurrentSession({
+    query: { queryKey: getGetCurrentSessionQueryKey(), staleTime: 10 * 60 * 1000, retry: false }
   });
   
   if (isLoading && !session) {
     return (
       <PlatformLoader fullScreen message="Loading Saudi Fintech Environment..." messageAr="جاري إعداد البيئة المالية السعودية..." />
+    );
+  }
+
+  if (isError) {
+    const message = error instanceof Error ? error.message : 'Unable to load your session.';
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f8fafc] px-6 text-center">
+        <div className="max-w-md">
+          <h1 className="text-2xl font-bold text-[#071f19]">Session setup failed</h1>
+          <p className="mt-3 text-sm text-[#566861]">{message}</p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="mt-6 rounded-lg bg-[#071f19] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#0d352b]"
+          >
+            Try again
+          </button>
+        </div>
+      </main>
     );
   }
 
