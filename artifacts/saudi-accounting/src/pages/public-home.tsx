@@ -186,9 +186,9 @@ export function PublicHome() {
     <PublicLayout>
       
       {/* HERO SECTION */}
-      <section className="mx-auto grid max-w-[1280px] items-center gap-12 px-6 py-12 lg:grid-cols-[1fr_1fr] lg:px-10 lg:py-20">
-        <div className="fade-up">
-          <div className="inline-flex items-center gap-2.5 rounded-full border border-[#176752]/25 bg-white/90 backdrop-blur-md px-4 py-1.5 text-xs font-bold text-[#176752] shadow-sm mb-6">
+      <section className="relative overflow-hidden mx-auto grid max-w-[1280px] items-center gap-12 px-6 py-12 lg:grid-cols-[1fr_1fr] lg:px-10 lg:py-20">
+        <div className="fade-up z-10">
+          <div className="inline-flex items-center gap-2.5 rounded-full border border-[#176752]/25 bg-white/90 backdrop-blur-md px-4 py-1.5 text-xs font-bold text-[#176752] shadow-sm badge-glow mb-6">
             <span className="flex h-2 w-2 rounded-full bg-[#10b981] animate-ping" />
             <Sparkles size={14} className="text-[#d4af37]" />
             <span>{t('KHANBAS NEXUS | Saudi Enterprise Accounting Platform', 'KHANBAS NEXUS | منصة نكسس المالية المحاسبية بالسعودية')}</span>
@@ -196,7 +196,7 @@ export function PublicHome() {
 
           <h1 className="text-[clamp(2.3rem,4.2vw,4.2rem)] font-black leading-[1.08] tracking-tight text-[#071f19]">
             {t('Saudi Enterprise Accounting.', 'المحاسبة والفوترة الإلكترونية للمنشآت السعودية.')} <br />
-            <span className="bg-gradient-to-r from-[#176752] via-[#b8800b] to-[#d4af37] bg-clip-text text-transparent">
+            <span className="animated-gradient-text">
               {t('Smarter, Faster & ZATCA Compliant.', 'أسهل، أسرع، ومعتمدة من هيئة الزكاة (ZATCA).')}
             </span>
           </h1>
@@ -210,11 +210,11 @@ export function PublicHome() {
 
           {/* CTAs */}
           <div className="mt-8 flex flex-wrap items-center gap-4">
-            <Link href={isSignedIn ? "/home" : "/sign-up"} className="btn-primary flex items-center gap-2 px-7 py-3.5 text-sm font-bold shadow-xl shadow-[#176752]/25 hover:scale-[1.03] transition-all cursor-pointer" data-testid="link-hero-start">
+            <Link href={isSignedIn ? "/home" : "/sign-up"} className="btn-primary flex items-center gap-2 px-7 py-3.5 text-sm font-bold shadow-xl shadow-[#176752]/25 hover:scale-[1.04] transition-all cursor-pointer" data-testid="link-hero-start">
               <span>{isSignedIn ? t("Go to Workspace", "الانتقال إلى مساحة العمل") : t("Start Free Account", "ابدأ حسابك المجاني")}</span>
               {isRtl ? <ArrowLeft size={16} /> : <ArrowRight size={16} />}
             </Link>
-            <a href="#packages" className="flex items-center gap-2 rounded-xl border border-[#d6cfbe] bg-white px-6 py-3.5 text-sm font-bold text-[#0a2620] hover:bg-[#ede7d8] transition-colors cursor-pointer">
+            <a href="#packages" className="flex items-center gap-2 rounded-xl border border-[#d6cfbe] bg-white px-6 py-3.5 text-sm font-bold text-[#0a2620] hover:bg-[#ede7d8] hover:scale-[1.02] transition-all cursor-pointer">
               <Receipt size={16} className="text-[#176752]" />
               <span>{t('View Packages', 'مشاهدة باقات الأسعار')}</span>
             </a>
@@ -222,16 +222,16 @@ export function PublicHome() {
 
           {/* Trust Pills */}
           <div className="mt-10 flex flex-wrap items-center gap-5 text-xs font-bold text-[#3e524b]">
-            <span className="flex items-center gap-1.5"><CheckCircle2 size={16} className="text-[#176752]" /> {t('ZATCA Phase 1 & 2', 'الفوترة الإلكترونية المرحلة 1 و 2')}</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 size={16} className="text-[#176752]" /> {t('SOCPA GAAP Compliant', 'معتمد وفق معايير SOCPA')}</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 size={16} className="text-[#176752]" /> {t('Instant TLV QR Code', 'رمز QR المعتمد TLV')}</span>
+            <span className="flex items-center gap-1.5 hover:text-[#176752] transition-colors"><CheckCircle2 size={16} className="text-[#176752]" /> {t('ZATCA Phase 1 & 2', 'الفوترة الإلكترونية المرحلة 1 و 2')}</span>
+            <span className="flex items-center gap-1.5 hover:text-[#176752] transition-colors"><CheckCircle2 size={16} className="text-[#176752]" /> {t('SOCPA GAAP Compliant', 'معتمد وفق معايير SOCPA')}</span>
+            <span className="flex items-center gap-1.5 hover:text-[#176752] transition-colors"><CheckCircle2 size={16} className="text-[#176752]" /> {t('Instant TLV QR Code', 'رمز QR المعتمد TLV')}</span>
           </div>
         </div>
 
         {/* DYNAMIC DUAL-MODE INTERACTIVE PREVIEW WIDGET */}
-        <div id="preview" className="fade-up-2 relative mx-auto w-full max-w-[560px]">
-          <div className="absolute -right-6 -top-6 h-36 w-36 rounded-full bg-gradient-to-br from-[#d4af37] to-[#10b981] opacity-50 blur-xl" />
-          <div className="absolute -left-6 -bottom-6 h-40 w-40 rounded-full bg-[#176752]/20 blur-xl" />
+        <div id="preview" className="fade-up-2 animate-float relative mx-auto w-full max-w-[560px]">
+          <div className="absolute -right-6 -top-6 h-44 w-44 rounded-full bg-gradient-to-br from-[#d4af37] via-[#10b981] to-[#176752] opacity-40 blur-2xl animate-pulse" />
+          <div className="absolute -left-6 -bottom-6 h-48 w-48 rounded-full bg-[#176752]/30 blur-2xl animate-pulse" />
 
           <div className="relative overflow-hidden rounded-3xl border border-[#d8d2c2] bg-white/90 p-2.5 shadow-2xl backdrop-blur-xl">
             <div className="rounded-2xl bg-[#071f19] text-white p-6 shadow-2xl">
@@ -437,9 +437,9 @@ export function PublicHome() {
                 {t('Supported Legacy Platforms for Direct Import:', 'أنظمة المحاسبة المتاحة للاستيراد المباشر:')}
               </div>
               {migrationSources.map((src, idx) => (
-                <div key={idx} className="flex items-center justify-between rounded-2xl border border-[#e2dcce] bg-[#fcfbfa] p-4 shadow-sm hover:border-[#176752] transition-colors">
+                <div key={idx} className="glow-card flex items-center justify-between rounded-2xl border border-[#e2dcce] bg-[#fcfbfa] p-4 shadow-sm hover:border-[#176752] transition-all cursor-pointer">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#071f19] text-xs font-black text-[#d4af37]">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#071f19] text-xs font-black text-[#d4af37] shadow-md">
                       {src.icon}
                     </span>
                     <div>
@@ -459,10 +459,11 @@ export function PublicHome() {
       </section>
 
       {/* SAUDI DATA SOVEREIGNTY, SECURITY & RESILIENCY */}
-      <section className="py-20 lg:py-24 bg-[#071f19] text-white">
-        <div className="mx-auto max-w-[1280px] px-6 lg:px-10">
+      <section className="py-20 lg:py-24 bg-[#071f19] text-white relative overflow-hidden">
+        <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-[#176752]/20 blur-3xl pointer-events-none" />
+        <div className="mx-auto max-w-[1280px] px-6 lg:px-10 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <span className="inline-flex items-center gap-2 rounded-full bg-[#d4af37]/20 border border-[#d4af37]/30 px-4 py-1 text-xs font-bold text-[#fde68a]">
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#d4af37]/20 border border-[#d4af37]/30 px-4 py-1 text-xs font-bold text-[#fde68a] badge-glow">
               <Server size={14} />
               <span>{t('Saudi Data Hosting & Enterprise Resiliency', 'مراكز بيانات سعودية وأمان عالي')}</span>
             </span>
@@ -472,8 +473,8 @@ export function PublicHome() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-xl">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#d4af37]/20 text-[#d4af37]">
+            <div className="glow-card rounded-2xl border border-white/10 bg-white/5 p-8 shadow-xl cursor-pointer">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#d4af37]/20 text-[#d4af37] shadow-inner">
                 <Server size={24} />
               </div>
               <h3 className="mt-6 text-lg font-bold text-white">{t('Local KSA Cloud Hosting', 'استضافة سحابية داخل السعودية')}</h3>
@@ -486,8 +487,8 @@ export function PublicHome() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-xl">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#d4af37]/20 text-[#d4af37]">
+            <div className="glow-card rounded-2xl border border-white/10 bg-white/5 p-8 shadow-xl cursor-pointer">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#d4af37]/20 text-[#d4af37] shadow-inner">
                 <Lock size={24} />
               </div>
               <h3 className="mt-6 text-lg font-bold text-white">{t('256-Bit AES Encryption', 'تشفير كامل AES 256-Bit')}</h3>
@@ -500,8 +501,8 @@ export function PublicHome() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-xl">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#d4af37]/20 text-[#d4af37]">
+            <div className="glow-card rounded-2xl border border-white/10 bg-white/5 p-8 shadow-xl cursor-pointer">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#d4af37]/20 text-[#d4af37] shadow-inner">
                 <Cpu size={24} />
               </div>
               <h3 className="mt-6 text-lg font-bold text-white">{t('99.99% Uptime Guarantee', 'ضمان تشغيل بنسبة 99.99%')}</h3>
@@ -572,14 +573,14 @@ export function PublicHome() {
               return (
                 <div
                   key={pkg.id}
-                  className={`relative flex flex-col justify-between rounded-3xl p-8 transition-all duration-300 cursor-pointer ${
+                  className={`glow-card relative flex flex-col justify-between rounded-3xl p-8 transition-all duration-300 cursor-pointer ${
                     pkg.popular
                       ? 'bg-[#071f19] text-white ring-2 ring-[#176752] shadow-2xl scale-[1.03] z-10'
-                      : 'bg-white border border-[#e2dcce] text-[#0a2620] shadow-sm hover:shadow-xl hover:border-[#176752]/40'
+                      : 'bg-white border border-[#e2dcce] text-[#0a2620] shadow-sm hover:border-[#176752]'
                   }`}
                 >
                   {pkg.popular && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-[#176752] to-[#d4af37] px-4 py-1 text-[11px] font-extrabold uppercase tracking-widest text-white shadow-md flex items-center gap-1.5">
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-[#176752] to-[#d4af37] px-4 py-1 text-[11px] font-extrabold uppercase tracking-widest text-white shadow-md flex items-center gap-1.5 badge-glow">
                       <Sparkles size={12} className="text-[#fde68a]" />
                       <span>{t('Most Popular', 'الأكثر طلباً للمنشآت')}</span>
                     </div>
@@ -624,7 +625,7 @@ export function PublicHome() {
                       href={isSignedIn ? "/home" : "/sign-up"}
                       className={`w-full py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md ${
                         pkg.popular
-                          ? 'btn-primary text-white shadow-[#176752]/40 hover:scale-[1.02]'
+                          ? 'btn-primary text-white shadow-[#176752]/40 hover:scale-[1.03]'
                           : 'bg-[#f0ece1] text-[#0a2620] hover:bg-[#176752] hover:text-white'
                       }`}
                     >
@@ -651,7 +652,7 @@ export function PublicHome() {
                 {t('Engineered for Saudi business requirements.', 'مصمم خصيصاً لتلبية متطلبات الأعمال والأنظمة السعودية.')}
               </h2>
             </div>
-            <Link href={isSignedIn ? "/home" : "/sign-up"} className="btn-primary inline-flex items-center gap-2 text-xs font-bold py-3 px-5 shadow-md cursor-pointer hover:scale-[1.03] transition-all">
+            <Link href={isSignedIn ? "/home" : "/sign-up"} className="btn-primary inline-flex items-center gap-2 text-xs font-bold py-3 px-5 shadow-md cursor-pointer hover:scale-[1.04] transition-all">
               <span>{isSignedIn ? t("Go to Workspace", "الانتقال إلى مساحة العمل") : t("Explore Full Platform", "استكشف المنصة بالكامل")}</span>
               {isRtl ? <ArrowLeft size={14} /> : <ArrowRight size={14} />}
             </Link>
@@ -659,7 +660,7 @@ export function PublicHome() {
 
           <div className="grid gap-8 md:grid-cols-3">
             {/* Feature 1 */}
-            <div className="group rounded-2xl border border-[#e0d9ca] bg-white p-8 shadow-sm hover:shadow-xl hover:border-[#176752]/40 transition-all duration-300 cursor-pointer">
+            <div className="glow-card group rounded-2xl border border-[#e0d9ca] bg-white p-8 shadow-sm hover:border-[#176752] transition-all duration-300 cursor-pointer">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#176752]/10 text-[#176752] group-hover:bg-[#176752] group-hover:text-white transition-colors">
                 <QrCode size={24} />
               </div>
@@ -673,7 +674,7 @@ export function PublicHome() {
             </div>
 
             {/* Feature 2 */}
-            <div className="group rounded-2xl border border-[#e0d9ca] bg-white p-8 shadow-sm hover:shadow-xl hover:border-[#176752]/40 transition-all duration-300 cursor-pointer">
+            <div className="glow-card group rounded-2xl border border-[#e0d9ca] bg-white p-8 shadow-sm hover:border-[#176752] transition-all duration-300 cursor-pointer">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#176752]/10 text-[#176752] group-hover:bg-[#176752] group-hover:text-white transition-colors">
                 <Scale size={24} />
               </div>
@@ -687,7 +688,7 @@ export function PublicHome() {
             </div>
 
             {/* Feature 3 */}
-            <div className="group rounded-2xl border border-[#e0d9ca] bg-white p-8 shadow-sm hover:shadow-xl hover:border-[#176752]/40 transition-all duration-300 cursor-pointer">
+            <div className="glow-card group rounded-2xl border border-[#e0d9ca] bg-white p-8 shadow-sm hover:border-[#176752] transition-all duration-300 cursor-pointer">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#176752]/10 text-[#176752] group-hover:bg-[#176752] group-hover:text-white transition-colors">
                 <Building2 size={24} />
               </div>
@@ -709,7 +710,7 @@ export function PublicHome() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             
             <div className="lg:col-span-6 space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full bg-[#176752]/10 border border-[#176752]/20 px-3.5 py-1 text-xs font-bold text-[#176752]">
+              <div className="inline-flex items-center gap-2 rounded-full bg-[#176752]/10 border border-[#176752]/20 px-3.5 py-1 text-xs font-bold text-[#176752] badge-glow">
                 <Calculator size={14} className="text-[#d4af37]" />
                 <span>{t('Live Calculator Tool', 'حاسبة ضريبة القيمة المضافة الفورية')}</span>
               </div>
@@ -733,13 +734,13 @@ export function PublicHome() {
                     type="number"
                     value={calcSubtotal}
                     onChange={(e) => setCalcSubtotal(Math.max(0, parseFloat(e.target.value) || 0))}
-                    className="w-full max-w-sm rounded-xl border border-[#d6cfbe] bg-white px-4 py-3 text-base font-mono font-bold text-[#071f19] focus:border-[#176752] focus:outline-none focus:ring-2 focus:ring-[#176752]/20"
+                    className="w-full max-w-sm rounded-xl border border-[#d6cfbe] bg-white px-4 py-3 text-base font-mono font-bold text-[#071f19] focus:border-[#176752] focus:outline-none focus:ring-2 focus:ring-[#176752]/20 transition-all"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="lg:col-span-6 rounded-3xl border border-[#071f19] bg-[#071f19] text-white p-8 lg:p-10 shadow-2xl">
+            <div className="glow-card lg:col-span-6 rounded-3xl border border-[#071f19] bg-[#071f19] text-white p-8 lg:p-10 shadow-2xl cursor-pointer">
               <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#d4af37]">{t('ZATCA Compliant Breakdown', 'تفاصيل الفاتورة الضريبية')}</span>
                 <span className="text-[10px] font-bold text-[#6ee7b7] bg-[#6ee7b7]/20 px-2.5 py-1 rounded-full">{t('15% Rate Applied', 'تطبيق نسبة 15%')}</span>
