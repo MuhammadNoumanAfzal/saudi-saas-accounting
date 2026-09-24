@@ -18,7 +18,15 @@ import {
   Globe2,
   Activity,
   Calculator,
-  ChevronDown
+  ChevronDown,
+  RefreshCw,
+  Server,
+  Lock,
+  DollarSign,
+  FileSpreadsheet,
+  Download,
+  Database,
+  Cpu
 } from 'lucide-react';
 
 export function PublicHome() {
@@ -141,6 +149,14 @@ export function PublicHome() {
     }
   ];
 
+  const migrationSources = [
+    { name: "QuickBooks", desc: "استيراد الحسابات والفواتير والعملاء بضغطة زر واحدة", icon: "QB" },
+    { name: "Excel & CSV", desc: "رفع جميع القوائم والأصناف عبر قوالب أكسل الجاهزة", icon: "XLS" },
+    { name: "Odoo ERP", desc: "نقل شجرة الحسابات ودليل المشتريات والمبيعات بسلاسة", icon: "ODOO" },
+    { name: "Zoho Books", desc: "تحويل سجلات الضريبة والعملاء بدون أي فقدان للبيانات", icon: "ZOHO" },
+    { name: "Legacy Desktop ERPs", desc: "تحديث الأنظمة القديمة إلى السحابة السعودية المعتمدة", icon: "ERP" }
+  ];
+
   const faqs = [
     {
       qEn: "Is KHANBAS NEXUS certified for ZATCA E-Invoicing Phase 1 & 2?",
@@ -149,22 +165,22 @@ export function PublicHome() {
       aAr: "نعم بالكامل. المنصة تولد رموز QR بصيغة Base64 TLV المعتمدة للمرحلة الأولى، وتتضمن التوقيع الرقمي المشفر ECDSA، وسلسلة التشفير SHA-256، وملفات UBL 2.1 XML الجاهزة للربط المباشر مع منصة فاتورة (ZATCA Phase 2)."
     },
     {
-      qEn: "Can I manage multiple Saudi business branches under one subscription?",
-      qAr: "هل يمكنني إدارة عدة فروع بسجلات تجارية مختلفة في حساب واحد؟",
-      aEn: "Yes. The Enterprise package allows you to add multiple branches, commercial registration (CR) numbers, and location profiles under a single organization session and switch between them instantly.",
-      aAr: "نعم، تتيح لك باقة المؤسسات إضافة عدة فروع وسجلات تجارية متعددة وعناوين مختلفة تحت منشأة واحدة والتنقل بينها بسهولة."
+      qEn: "How easy is it to migrate from our old accounting system (QuickBooks/Excel/Odoo)?",
+      qAr: "كيف يمكنني الانتقال من نظامي المحاسبي القديم (كويك بوكس / أكسل / أودو)؟",
+      aEn: "Migration is instant and seamless. You can upload your Chart of Accounts, Customers, Suppliers, and Products in 1 click using our pre-formatted Excel/CSV templates with zero downtime.",
+      aAr: "الانتقال يتم بسهولة وبدون أي توقف للعمل. يمكنك استيراد شجرة الحسابات ودليل العملاء والموردين والمنتجات بضغطة زر واحدة باستخدام قوالب الأكسل الجاهزة لدينا."
+    },
+    {
+      qEn: "Where is our business financial data hosted?",
+      qAr: "أين يتم استضافة البيانات المالية لمنشأتنا؟",
+      aEn: "Your data is strictly hosted in high-availability, bank-grade encrypted Saudi cloud data centers compliant with KSA cybersecurity laws, backed up nightly with 99.99% uptime guarantee.",
+      aAr: "تستضيف المنصة بياناتك في مراكز بيانات سحابية سعودية عالية الأمان ومتوافقة مع أنظمة الأمن السيبراني بالمملكة، بتشفيير 256-bit ونظام نسخ احتياطي يومي آلي."
     },
     {
       qEn: "Does the system calculate Saudi 15% VAT and Form 21 automatically?",
       qAr: "هل يقوم النظام بحساب ضريبة القيمة المضافة 15% وإعداد الإقرار الضريبي نموذج 21 تلقائياً؟",
       aEn: "Yes. All sales invoices, purchase bills, and operational expenses automatically compute Output VAT and Input VAT, generating an official ZATCA Form 21 Tax Return report ready for submission.",
       aAr: "نعم، جميع الفواتير والمشتريات والمصاريف تحسب ضريبة المخرجات والمدخلات تلقائياً، وتولد تقرير الإقرار الضريبي الرسمي (نموذج 21) الجاهز للتقديم لهيئة الزكاة."
-    },
-    {
-      qEn: "Is my financial data stored securely in accordance with KSA regulations?",
-      qAr: "هل يتم حفظ البيانات المالية بشكل آمن وفق الأنظمة السعودية؟",
-      aEn: "Your data is stored in bank-grade encrypted Saudi cloud servers with 256-bit AES encryption at rest and TLS 1.3 in transit, backed up nightly with 99.99% uptime guarantee.",
-      aAr: "يتم حفظ بياناتك في خوادم سحابية مخصصة ومحمية بتشفير 256-bit AES في الراحة وTLS 1.3 أثناء النقل، مع نسخ احتياطي يومي آلي وضمان تشغيل 99.99%."
     }
   ];
 
@@ -187,9 +203,9 @@ export function PublicHome() {
             </span>
           </h1>
 
-          <p className="mt-3 text-lg font-bold text-[#176752] dir-rtl font-arabic">
+          <h2 className="mt-3 text-lg font-extrabold text-[#176752] dir-rtl font-arabic">
             المنصة السحابية المعتمدة للمحاسبة والفوترة الإلكترونية في المملكة العربية السعودية (ZATCA & SOCPA)
-          </p>
+          </h2>
 
           <p className="mt-4 text-sm leading-relaxed text-[#485d56] max-w-[540px]">
             Unified double-entry financial ledger, instant Base64 TLV e-invoicing, automatic 15% VAT Form 21 reporting, and multi-branch operations designed strictly to SOCPA & ZATCA FATOORA standards.
@@ -374,7 +390,125 @@ export function PublicHome() {
         </div>
       </section>
 
-      {/* NEW BILINGUAL PACKAGES & PRICING SECTION */}
+      {/* SYSTEM MIGRATION & EASY TRANSITION SECTION (SEO SEO SEO) */}
+      <section id="migration" className="py-20 lg:py-24 bg-white border-b border-[#e2dcce]">
+        <div className="mx-auto max-w-[1280px] px-6 lg:px-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            
+            <div className="lg:col-span-6 space-y-6">
+              <div className="inline-flex items-center gap-2 rounded-full bg-[#176752]/10 border border-[#176752]/20 px-3.5 py-1 text-xs font-bold text-[#176752]">
+                <RefreshCw size={14} className="text-[#d4af37] animate-spin" />
+                <span>Seamless Migration | سهولة الانتقال من الأنظمة القديمة</span>
+              </div>
+
+              <h2 className="text-3xl font-black text-[#071f19] sm:text-4xl leading-tight">
+                Easily Upgrade from Legacy Systems to KHANBAS NEXUS <br />
+                <span className="text-[#176752] text-2xl font-bold">انتقل بلمسة واحدة من برنامجك المحاسبي القديم بدون فقدان للبيانات</span>
+              </h2>
+
+              <p className="text-sm text-[#485d56] leading-relaxed">
+                Stuck on outdated desktop accounting software or manual Excel spreadsheets that don't support ZATCA Phase 2? Migrate your entire Chart of Accounts, Customers, Suppliers, and Inventory in minutes.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="rounded-2xl border border-[#e2dcce] bg-[#fbf9f4] p-4 flex items-start gap-3">
+                  <div className="p-2 rounded-xl bg-[#176752]/10 text-[#176752]">
+                    <FileSpreadsheet size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-[#071f19]">1-Click Excel / CSV Import</h4>
+                    <p className="text-[11px] text-[#566861] mt-0.5">رفع القوائم والمنتجات بقوالب جاهزة</p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-[#e2dcce] bg-[#fbf9f4] p-4 flex items-start gap-3">
+                  <div className="p-2 rounded-xl bg-[#176752]/10 text-[#176752]">
+                    <Database size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-[#071f19]">Zero Data Loss Guarantee</h4>
+                    <p className="text-[11px] text-[#566861] mt-0.5">حفظ تاريخ الأرصدة والعملاء بالكامل</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-6 space-y-3">
+              <div className="text-xs font-extrabold uppercase tracking-wider text-[#3e524b] mb-4">Supported Legacy Platforms for Direct Import:</div>
+              {migrationSources.map((src, idx) => (
+                <div key={idx} className="flex items-center justify-between rounded-2xl border border-[#e2dcce] bg-[#fcfbfa] p-4 shadow-sm hover:border-[#176752] transition-colors">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#071f19] text-xs font-black text-[#d4af37]">
+                      {src.icon}
+                    </span>
+                    <div>
+                      <div className="text-sm font-bold text-[#071f19]">{src.name}</div>
+                      <div className="text-xs text-[#566861]">{src.desc}</div>
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-[#176752]/10 text-[#176752] text-[10px] font-bold px-3 py-1">
+                    Ready to Import
+                  </span>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* SAUDI DATA SOVEREIGNTY, SECURITY & RESILIENCY */}
+      <section className="py-20 lg:py-24 bg-[#071f19] text-white">
+        <div className="mx-auto max-w-[1280px] px-6 lg:px-10">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#d4af37]/20 border border-[#d4af37]/30 px-4 py-1 text-xs font-bold text-[#fde68a]">
+              <Server size={14} />
+              <span>Saudi Data Hosting & Enterprise Resiliency | مراكز بيانات سعودية وأمان عالي</span>
+            </span>
+            <h2 className="mt-4 text-3xl font-black text-white sm:text-4xl">
+              Bank-Grade Security & Local Data Sovereignty <br />
+              <span className="text-[#d4af37]">بياناتك المالية محمية وفق أعلى المعايير الأمنية داخل المملكة</span>
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-xl">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#d4af37]/20 text-[#d4af37]">
+                <Server size={24} />
+              </div>
+              <h3 className="mt-6 text-lg font-bold text-white">Local KSA Cloud Hosting</h3>
+              <p className="text-xs font-semibold text-[#6ee7b7] mt-0.5">استضافة سحابية داخل المملكة</p>
+              <p className="mt-3 text-xs leading-relaxed text-[#a4c0b6]">
+                Compliant with National Cybersecurity Authority (NCA) regulations. Financial data remains strictly within Saudi Arabian borders.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-xl">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#d4af37]/20 text-[#d4af37]">
+                <Lock size={24} />
+              </div>
+              <h3 className="mt-6 text-lg font-bold text-white">256-Bit AES Encryption</h3>
+              <p className="text-xs font-semibold text-[#6ee7b7] mt-0.5">تشفير كامل للأمان والحماية</p>
+              <p className="mt-3 text-xs leading-relaxed text-[#a4c0b6]">
+                End-to-end 256-bit AES encryption at rest and TLS 1.3 in transit with automated nightly offsite database backups.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-xl">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#d4af37]/20 text-[#d4af37]">
+                <Cpu size={24} />
+              </div>
+              <h3 className="mt-6 text-lg font-bold text-white">99.99% Uptime Guarantee</h3>
+              <p className="text-xs font-semibold text-[#6ee7b7] mt-0.5">استقرار وتشغيل مستمر بنسبة 99.99%</p>
+              <p className="mt-3 text-xs leading-relaxed text-[#a4c0b6]">
+                High-resiliency architecture engineered to handle peak invoicing volumes during tax deadlines without slowdown.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* BILINGUAL PACKAGES & PRICING SECTION */}
       <section id="packages" className="py-20 lg:py-24 bg-[#f8f5ee] border-b border-[#e2dcce]">
         <div className="mx-auto max-w-[1280px] px-6 lg:px-10">
           
@@ -656,6 +790,35 @@ export function PublicHome() {
             ))}
           </div>
 
+        </div>
+      </section>
+
+      {/* HIGH INTENT SEO KEYWORDS FOOTER HUB */}
+      <section className="border-t border-[#e2dcce] bg-[#efeade] py-12 text-xs">
+        <div className="mx-auto max-w-[1280px] px-6 lg:px-10">
+          <div className="text-center mb-6">
+            <h3 className="font-bold text-[#071f19] uppercase tracking-wider text-[11px]">
+              KSA Enterprise Search Keywords & Compliance Index | دليل الكلمات والخدمات الأكثر بحثاً في السعودية
+            </h3>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[11px] text-[#566861]">
+            <div className="rounded-xl border border-[#dcd6c8] bg-white/60 p-3">
+              <strong className="block text-[#071f19] font-bold mb-1">الفوترة والزكاة</strong>
+              <span>برنامج فوترة إلكترونية معتمد | ZATCA Phase 2 E-Invoicing | رمز كيو آر Base64 TLV | هيئة الزكاة والضريبة والجمارك</span>
+            </div>
+            <div className="rounded-xl border border-[#dcd6c8] bg-white/60 p-3">
+              <strong className="block text-[#071f19] font-bold mb-1">المحاسبة والإقرارات</strong>
+              <span>إقرار ضريبة القيمة المضافة 15% | نموذج 21 | معايير SOCPA | ميزانية عمومية وقائمة الأرباح والخسائر</span>
+            </div>
+            <div className="rounded-xl border border-[#dcd6c8] bg-white/60 p-3">
+              <strong className="block text-[#071f19] font-bold mb-1">التحول والنقل</strong>
+              <span>الاستيراد من كويك بوكس | استيراد ملفات أكسل | نقل البيانات من أودو | برنامج محاسبة سحابي بديل</span>
+            </div>
+            <div className="rounded-xl border border-[#dcd6c8] bg-white/60 p-3">
+              <strong className="block text-[#071f19] font-bold mb-1">الأمان والفروع</strong>
+              <span>استضافة سحابية داخل السعودية | تشفير 256-Bit AES | إدارة الفروع والسجلات التجارية | باقات أسعار اقتصادية</span>
+            </div>
+          </div>
         </div>
       </section>
 
