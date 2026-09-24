@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useAuth } from '@clerk/react';
-import { Redirect, Link } from 'wouter';
+import { Link } from 'wouter';
 import { PlatformLoader } from '@/components/ui/platform-loader';
 import { PublicLayout } from '@/components/layout/public-layout';
 import { useTranslation } from '@/lib/utils';
 import { 
   ArrowRight, 
+  ArrowLeft,
   Sparkles, 
   ShieldCheck, 
   QrCode, 
@@ -17,22 +18,19 @@ import {
   BarChart3,
   Check,
   Globe2,
-  Activity,
   Calculator,
   ChevronDown,
   RefreshCw,
   Server,
   Lock,
-  DollarSign,
   FileSpreadsheet,
-  Download,
   Database,
   Cpu
 } from 'lucide-react';
 
 export function PublicHome() {
   const { isSignedIn, isLoaded } = useAuth();
-  const { lang, isRtl, toggleLanguage, t } = useTranslation();
+  const { isRtl, t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'invoice' | 'ledger' | 'vat'>('invoice');
   const [annualBilling, setAnnualBilling] = useState(true);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
@@ -78,7 +76,7 @@ export function PublicHome() {
         "حتى 100 فاتورة إلكترونية شهرياً",
         "رمز QR المعتمد لـ ZATCA المرحلة 1",
         "احتساب ضريبة القيمة المضافة 15%",
-        "دليل العملاء والموردين",
+        "دليل العملاء والموردين الكامل",
         "دفتر الأستاذ العام المزدوج",
         "دعم فني عبر البريد والمحادثة"
       ]
@@ -110,7 +108,7 @@ export function PublicHome() {
         "الربط المباشر مع هيئة الزكاة (ZATCA Phase 2)",
         "الإقرار الضريبي المعتمد (نموذج 21)",
         "المحاسبة المزدوجة وفق معايير SOCPA",
-        "تقارير الأرباح والخسائر والميزانية",
+        "تقارير الأرباح والخسائر والميزانية العمومية",
         "سجل مراجعة كامل وتتبع العمليات",
         "دعم فني أولوية على مدار 24/7"
       ]
@@ -150,11 +148,11 @@ export function PublicHome() {
   ];
 
   const migrationSources = [
-    { name: "QuickBooks", desc: "استيراد الحسابات والفواتير والعملاء بضغطة زر واحدة", icon: "QB" },
-    { name: "Excel & CSV", desc: "رفع جميع القوائم والأصناف عبر قوالب أكسل الجاهزة", icon: "XLS" },
-    { name: "Odoo ERP", desc: "نقل شجرة الحسابات ودليل المشتريات والمبيعات بسلاسة", icon: "ODOO" },
-    { name: "Zoho Books", desc: "تحويل سجلات الضريبة والعملاء بدون أي فقدان للبيانات", icon: "ZOHO" },
-    { name: "Legacy Desktop ERPs", desc: "تحديث الأنظمة القديمة إلى السحابة السعودية المعتمدة", icon: "ERP" }
+    { name: "QuickBooks", descEn: "1-Click import of accounts, invoices, and clients", descAr: "استيراد الحسابات والفواتير والعملاء بضغطة زر واحدة", icon: "QB" },
+    { name: "Excel & CSV", descEn: "Bulk upload using pre-formatted ready templates", descAr: "رفع جميع القوائم والأصناف عبر قوالب أكسل الجاهزة", icon: "XLS" },
+    { name: "Odoo ERP", descEn: "Seamless transfer of Chart of Accounts and Sales", descAr: "نقل شجرة الحسابات ودليل المشتريات والمبيعات بسلاسة", icon: "ODOO" },
+    { name: "Zoho Books", descEn: "Convert VAT logs and customer directories safely", descAr: "تحويل سجلات الضريبة والعملاء بدون أي فقدان للبيانات", icon: "ZOHO" },
+    { name: "Legacy Desktop ERPs", descEn: "Modernize legacy systems into certified KSA Cloud", descAr: "تحديث الأنظمة القديمة إلى السحابة السعودية المعتمدة", icon: "ERP" }
   ];
 
   const faqs = [
@@ -174,7 +172,7 @@ export function PublicHome() {
       qEn: "Where is our business financial data hosted?",
       qAr: "أين يتم استضافة البيانات المالية لمنشأتنا؟",
       aEn: "Your data is strictly hosted in high-availability, bank-grade encrypted Saudi cloud data centers compliant with KSA cybersecurity laws, backed up nightly with 99.99% uptime guarantee.",
-      aAr: "تستضيف المنصة بياناتك في مراكز بيانات سحابية سعودية عالية الأمان ومتوافقة مع أنظمة الأمن السيبراني بالمملكة، بتشفيير 256-bit ونظام نسخ احتياطي يومي آلي."
+      aAr: "تستضيف المنصة بياناتك في مراكز بيانات سحابية سعودية عالية الأمان ومتوافقة مع أنظمة الأمن السيبراني بالمملكة، بتشفير 256-bit ونظام نسخ احتياطي يومي آلي."
     },
     {
       qEn: "Does the system calculate Saudi 15% VAT and Form 21 automatically?",
@@ -193,41 +191,40 @@ export function PublicHome() {
           <div className="inline-flex items-center gap-2.5 rounded-full border border-[#176752]/25 bg-white/90 backdrop-blur-md px-4 py-1.5 text-xs font-bold text-[#176752] shadow-sm mb-6">
             <span className="flex h-2 w-2 rounded-full bg-[#10b981] animate-ping" />
             <Sparkles size={14} className="text-[#d4af37]" />
-            <span>KHANBAS NEXUS | منصة نكسس المالية المحاسبية</span>
+            <span>{t('KHANBAS NEXUS | Saudi Enterprise Accounting Platform', 'KHANBAS NEXUS | منصة نكسس المالية المحاسبية بالسعودية')}</span>
           </div>
 
           <h1 className="text-[clamp(2.3rem,4.2vw,4.2rem)] font-black leading-[1.08] tracking-tight text-[#071f19]">
-            Saudi Enterprise Accounting. <br />
+            {t('Saudi Enterprise Accounting.', 'المحاسبة والفوترة الإلكترونية للمنشآت السعودية.')} <br />
             <span className="bg-gradient-to-r from-[#176752] via-[#b8800b] to-[#d4af37] bg-clip-text text-transparent">
-              Smarter, Faster & ZATCA Compliant.
+              {t('Smarter, Faster & ZATCA Compliant.', 'أسهل، أسرع، ومعتمدة من هيئة الزكاة (ZATCA).')}
             </span>
           </h1>
 
-          <h2 className="mt-3 text-lg font-extrabold text-[#176752] dir-rtl font-arabic">
-            المنصة السحابية المعتمدة للمحاسبة والفوترة الإلكترونية في المملكة العربية السعودية (ZATCA & SOCPA)
-          </h2>
-
           <p className="mt-4 text-sm leading-relaxed text-[#485d56] max-w-[540px]">
-            Unified double-entry financial ledger, instant Base64 TLV e-invoicing, automatic 15% VAT Form 21 reporting, and multi-branch operations designed strictly to SOCPA & ZATCA FATOORA standards.
+            {t(
+              'Unified double-entry financial ledger, instant Base64 TLV e-invoicing, automatic 15% VAT Form 21 reporting, and multi-branch operations designed strictly to SOCPA & ZATCA FATOORA standards.',
+              'دفتر أستاذ محاسبي موحد، فوترة إلكترونية فورية بمعيار Base64 TLV، إقرار ضريبة القيمة المضافة 15% تلقائي (نموذج 21)، وتكامل الفروع وفق معايير SOCPA وZATCA.'
+            )}
           </p>
 
           {/* CTAs */}
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link href={isSignedIn ? "/home" : "/sign-up"} className="btn-primary flex items-center gap-2 px-7 py-3.5 text-sm font-bold shadow-xl shadow-[#176752]/25 hover:scale-[1.03] transition-all cursor-pointer" data-testid="link-hero-start">
-              <span>{isSignedIn ? "Go to Workspace / مساحة العمل" : "Start Free Account / ابدأ مجاناً"}</span>
-              <ArrowRight size={16} />
+              <span>{isSignedIn ? t("Go to Workspace", "الانتقال إلى مساحة العمل") : t("Start Free Account", "ابدأ حسابك المجاني")}</span>
+              {isRtl ? <ArrowLeft size={16} /> : <ArrowRight size={16} />}
             </Link>
             <a href="#packages" className="flex items-center gap-2 rounded-xl border border-[#d6cfbe] bg-white px-6 py-3.5 text-sm font-bold text-[#0a2620] hover:bg-[#ede7d8] transition-colors cursor-pointer">
               <Receipt size={16} className="text-[#176752]" />
-              <span>View Packages / باقات الأسعار</span>
+              <span>{t('View Packages', 'مشاهدة باقات الأسعار')}</span>
             </a>
           </div>
 
           {/* Trust Pills */}
           <div className="mt-10 flex flex-wrap items-center gap-5 text-xs font-bold text-[#3e524b]">
-            <span className="flex items-center gap-1.5"><CheckCircle2 size={16} className="text-[#176752]" /> ZATCA Phase 1 & 2</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 size={16} className="text-[#176752]" /> SOCPA GAAP Compliant</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 size={16} className="text-[#176752]" /> Instant TLV QR Code</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 size={16} className="text-[#176752]" /> {t('ZATCA Phase 1 & 2', 'الفوترة الإلكترونية المرحلة 1 و 2')}</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 size={16} className="text-[#176752]" /> {t('SOCPA GAAP Compliant', 'معتمد وفق معايير SOCPA')}</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 size={16} className="text-[#176752]" /> {t('Instant TLV QR Code', 'رمز QR المعتمد TLV')}</span>
           </div>
         </div>
 
@@ -249,7 +246,7 @@ export function PublicHome() {
                     }`}
                   >
                     <QrCode size={13} />
-                    <span>E-Invoice</span>
+                    <span>{t('E-Invoice', 'فاتورة إلكترونية')}</span>
                   </button>
                   <button
                     onClick={() => setActiveTab('ledger')}
@@ -258,7 +255,7 @@ export function PublicHome() {
                     }`}
                   >
                     <BarChart3 size={13} />
-                    <span>Ledger</span>
+                    <span>{t('Ledger', 'دفتر الأستاذ')}</span>
                   </button>
                   <button
                     onClick={() => setActiveTab('vat')}
@@ -267,12 +264,12 @@ export function PublicHome() {
                     }`}
                   >
                     <Receipt size={13} />
-                    <span>VAT Form 21</span>
+                    <span>{t('VAT Form 21', 'الإقرار الضريبي 21')}</span>
                   </button>
                 </div>
                 <span className="hidden sm:flex items-center gap-1 rounded-full bg-[#10b981]/20 border border-[#10b981]/30 px-2.5 py-0.5 text-[10px] font-bold text-[#6ee7b7]">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#34d399] animate-pulse" />
-                  ZATCA Live
+                  {t('ZATCA Live', 'ربط فوري مفعّل')}
                 </span>
               </div>
 
@@ -285,27 +282,27 @@ export function PublicHome() {
                         <QrCode size={22} />
                       </div>
                       <div>
-                        <div className="text-xs font-bold text-white">Tax Invoice #INV-00091</div>
-                        <div className="text-[10px] text-[#9ab3a9]">Al-Rashid Commercial Trading Co.</div>
+                        <div className="text-xs font-bold text-white">{t('Tax Invoice #INV-00091', 'فاتورة ضريبية #INV-00091')}</div>
+                        <div className="text-[10px] text-[#9ab3a9]">{t('Al-Rashid Commercial Trading Co.', 'شركة الراشد للتجارة العمومية')}</div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-extrabold text-[#d4af37]">SAR 6,900.00</div>
-                      <div className="text-[10px] text-[#6ee7b7] font-semibold">Incl. 15% VAT (SAR 900.00)</div>
+                      <div className="text-sm font-extrabold text-[#d4af37]">{t('SAR 6,900.00', '6,900.00 ر.س')}</div>
+                      <div className="text-[10px] text-[#6ee7b7] font-semibold">{t('Incl. 15% VAT (SAR 900.00)', 'شاملة 15% ضريبة (900.00 ر.س)')}</div>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                      <div className="text-[10px] text-[#8fa8a0]">TLV QR Spec</div>
+                      <div className="text-[10px] text-[#8fa8a0]">{t('TLV QR Spec', 'مواصفة ترميز TLV')}</div>
                       <div className="mt-1 font-bold text-white flex items-center gap-1">
-                        <CheckCircle2 size={12} className="text-[#34d399]" /> Base64 Encoded
+                        <CheckCircle2 size={12} className="text-[#34d399]" /> {t('Base64 Encoded', 'مشفر Base64')}
                       </div>
                     </div>
                     <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                      <div className="text-[10px] text-[#8fa8a0]">ZATCA Status</div>
+                      <div className="text-[10px] text-[#8fa8a0]">{t('ZATCA Status', 'حالة هيئة الزكاة')}</div>
                       <div className="mt-1 font-bold text-[#34d399] flex items-center gap-1">
-                        <ShieldCheck size={12} /> ECDSA Signed
+                        <ShieldCheck size={12} /> {t('ECDSA Signed', 'موقّع رقمياً ECDSA')}
                       </div>
                     </div>
                   </div>
@@ -317,17 +314,17 @@ export function PublicHome() {
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <div className="rounded-xl border border-white/10 bg-white/5 p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-[#d4af37]">Trial Balance Reconciliation</span>
-                      <span className="text-[10px] font-bold text-[#34d399] bg-[#34d399]/20 px-2 py-0.5 rounded">100% Balanced</span>
+                      <span className="text-xs font-bold text-[#d4af37]">{t('Trial Balance Reconciliation', 'مطابقة ميزان المراجعة')}</span>
+                      <span className="text-[10px] font-bold text-[#34d399] bg-[#34d399]/20 px-2 py-0.5 rounded">{t('100% Balanced', 'مطابق 100%')}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-white/10">
                       <div>
-                        <div className="text-[10px] text-[#8fa8a0]">Total Debits</div>
-                        <div className="font-bold text-white">SAR 73,000.00</div>
+                        <div className="text-[10px] text-[#8fa8a0]">{t('Total Debits', 'إجمالي المدين')}</div>
+                        <div className="font-bold text-white">{t('SAR 73,000.00', '73,000.00 ر.س')}</div>
                       </div>
                       <div>
-                        <div className="text-[10px] text-[#8fa8a0]">Total Credits</div>
-                        <div className="font-bold text-white">SAR 73,000.00</div>
+                        <div className="text-[10px] text-[#8fa8a0]">{t('Total Credits', 'إجمالي الدائن')}</div>
+                        <div className="font-bold text-white">{t('SAR 73,000.00', '73,000.00 ر.س')}</div>
                       </div>
                     </div>
                   </div>
@@ -340,16 +337,16 @@ export function PublicHome() {
                   <div className="rounded-xl border border-[#176752] bg-[#176752]/30 p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-[10px] uppercase font-bold tracking-wider text-[#9ab3a9]">Quarterly Net VAT</div>
-                        <div className="text-lg font-extrabold text-[#ffffff] mt-0.5">SAR 1,200.00 Refundable</div>
+                        <div className="text-[10px] uppercase font-bold tracking-wider text-[#9ab3a9]">{t('Quarterly Net VAT', 'صافي الضريبة الربع سنوية')}</div>
+                        <div className="text-lg font-extrabold text-[#ffffff] mt-0.5">{t('SAR 1,200.00 Refundable', '1,200.00 ر.س مستردة')}</div>
                       </div>
                       <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#176752] text-white">
                         <Receipt size={18} />
                       </div>
                     </div>
                     <div className="mt-3 text-[10px] text-[#6ee7b7] border-t border-white/10 pt-2 flex justify-between">
-                      <span>Box 1 Output VAT: SAR 900.00</span>
-                      <span>Box 8 Input VAT: SAR 2,100.00</span>
+                      <span>{t('Box 1 Output VAT: SAR 900.00', 'البند 1 ضريبة المخرجات: 900.00 ر.س')}</span>
+                      <span>{t('Box 8 Input VAT: SAR 2,100.00', 'البند 8 ضريبة المدخلات: 2,100.00 ر.س')}</span>
                     </div>
                   </div>
                 </div>
@@ -365,32 +362,32 @@ export function PublicHome() {
         <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-6 overflow-x-auto text-xs font-extrabold text-[#071f19] lg:px-10">
           <div className="flex items-center gap-2 whitespace-nowrap">
             <ShieldCheck size={16} className="text-[#176752]" />
-            <span>100% ZATCA Compliant / هيئة الزكاة والضريبة</span>
+            <span>{t('100% ZATCA Compliant', 'مطابق لمتطلبات هيئة الزكاة 100%')}</span>
           </div>
           <span className="text-[#c5bea9]">|</span>
           <div className="flex items-center gap-2 whitespace-nowrap">
             <Receipt size={16} className="text-[#b8800b]" />
-            <span>15% Saudi VAT Form 21 / الإقرار الضريبي</span>
+            <span>{t('15% Saudi VAT Form 21', 'إقرار ضريبة القيمة المضافة 15% (نموذج 21)')}</span>
           </div>
           <span className="text-[#c5bea9]">|</span>
           <div className="flex items-center gap-2 whitespace-nowrap">
             <Scale size={16} className="text-[#176752]" />
-            <span>SOCPA Standard / معايير المحاسبة السعودية</span>
+            <span>{t('SOCPA Standard', 'معايير المحاسبة السعودية SOCPA')}</span>
           </div>
           <span className="text-[#c5bea9]">|</span>
           <div className="flex items-center gap-2 whitespace-nowrap">
             <Zap size={16} className="text-[#b8800b]" />
-            <span>Instant Base64 QR / رمز كيو آر الفوري</span>
+            <span>{t('Instant Base64 QR', 'رمز QR المعتمد الفوري')}</span>
           </div>
           <span className="text-[#c5bea9]">|</span>
           <div className="flex items-center gap-2 whitespace-nowrap">
             <Globe2 size={16} className="text-[#176752]" />
-            <span>Arabic & English / دعم اللغة العربية والإنجليزية</span>
+            <span>{t('Arabic & English', 'دعم كامل للغة العربية والإنجليزية')}</span>
           </div>
         </div>
       </section>
 
-      {/* SYSTEM MIGRATION & EASY TRANSITION SECTION (SEO SEO SEO) */}
+      {/* SYSTEM MIGRATION & EASY TRANSITION SECTION */}
       <section id="migration" className="py-20 lg:py-24 bg-white border-b border-[#e2dcce]">
         <div className="mx-auto max-w-[1280px] px-6 lg:px-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -398,16 +395,18 @@ export function PublicHome() {
             <div className="lg:col-span-6 space-y-6">
               <div className="inline-flex items-center gap-2 rounded-full bg-[#176752]/10 border border-[#176752]/20 px-3.5 py-1 text-xs font-bold text-[#176752]">
                 <RefreshCw size={14} className="text-[#d4af37] animate-spin" />
-                <span>Seamless Migration | سهولة الانتقال من الأنظمة القديمة</span>
+                <span>{t('Seamless Data Migration', 'سهولة الانتقال من الأنظمة القديمة')}</span>
               </div>
 
               <h2 className="text-3xl font-black text-[#071f19] sm:text-4xl leading-tight">
-                Easily Upgrade from Legacy Systems to KHANBAS NEXUS <br />
-                <span className="text-[#176752] text-2xl font-bold">انتقل بلمسة واحدة من برنامجك المحاسبي القديم بدون فقدان للبيانات</span>
+                {t('Easily Upgrade from Legacy Systems to KHANBAS NEXUS', 'انتقل بسلاسة من برنامجك المحاسبي القديم إلى نكسس')}
               </h2>
 
               <p className="text-sm text-[#485d56] leading-relaxed">
-                Stuck on outdated desktop accounting software or manual Excel spreadsheets that don't support ZATCA Phase 2? Migrate your entire Chart of Accounts, Customers, Suppliers, and Inventory in minutes.
+                {t(
+                  'Stuck on outdated desktop accounting software or manual Excel spreadsheets that don\'t support ZATCA Phase 2? Migrate your entire Chart of Accounts, Customers, Suppliers, and Inventory in minutes.',
+                  'هل تعاني من البرامج القديمة أو ملفات الأكسل اليدوية التي لا تدعم الربط المباشر مع هيئة الزكاة؟ يمكنك نقل شجرة الحسابات والعملاء والموردين والمنتجات خلال دقائق.'
+                )}
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
@@ -416,8 +415,8 @@ export function PublicHome() {
                     <FileSpreadsheet size={20} />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-[#071f19]">1-Click Excel / CSV Import</h4>
-                    <p className="text-[11px] text-[#566861] mt-0.5">رفع القوائم والمنتجات بقوالب جاهزة</p>
+                    <h4 className="text-xs font-bold text-[#071f19]">{t('1-Click Excel / CSV Import', 'استيراد الأكسل و CSV بضغطة زر')}</h4>
+                    <p className="text-[11px] text-[#566861] mt-0.5">{t('Upload lists using ready-made templates', 'رفع القوائم والمنتجات بقوالب جاهزة')}</p>
                   </div>
                 </div>
 
@@ -426,15 +425,17 @@ export function PublicHome() {
                     <Database size={20} />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-[#071f19]">Zero Data Loss Guarantee</h4>
-                    <p className="text-[11px] text-[#566861] mt-0.5">حفظ تاريخ الأرصدة والعملاء بالكامل</p>
+                    <h4 className="text-xs font-bold text-[#071f19]">{t('Zero Data Loss Guarantee', 'ضمان عدم فقدان أي بيانات')}</h4>
+                    <p className="text-[11px] text-[#566861] mt-0.5">{t('Complete balance & history retention', 'حفظ سجل الحسابات والأرصدة بالكامل')}</p>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="lg:col-span-6 space-y-3">
-              <div className="text-xs font-extrabold uppercase tracking-wider text-[#3e524b] mb-4">Supported Legacy Platforms for Direct Import:</div>
+              <div className="text-xs font-extrabold uppercase tracking-wider text-[#3e524b] mb-4">
+                {t('Supported Legacy Platforms for Direct Import:', 'أنظمة المحاسبة المتاحة للاستيراد المباشر:')}
+              </div>
               {migrationSources.map((src, idx) => (
                 <div key={idx} className="flex items-center justify-between rounded-2xl border border-[#e2dcce] bg-[#fcfbfa] p-4 shadow-sm hover:border-[#176752] transition-colors">
                   <div className="flex items-center gap-3">
@@ -443,11 +444,11 @@ export function PublicHome() {
                     </span>
                     <div>
                       <div className="text-sm font-bold text-[#071f19]">{src.name}</div>
-                      <div className="text-xs text-[#566861]">{src.desc}</div>
+                      <div className="text-xs text-[#566861]">{isRtl ? src.descAr : src.descEn}</div>
                     </div>
                   </div>
                   <span className="rounded-full bg-[#176752]/10 text-[#176752] text-[10px] font-bold px-3 py-1">
-                    Ready to Import
+                    {t('Ready to Import', 'جاهز للاستيراد')}
                   </span>
                 </div>
               ))}
@@ -463,11 +464,10 @@ export function PublicHome() {
           <div className="text-center max-w-3xl mx-auto mb-16">
             <span className="inline-flex items-center gap-2 rounded-full bg-[#d4af37]/20 border border-[#d4af37]/30 px-4 py-1 text-xs font-bold text-[#fde68a]">
               <Server size={14} />
-              <span>Saudi Data Hosting & Enterprise Resiliency | مراكز بيانات سعودية وأمان عالي</span>
+              <span>{t('Saudi Data Hosting & Enterprise Resiliency', 'مراكز بيانات سعودية وأمان عالي')}</span>
             </span>
             <h2 className="mt-4 text-3xl font-black text-white sm:text-4xl">
-              Bank-Grade Security & Local Data Sovereignty <br />
-              <span className="text-[#d4af37]">بياناتك المالية محمية وفق أعلى المعايير الأمنية داخل المملكة</span>
+              {t('Bank-Grade Security & Local Data Sovereignty', 'أمان بمستوى البنوك واستضافة بيانات داخل المملكة')}
             </h2>
           </div>
 
@@ -476,10 +476,13 @@ export function PublicHome() {
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#d4af37]/20 text-[#d4af37]">
                 <Server size={24} />
               </div>
-              <h3 className="mt-6 text-lg font-bold text-white">Local KSA Cloud Hosting</h3>
-              <p className="text-xs font-semibold text-[#6ee7b7] mt-0.5">استضافة سحابية داخل المملكة</p>
+              <h3 className="mt-6 text-lg font-bold text-white">{t('Local KSA Cloud Hosting', 'استضافة سحابية داخل السعودية')}</h3>
+              <p className="text-xs font-semibold text-[#6ee7b7] mt-0.5">{t('NCA Cybersecurity Compliant', 'متوافق مع أنظمة الأمن السيبراني (NCA)')}</p>
               <p className="mt-3 text-xs leading-relaxed text-[#a4c0b6]">
-                Compliant with National Cybersecurity Authority (NCA) regulations. Financial data remains strictly within Saudi Arabian borders.
+                {t(
+                  'Compliant with National Cybersecurity Authority regulations within Saudi Arabia.',
+                  'تستضيف المنصة بياناتك في مراكز بيانات سحابية عالية الأمان داخل حدود المملكة العربية السعودية.'
+                )}
               </p>
             </div>
 
@@ -487,10 +490,13 @@ export function PublicHome() {
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#d4af37]/20 text-[#d4af37]">
                 <Lock size={24} />
               </div>
-              <h3 className="mt-6 text-lg font-bold text-white">256-Bit AES Encryption</h3>
-              <p className="text-xs font-semibold text-[#6ee7b7] mt-0.5">تشفير كامل للأمان والحماية</p>
+              <h3 className="mt-6 text-lg font-bold text-white">{t('256-Bit AES Encryption', 'تشفير كامل AES 256-Bit')}</h3>
+              <p className="text-xs font-semibold text-[#6ee7b7] mt-0.5">{t('Military-Grade Encryption', 'تشفير عالي الأمان لحماية البيانات')}</p>
               <p className="mt-3 text-xs leading-relaxed text-[#a4c0b6]">
-                End-to-end 256-bit AES encryption at rest and TLS 1.3 in transit with automated nightly offsite database backups.
+                {t(
+                  'End-to-end 256-bit AES encryption at rest and TLS 1.3 in transit with automated nightly offsite database backups.',
+                  'تشفير كامل للبيانات والسجلات المالية أثناء التخزين والنقل مع نسخ احتياطي آلي يومي.'
+                )}
               </p>
             </div>
 
@@ -498,10 +504,13 @@ export function PublicHome() {
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#d4af37]/20 text-[#d4af37]">
                 <Cpu size={24} />
               </div>
-              <h3 className="mt-6 text-lg font-bold text-white">99.99% Uptime Guarantee</h3>
-              <p className="text-xs font-semibold text-[#6ee7b7] mt-0.5">استقرار وتشغيل مستمر بنسبة 99.99%</p>
+              <h3 className="mt-6 text-lg font-bold text-white">{t('99.99% Uptime Guarantee', 'ضمان تشغيل بنسبة 99.99%')}</h3>
+              <p className="text-xs font-semibold text-[#6ee7b7] mt-0.5">{t('High-Availability Architecture', 'استقرار واستجابة مستمرة للأعمال')}</p>
               <p className="mt-3 text-xs leading-relaxed text-[#a4c0b6]">
-                High-resiliency architecture engineered to handle peak invoicing volumes during tax deadlines without slowdown.
+                {t(
+                  'High-resiliency architecture engineered to handle peak invoicing volumes during tax deadlines without slowdown.',
+                  'بنية سحابية عالية الاعتمادية تضمن استمرار العمل وإصدار الفواتير بدون أي توقف.'
+                )}
               </p>
             </div>
           </div>
@@ -515,24 +524,24 @@ export function PublicHome() {
           <div className="text-center max-w-3xl mx-auto mb-16">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#176752]/25 bg-white px-4 py-1.5 text-xs font-bold text-[#176752] shadow-sm mb-4">
               <Sparkles size={14} className="text-[#d4af37]" />
-              <span>Packages & Subscription Plans | باقات الاشتراك والأسعار</span>
+              <span>{t('Packages & Subscription Plans', 'باقات الاشتراك والأسعار')}</span>
             </div>
             
             <h2 className="text-3xl font-black text-[#071f19] sm:text-4xl">
-              Choose the Right Package for Your Business <br />
-              <span className="bg-gradient-to-r from-[#176752] via-[#b8800b] to-[#d4af37] bg-clip-text text-transparent">
-                اختر الباقة المناسبة لمنشأتك بدون مصاريف خفية
-              </span>
+              {t('Choose the Right Package for Your Business', 'اختر الباقة المناسبة لمنشأتك بدون أي مصاريف خفية')}
             </h2>
             
             <p className="mt-4 text-sm text-[#485d56]">
-              All packages include 15% Saudi VAT calculation, SOCPA double-entry accounting, Base64 TLV QR codes, and bilingual Arabic & English interface.
+              {t(
+                'All packages include 15% Saudi VAT calculation, SOCPA double-entry accounting, Base64 TLV QR codes, and bilingual Arabic & English interface.',
+                'جميع الباقات تشمل احتساب ضريبة 15%، المحاسبة المزدوجة بمعايير SOCPA، وإنشاء رموز QR المعتمدة فورياً.'
+              )}
             </p>
 
             {/* Billing Cycle Toggle */}
             <div className="mt-8 flex items-center justify-center gap-4">
               <span className={`text-xs font-bold uppercase tracking-wider ${!annualBilling ? 'text-[#176752]' : 'text-[#78938a]'}`}>
-                Monthly / شهري
+                {t('Monthly', 'شهري')}
               </span>
               <button
                 onClick={() => setAnnualBilling(!annualBilling)}
@@ -542,10 +551,10 @@ export function PublicHome() {
               </button>
               <div className="flex items-center gap-1.5">
                 <span className={`text-xs font-bold uppercase tracking-wider ${annualBilling ? 'text-[#176752]' : 'text-[#78938a]'}`}>
-                  Annual Billing / سنوي
+                  {t('Annual Billing', 'سنوي')}
                 </span>
                 <span className="rounded-full bg-[#d4af37]/20 border border-[#d4af37] px-2.5 py-0.5 text-[10px] font-extrabold text-[#b8800b]">
-                  Save 20% / خصم 20%
+                  {t('Save 20%', 'خصم 20%')}
                 </span>
               </div>
             </div>
@@ -555,6 +564,11 @@ export function PublicHome() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
             {packages.map((pkg) => {
               const price = annualBilling ? pkg.annualPrice : pkg.monthlyPrice;
+              const pkgName = isRtl ? pkg.nameAr : pkg.name;
+              const pkgSubtitle = isRtl ? pkg.subtitleAr : pkg.subtitle;
+              const pkgFeatures = isRtl ? pkg.featuresAr : pkg.featuresEn;
+              const pkgCta = isRtl ? pkg.ctaAr : pkg.ctaEn;
+
               return (
                 <div
                   key={pkg.id}
@@ -567,45 +581,38 @@ export function PublicHome() {
                   {pkg.popular && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-[#176752] to-[#d4af37] px-4 py-1 text-[11px] font-extrabold uppercase tracking-widest text-white shadow-md flex items-center gap-1.5">
                       <Sparkles size={12} className="text-[#fde68a]" />
-                      <span>Most Popular / الأكثر طلباً</span>
+                      <span>{t('Most Popular', 'الأكثر طلباً للمنشآت')}</span>
                     </div>
                   )}
 
                   <div>
                     <div className="flex items-center justify-between">
-                      <h3 className={`text-2xl font-black ${pkg.popular ? 'text-white' : 'text-[#071f19]'}`}>{pkg.name}</h3>
-                      <span className={`text-xs font-bold ${pkg.popular ? 'text-[#d4af37]' : 'text-[#176752]'}`}>{pkg.nameAr}</span>
+                      <h3 className={`text-2xl font-black ${pkg.popular ? 'text-white' : 'text-[#071f19]'}`}>{pkgName}</h3>
                     </div>
 
                     <p className={`mt-2 text-xs leading-relaxed ${pkg.popular ? 'text-[#a3b8b0]' : 'text-[#5c726a]'}`}>
-                      {pkg.subtitle}
-                    </p>
-                    <p className={`mt-1 text-xs font-semibold ${pkg.popular ? 'text-[#6ee7b7]' : 'text-[#176752]'}`}>
-                      {pkg.subtitleAr}
+                      {pkgSubtitle}
                     </p>
 
                     <div className="mt-6 flex items-baseline gap-1.5">
                       <span className="text-4xl font-black font-mono">{price}</span>
                       <span className={`text-xs font-bold ${pkg.popular ? 'text-[#6ee7b7]' : 'text-[#176752]'}`}>
-                        SAR / Month (ر.س / شهرياً)
+                        {t('SAR / Month', 'ر.س / شهرياً')}
                       </span>
                     </div>
                     <div className={`text-[10px] font-semibold mt-1 ${pkg.popular ? 'text-[#78938a]' : 'text-[#94a3b8]'}`}>
-                      {annualBilling ? 'Billed annually (خصم الفوترة السنوية)' : 'Billed monthly (مفوترة شهرياً)'}
+                      {annualBilling ? t('Billed annually (20% Off)', 'مفوترة سنوياً (خصم 20%)') : t('Billed monthly', 'مفوترة شهرياً')}
                     </div>
 
                     <hr className={`my-6 ${pkg.popular ? 'border-white/10' : 'border-[#e2dcce]'}`} />
 
                     <div className="space-y-3">
-                      <div className="text-[10px] uppercase font-extrabold tracking-wider opacity-75">Package Features / مميزات الباقة:</div>
+                      <div className="text-[10px] uppercase font-extrabold tracking-wider opacity-75">{t('Package Features:', 'مميزات الباقة:')}</div>
                       <ul className="space-y-2.5 text-xs">
-                        {pkg.featuresEn.map((featEn, fIdx) => (
+                        {pkgFeatures.map((feat, fIdx) => (
                           <li key={fIdx} className="flex items-start gap-2.5">
                             <Check size={15} className={pkg.popular ? 'text-[#6ee7b7] shrink-0 mt-0.5' : 'text-[#176752] shrink-0 mt-0.5'} />
-                            <div>
-                              <div className={pkg.popular ? 'text-[#e2e8f0] font-medium' : 'text-[#334155] font-medium'}>{featEn}</div>
-                              <div className={pkg.popular ? 'text-[#6ee7b7] text-[10px]' : 'text-[#176752] text-[10px]'}>{pkg.featuresAr[fIdx]}</div>
-                            </div>
+                            <span className={pkg.popular ? 'text-[#e2e8f0] font-medium' : 'text-[#334155] font-medium'}>{feat}</span>
                           </li>
                         ))}
                       </ul>
@@ -621,8 +628,8 @@ export function PublicHome() {
                           : 'bg-[#f0ece1] text-[#0a2620] hover:bg-[#176752] hover:text-white'
                       }`}
                     >
-                      <span>{isSignedIn ? "Go to Workspace / مساحة العمل" : `${pkg.ctaEn} / ${pkg.ctaAr}`}</span>
-                      <ArrowRight size={14} />
+                      <span>{isSignedIn ? t("Go to Workspace", "الانتقال إلى مساحة العمل") : pkgCta}</span>
+                      {isRtl ? <ArrowLeft size={14} /> : <ArrowRight size={14} />}
                     </Link>
                   </div>
 
@@ -639,15 +646,14 @@ export function PublicHome() {
         <div className="mx-auto max-w-[1280px] px-6 lg:px-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
             <div>
-              <div className="eyebrow">Platform Capabilities | مميزات النظام</div>
+              <div className="eyebrow">{t('Platform Capabilities', 'مميزات وإمكانيات النظام')}</div>
               <h2 className="mt-2 text-3xl font-black text-[#071f19] sm:text-4xl">
-                Engineered for Saudi business requirements. <br />
-                <span className="text-[#176752] font-bold text-2xl">مصمم خصيصاً لتلبية متطلبات الأعمال في المملكة</span>
+                {t('Engineered for Saudi business requirements.', 'مصمم خصيصاً لتلبية متطلبات الأعمال والأنظمة السعودية.')}
               </h2>
             </div>
             <Link href={isSignedIn ? "/home" : "/sign-up"} className="btn-primary inline-flex items-center gap-2 text-xs font-bold py-3 px-5 shadow-md cursor-pointer hover:scale-[1.03] transition-all">
-              <span>{isSignedIn ? "Go to Workspace / مساحة العمل" : "Explore Full Platform"}</span>
-              <ArrowRight size={14} />
+              <span>{isSignedIn ? t("Go to Workspace", "الانتقال إلى مساحة العمل") : t("Explore Full Platform", "استكشف المنصة بالكامل")}</span>
+              {isRtl ? <ArrowLeft size={14} /> : <ArrowRight size={14} />}
             </Link>
           </div>
 
@@ -657,10 +663,12 @@ export function PublicHome() {
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#176752]/10 text-[#176752] group-hover:bg-[#176752] group-hover:text-white transition-colors">
                 <QrCode size={24} />
               </div>
-              <h3 className="mt-6 text-lg font-bold text-[#071f19]">ZATCA E-Invoicing Phase 1 & 2</h3>
-              <p className="text-xs font-bold text-[#176752] mt-0.5">الفوترة الإلكترونية المرحلة الأولى والثانية</p>
+              <h3 className="mt-6 text-lg font-bold text-[#071f19]">{t('ZATCA E-Invoicing Phase 1 & 2', 'الفوترة الإلكترونية (ZATCA 1 & 2)')}</h3>
               <p className="mt-2 text-xs leading-relaxed text-[#566861]">
-                Generates Base64 TLV QR Codes, cryptographic signatures, XML formatting, and direct ZATCA FATOORA portal sync.
+                {t(
+                  'Generates Base64 TLV QR Codes, cryptographic signatures, XML formatting, and direct ZATCA FATOORA portal sync.',
+                  'توليد رموز QR مشفرة بصيغة TLV Base64، والتوقيع الرقمي، وملفات XML، والربط المباشر مع منصة فاتورة.'
+                )}
               </p>
             </div>
 
@@ -669,10 +677,12 @@ export function PublicHome() {
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#176752]/10 text-[#176752] group-hover:bg-[#176752] group-hover:text-white transition-colors">
                 <Scale size={24} />
               </div>
-              <h3 className="mt-6 text-lg font-bold text-[#071f19]">Double-Entry SOCPA Ledger</h3>
-              <p className="text-xs font-bold text-[#176752] mt-0.5">المحاسبة المزدوجة وفق معايير SOCPA</p>
+              <h3 className="mt-6 text-lg font-bold text-[#071f19]">{t('Double-Entry SOCPA Ledger', 'المحاسبة المزدوجة وفق معايير SOCPA')}</h3>
               <p className="mt-2 text-xs leading-relaxed text-[#566861]">
-                Complete Chart of Accounts, Journal Vouchers, Account Ledgers, Trial Balance, Profit & Loss, and Balance Sheet.
+                {t(
+                  'Complete Chart of Accounts, Journal Vouchers, Account Ledgers, Trial Balance, Profit & Loss, and Balance Sheet.',
+                  'شجرة حسابات متكاملة، قيود يومية، دفاتر استاد، ميزان مراجعة، تقارير الأرباح والخسائر والميزانية العمومية.'
+                )}
               </p>
             </div>
 
@@ -681,10 +691,12 @@ export function PublicHome() {
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#176752]/10 text-[#176752] group-hover:bg-[#176752] group-hover:text-white transition-colors">
                 <Building2 size={24} />
               </div>
-              <h3 className="mt-6 text-lg font-bold text-[#071f19]">Multi-Branch & Catalog</h3>
-              <p className="text-xs font-bold text-[#176752] mt-0.5">إدارة الفروع والسجلات التجارية المتعددة</p>
+              <h3 className="mt-6 text-lg font-bold text-[#071f19]">{t('Multi-Branch & Catalog', 'إدارة الفروع والسجلات التجارية')}</h3>
               <p className="mt-2 text-xs leading-relaxed text-[#566861]">
-                Manage multiple Saudi branches, CR numbers, commercial catalogs, VAT rates, customer and supplier directories.
+                {t(
+                  'Manage multiple Saudi branches, CR numbers, commercial catalogs, VAT rates, customer and supplier directories.',
+                  'إدارة الفروع والسجلات التجارية متعددة الأصناف، وقواعد الضريبة، ودليل العملاء والموردين الشامل.'
+                )}
               </p>
             </div>
           </div>
@@ -699,20 +711,23 @@ export function PublicHome() {
             <div className="lg:col-span-6 space-y-6">
               <div className="inline-flex items-center gap-2 rounded-full bg-[#176752]/10 border border-[#176752]/20 px-3.5 py-1 text-xs font-bold text-[#176752]">
                 <Calculator size={14} className="text-[#d4af37]" />
-                <span>Live Calculator Tool | حاسبة ضريبة القيمة المضافة</span>
+                <span>{t('Live Calculator Tool', 'حاسبة ضريبة القيمة المضافة الفورية')}</span>
               </div>
 
               <h2 className="text-3xl font-black text-[#071f19] sm:text-4xl">
-                Instant 15% Saudi VAT & Invoice Breakdown
+                {t('Instant 15% Saudi VAT & Invoice Breakdown', 'حساب آلي فوري لضريبة 15% وتفاصيل الفاتورة')}
               </h2>
               <p className="text-sm text-[#485d56] leading-relaxed">
-                Test how KHANBAS NEXUS calculates tax subtotals and 15% output VAT according to ZATCA regulations.
+                {t(
+                  'Test how KHANBAS NEXUS calculates tax subtotals and 15% output VAT according to ZATCA regulations.',
+                  'تجربة حية لتأكيد احتساب المبالغ قبل الضريبة وضريبة المخرجات وفق اشتراطات هيئة الزكاة.'
+                )}
               </p>
 
               <div className="space-y-4 pt-2">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-[#3e524b] mb-2">
-                    Enter Invoice Subtotal (SAR) / أدخل المبلغ قبل الضريبة
+                    {t('Enter Invoice Subtotal (SAR)', 'أدخل المبلغ قبل الضريبة (ر.س)')}
                   </label>
                   <input
                     type="number"
@@ -726,23 +741,23 @@ export function PublicHome() {
 
             <div className="lg:col-span-6 rounded-3xl border border-[#071f19] bg-[#071f19] text-white p-8 lg:p-10 shadow-2xl">
               <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#d4af37]">ZATCA Compliant Breakdown</span>
-                <span className="text-[10px] font-bold text-[#6ee7b7] bg-[#6ee7b7]/20 px-2.5 py-1 rounded-full">15% Rate Applied</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-[#d4af37]">{t('ZATCA Compliant Breakdown', 'تفاصيل الفاتورة الضريبية')}</span>
+                <span className="text-[10px] font-bold text-[#6ee7b7] bg-[#6ee7b7]/20 px-2.5 py-1 rounded-full">{t('15% Rate Applied', 'تطبيق نسبة 15%')}</span>
               </div>
 
               <div className="space-y-4 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-[#a3b8b0]">Net Subtotal (قبل الضريبة):</span>
-                  <span className="font-mono font-bold text-white text-base">SAR {calcSubtotal.toFixed(2)}</span>
+                  <span className="text-[#a3b8b0]">{t('Net Subtotal:', 'المبلغ قبل الضريبة:')}</span>
+                  <span className="font-mono font-bold text-white text-base">{isRtl ? `${calcSubtotal.toFixed(2)} ر.س` : `SAR ${calcSubtotal.toFixed(2)}`}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[#a3b8b0]">15% Output VAT (ضريبة القيمة المضافة):</span>
-                  <span className="font-mono font-bold text-[#6ee7b7] text-base">+ SAR {vatAmount.toFixed(2)}</span>
+                  <span className="text-[#a3b8b0]">{t('15% Output VAT:', 'ضريبة القيمة المضافة 15%:')}</span>
+                  <span className="font-mono font-bold text-[#6ee7b7] text-base">{isRtl ? `+ ${vatAmount.toFixed(2)} ر.س` : `+ SAR ${vatAmount.toFixed(2)}`}</span>
                 </div>
                 <hr className="border-white/10 my-4" />
                 <div className="flex items-center justify-between">
-                  <span className="font-black text-white">Grand Total (المبلغ الإجمالي):</span>
-                  <span className="font-mono font-black text-[#d4af37] text-2xl">SAR {grandTotal.toFixed(2)}</span>
+                  <span className="font-black text-white">{t('Grand Total:', 'المبلغ الإجمالي النهائي:')}</span>
+                  <span className="font-mono font-black text-[#d4af37] text-2xl">{isRtl ? `${grandTotal.toFixed(2)} ر.س` : `SAR ${grandTotal.toFixed(2)}`}</span>
                 </div>
               </div>
             </div>
@@ -755,39 +770,41 @@ export function PublicHome() {
       <section id="faq" className="py-20 lg:py-24">
         <div className="mx-auto max-w-[1280px] px-6 lg:px-10">
           <div className="text-center max-w-2xl mx-auto mb-16">
-            <div className="eyebrow">Got Questions? | الأسئلة الشائعة</div>
+            <div className="eyebrow">{t('Got Questions?', 'الأسئلة الشائعة حول النظام والفوترة')}</div>
             <h2 className="mt-2 text-3xl font-black text-[#071f19] sm:text-4xl">
-              Frequently Asked Questions
+              {t('Frequently Asked Questions', 'الأسئلة الأكثر تكراراً عن الفوترة والمحاسبة')}
             </h2>
           </div>
 
           <div className="max-w-3xl mx-auto space-y-4">
-            {faqs.map((faq, idx) => (
-              <div
-                key={idx}
-                className="rounded-2xl border border-[#e2dcce] bg-white transition-all cursor-pointer overflow-hidden shadow-sm"
-              >
-                <button
-                  onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                  className="w-full flex items-center justify-between p-6 text-left cursor-pointer"
+            {faqs.map((faq, idx) => {
+              const qText = isRtl ? faq.qAr : faq.qEn;
+              const aText = isRtl ? faq.aAr : faq.aEn;
+              return (
+                <div
+                  key={idx}
+                  className="rounded-2xl border border-[#e2dcce] bg-white transition-all cursor-pointer overflow-hidden shadow-sm"
                 >
-                  <div>
-                    <div className="text-base font-bold text-[#071f19]">{faq.qEn}</div>
-                    <div className="text-xs font-bold text-[#176752] mt-0.5">{faq.qAr}</div>
-                  </div>
-                  <ChevronDown
-                    size={20}
-                    className={`text-[#176752] transition-transform duration-300 shrink-0 ${openFaq === idx ? 'rotate-180' : ''}`}
-                  />
-                </button>
-                {openFaq === idx && (
-                  <div className="px-6 pb-6 text-xs leading-relaxed border-t border-[#f0ece1] pt-4 animate-in fade-in duration-200 space-y-2">
-                    <p className="text-[#5c726a]">{faq.aEn}</p>
-                    <p className="text-[#176752] font-semibold">{faq.aAr}</p>
-                  </div>
-                )}
-              </div>
-            ))}
+                  <button
+                    onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                    className="w-full flex items-center justify-between p-6 text-start cursor-pointer"
+                  >
+                    <div>
+                      <div className="text-base font-bold text-[#071f19]">{qText}</div>
+                    </div>
+                    <ChevronDown
+                      size={20}
+                      className={`text-[#176752] transition-transform duration-300 shrink-0 ${openFaq === idx ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  {openFaq === idx && (
+                    <div className="px-6 pb-6 text-xs leading-relaxed border-t border-[#f0ece1] pt-4 animate-in fade-in duration-200">
+                      <p className="text-[#485d56] font-medium leading-relaxed">{aText}</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
         </div>
@@ -798,25 +815,25 @@ export function PublicHome() {
         <div className="mx-auto max-w-[1280px] px-6 lg:px-10">
           <div className="text-center mb-6">
             <h3 className="font-bold text-[#071f19] uppercase tracking-wider text-[11px]">
-              KSA Enterprise Search Keywords & Compliance Index | دليل الكلمات والخدمات الأكثر بحثاً في السعودية
+              {t('KSA Enterprise Search Keywords & Compliance Index', 'دليل الكلمات والخدمات الأكثر بحثاً والامتثال بالمنشآت السعودية')}
             </h3>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[11px] text-[#566861]">
             <div className="rounded-xl border border-[#dcd6c8] bg-white/60 p-3">
-              <strong className="block text-[#071f19] font-bold mb-1">الفوترة والزكاة</strong>
-              <span>برنامج فوترة إلكترونية معتمد | ZATCA Phase 2 E-Invoicing | رمز كيو آر Base64 TLV | هيئة الزكاة والضريبة والجمارك</span>
+              <strong className="block text-[#071f19] font-bold mb-1">{t('E-Invoicing & ZATCA', 'الفوترة والزكاة')}</strong>
+              <span>{t('Certified E-Invoicing Software | ZATCA Phase 2 E-Invoicing | Base64 TLV QR Code', 'برنامج فوترة إلكترونية معتمد | ZATCA Phase 2 E-Invoicing | رمز كيو آر Base64 TLV | هيئة الزكاة والضريبة والجمارك')}</span>
             </div>
             <div className="rounded-xl border border-[#dcd6c8] bg-white/60 p-3">
-              <strong className="block text-[#071f19] font-bold mb-1">المحاسبة والإقرارات</strong>
-              <span>إقرار ضريبة القيمة المضافة 15% | نموذج 21 | معايير SOCPA | ميزانية عمومية وقائمة الأرباح والخسائر</span>
+              <strong className="block text-[#071f19] font-bold mb-1">{t('Accounting & Reports', 'المحاسبة والإقرارات')}</strong>
+              <span>{t('15% VAT Declaration | Form 21 | SOCPA GAAP | Balance Sheet & P&L', 'إقرار ضريبة القيمة المضافة 15% | نموذج 21 | معايير SOCPA | ميزانية عمومية وقائمة الأرباح والخسائر')}</span>
             </div>
             <div className="rounded-xl border border-[#dcd6c8] bg-white/60 p-3">
-              <strong className="block text-[#071f19] font-bold mb-1">التحول والنقل</strong>
-              <span>الاستيراد من كويك بوكس | استيراد ملفات أكسل | نقل البيانات من أودو | برنامج محاسبة سحابي بديل</span>
+              <strong className="block text-[#071f19] font-bold mb-1">{t('Migration & Transfer', 'التحول والنقل')}</strong>
+              <span>{t('Import from QuickBooks | Excel Upload | Odoo ERP Migration | Cloud Accounting', 'الاستيراد من كويك بوكس | استيراد ملفات أكسل | نقل البيانات من أودو | برنامج محاسبة سحابي بديل')}</span>
             </div>
             <div className="rounded-xl border border-[#dcd6c8] bg-white/60 p-3">
-              <strong className="block text-[#071f19] font-bold mb-1">الأمان والفروع</strong>
-              <span>استضافة سحابية داخل السعودية | تشفير 256-Bit AES | إدارة الفروع والسجلات التجارية | باقات أسعار اقتصادية</span>
+              <strong className="block text-[#071f19] font-bold mb-1">{t('Security & Branches', 'الأمان والفروع')}</strong>
+              <span>{t('KSA Local Cloud Hosting | 256-Bit AES Encryption | Multi-CR Branch Management', 'استضافة سحابية داخل السعودية | تشفير 256-Bit AES | إدارة الفروع والسجلات التجارية | باقات أسعار اقتصادية')}</span>
             </div>
           </div>
         </div>
@@ -826,22 +843,24 @@ export function PublicHome() {
       <section className="relative overflow-hidden bg-[#071f19] px-6 py-20 text-white lg:px-10">
         <div className="mx-auto flex max-w-[1280px] flex-col items-center text-center">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[#d4af37]/20 border border-[#d4af37]/30 px-3.5 py-1 text-xs font-bold text-[#fde68a]">
-            🇸🇦 Saudi Arabia Enterprise SaaS Edition | المملكة العربية السعودية
+            🇸🇦 {t('Saudi Arabia Enterprise SaaS Edition', 'المملكة العربية السعودية | إصدار المنشآت')}
           </span>
 
           <h2 className="mt-6 max-w-[680px] text-3xl font-black text-white sm:text-4xl">
-            Ready to Streamline Your Saudi Business Accounting? <br />
-            <span className="text-[#d4af37]">جاهز لتطوير أعمالك ونظامك المحاسبي مع نكسس؟</span>
+            {t('Ready to Streamline Your Saudi Business Accounting?', 'جاهز لتطوير أعمالك ونظامك المحاسبي مع نكسس؟')}
           </h2>
 
           <p className="mt-3 text-sm text-[#a4c0b6] max-w-[520px]">
-            Setup your organization, configure ZATCA e-invoicing, and generate SOCPA compliant reports in minutes.
+            {t(
+              'Setup your organization, configure ZATCA e-invoicing, and generate SOCPA compliant reports in minutes.',
+              'قم بإعداد منشأتك، تفعيل الفوترة الإلكترونية مع الزكاة، واستخراج التقارير المعتمدة خلال دقائق.'
+            )}
           </p>
 
           <div className="mt-8 flex items-center gap-4">
             <Link href={isSignedIn ? "/home" : "/sign-up"} className="btn-primary inline-flex items-center gap-2 px-8 py-4 text-sm font-bold bg-[#d4af37] text-[#071f19] hover:bg-[#ebd074] transition-all shadow-xl hover:scale-[1.03] cursor-pointer">
-              <span>{isSignedIn ? "Go to Workspace / مساحة العمل" : "Start Free Trial / ابدأ التجربة المجانية"}</span>
-              <ArrowRight size={16} />
+              <span>{isSignedIn ? t("Go to Workspace", "الانتقال إلى مساحة العمل") : t("Start Free Trial", "ابدأ التجربة المجانية الآن")}</span>
+              {isRtl ? <ArrowLeft size={16} /> : <ArrowRight size={16} />}
             </Link>
           </div>
         </div>

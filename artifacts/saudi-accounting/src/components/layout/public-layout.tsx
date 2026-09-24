@@ -21,6 +21,7 @@ import {
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 export function Logo({ dark = false }: { dark?: boolean }) {
+  const { isRtl } = useTranslation();
   return (
     <Link href="/" className="flex items-center gap-3 group cursor-pointer" data-testid="link-brand">
       <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#176752] via-[#0d3d31] to-[#071f19] p-2 shadow-md shadow-[#176752]/25 ring-1 ring-white/20 transition-transform duration-300 group-hover:scale-105">
@@ -30,7 +31,9 @@ export function Logo({ dark = false }: { dark?: boolean }) {
         <span className={`text-[17px] font-black tracking-tight uppercase ${dark ? 'text-[#f9f5e9]' : 'text-[#0a2620]'}`}>
           KHANBAS <span className="text-[#d4af37]">NEXUS</span>
         </span>
-        <span className="text-[9px] font-bold tracking-widest text-[#5c726a] uppercase -mt-1">Saudi Enterprise SaaS</span>
+        <span className="text-[9px] font-bold tracking-widest text-[#5c726a] uppercase -mt-1">
+          {isRtl ? 'المنظومة المحاسبية السعودية' : 'Saudi Enterprise SaaS'}
+        </span>
       </div>
     </Link>
   );
