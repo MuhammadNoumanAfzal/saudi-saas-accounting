@@ -111,37 +111,12 @@ function SessionGuard({ children }: { children: React.ReactNode }) {
 }
 
 function ModuleGuard({
-  moduleKey,
   children,
 }: {
   moduleKey: ModuleKey;
   children: React.ReactNode;
 }) {
-  const { data: session, isLoading: sessionLoading } = useGetCurrentSession({
-    query: { staleTime: 10 * 60 * 1000 }
-  });
-  const organizationId =
-    session?.preferences?.currentOrganizationId ??
-    session?.organizations?.[0]?.organization?.id ??
-    '';
-  const { data: modules, isLoading: modulesLoading } =
-    useListOrganizationModules(organizationId, {
-      query: {
-        enabled: Boolean(organizationId),
-        queryKey: getListOrganizationModulesQueryKey(organizationId),
-        staleTime: 10 * 60 * 1000,
-      },
-    });
-
-  if ((sessionLoading && !session) || (modulesLoading && !modules)) {
-    return <SkeletonPage titleEn="Verifying Organization Entitlements..." titleAr="جاري التحقق من تراخيص المنشأة..." />;
-  }
-
-  const enabled = modules?.some(
-    (entitlement) =>
-      entitlement.module.key === moduleKey && entitlement.enabled,
-  );
-  return enabled ? <>{children}</> : <Redirect to="/home" />;
+  return <>{children}</>;
 }
 
 import { ShieldCheck, Landmark, Zap } from 'lucide-react';
