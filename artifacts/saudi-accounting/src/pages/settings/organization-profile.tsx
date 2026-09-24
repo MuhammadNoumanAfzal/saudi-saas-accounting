@@ -18,26 +18,11 @@ export function OrganizationProfile() {
   const { data: org, isLoading } = useGetOrganization(orgId, { query: { enabled: Boolean(orgId) && orgId !== 'org_default', queryKey: getGetOrganizationQueryKey(orgId) } });
   const update = useUpdateOrganization();
 
-  const activeOrg = org || session?.organizations?.[0]?.organization || {
-    id: 'org_default',
-    legalNameEnglish: 'Saudi Enterprise Co.',
-    legalNameArabic: 'المؤسسة السعودية التجارية',
-    tradingNameEnglish: 'Nexus Finance Enterprise',
-    tradingNameArabic: 'نكسس المالية',
-    businessType: 'limited_liability_company',
-    country: 'Saudi Arabia',
-    commercialRegistrationNumber: '1010894231',
-    vatNumber: '300123456700003',
-    city: 'Riyadh',
-    district: 'Olaya District',
-    streetName: 'King Fahd Road',
-    buildingNumber: '1234',
-    postalCode: '12211',
-    currency: 'SAR',
-    defaultLanguage: 'en',
-    invoiceLanguage: 'bilingual',
-    fiscalYearStart: '01-01',
-  };
+  const userOrg = session?.organizations?.find(
+    item => item.organization.id === session?.preferences?.currentOrganizationId,
+  )?.organization ?? session?.organizations?.[0]?.organization;
+
+  const activeOrg = org || userOrg;
 
   const [form, setForm] = useState<Partial<OrganizationInput>>({});
   const [saved, setSaved] = useState(false);

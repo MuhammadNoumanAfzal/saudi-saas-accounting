@@ -144,6 +144,23 @@ function SessionGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
+  const hasOrganizations = Boolean(session?.organizations && session.organizations.length > 0);
+  const activeOrg = session?.organizations?.find(
+    item => item.organization.id === session?.preferences?.currentOrganizationId,
+  )?.organization ?? session?.organizations?.[0]?.organization;
+
+  const isOnboarded = hasOrganizations && Boolean(activeOrg);
+
+  // If user has not completed onboarding and is not on /onboarding page, redirect to onboarding
+  if (!isOnboarded && location !== '/onboarding') {
+    return <Redirect to="/onboarding" />;
+  }
+
+  // If user IS onboarded and lands on /onboarding without ?new=1, redirect to finance dashboard
+  if (isOnboarded && location === '/onboarding' && !window.location.search.includes('new=1')) {
+    return <Redirect to="/finance" />;
+  }
+
   if (location === '/onboarding') {
     return <>{children}</>;
   }

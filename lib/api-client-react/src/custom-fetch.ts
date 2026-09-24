@@ -323,19 +323,33 @@ async function parseSuccessBody(
 
 const MOCK_STORAGE_KEY_PREFIX = "saudi_accounting_mock_db_";
 
+function getActiveOrgId(): string {
+  try {
+    const activeOrgId = localStorage.getItem("nexus_current_org_id") || localStorage.getItem("nexus_onboarding_org_id");
+    if (activeOrgId) return activeOrgId;
+  } catch {}
+  return "demo_org_101";
+}
+
 function getMockStorageKey(url: string): string {
-  if (url.includes("customer")) return MOCK_STORAGE_KEY_PREFIX + "customers";
-  if (url.includes("supplier")) return MOCK_STORAGE_KEY_PREFIX + "suppliers";
-  if (url.includes("invoice")) return MOCK_STORAGE_KEY_PREFIX + "invoices";
-  if (url.includes("quotation")) return MOCK_STORAGE_KEY_PREFIX + "quotations";
-  if (url.includes("bill")) return MOCK_STORAGE_KEY_PREFIX + "bills";
-  if (url.includes("item") || url.includes("catalog")) return MOCK_STORAGE_KEY_PREFIX + "items";
-  if (url.includes("journal")) return MOCK_STORAGE_KEY_PREFIX + "journal-entries";
-  if (url.includes("expense")) return MOCK_STORAGE_KEY_PREFIX + "expenses";
-  return MOCK_STORAGE_KEY_PREFIX + "general";
+  const orgId = getActiveOrgId();
+  if (url.includes("customer")) return `nexus_customers_${orgId}`;
+  if (url.includes("supplier")) return `nexus_suppliers_${orgId}`;
+  if (url.includes("invoice")) return `nexus_invoices_${orgId}`;
+  if (url.includes("quotation")) return `nexus_quotations_${orgId}`;
+  if (url.includes("bill")) return `nexus_bills_${orgId}`;
+  if (url.includes("item") || url.includes("catalog")) return `nexus_catalog_${orgId}`;
+  if (url.includes("journal")) return `nexus_journal_entries_${orgId}`;
+  if (url.includes("expense")) return `nexus_expenses_${orgId}`;
+  return `nexus_general_${orgId}`;
 }
 
 function getInitialSeedData(url: string): any[] {
+  const orgId = getActiveOrgId();
+  // Only demo_org_101 starts with sample seed data. Real user organizations start 100% empty!
+  if (orgId !== "demo_org_101") {
+    return [];
+  }
   if (url.includes("customer")) {
     return [
       {
@@ -548,23 +562,6 @@ function saveStoredMockItem(url: string, item: any): void {
     const existing = getStoredMockItems(url);
     const updated = [item, ...existing.filter((i) => i.id !== item.id)];
     localStorage.setItem(key, JSON.stringify(updated));
-
-    // Also sync to component-specific nexus_ keys
-    let nexusKey = "";
-    if (url.includes("customer")) nexusKey = "nexus_customers_demo_org_101";
-    else if (url.includes("supplier")) nexusKey = "nexus_suppliers_demo_org_101";
-    else if (url.includes("invoice")) nexusKey = "nexus_invoices_demo_org_101";
-    else if (url.includes("quotation")) nexusKey = "nexus_quotations_demo_org_101";
-    else if (url.includes("bill")) nexusKey = "nexus_bills_demo_org_101";
-    else if (url.includes("item") || url.includes("catalog")) nexusKey = "nexus_catalog_demo_org_101";
-    else if (url.includes("journal")) nexusKey = "nexus_journal_entries_demo_org_101";
-
-    if (nexusKey) {
-      const rawNexus = localStorage.getItem(nexusKey);
-      const nexusList = rawNexus ? JSON.parse(rawNexus) : [];
-      const updatedNexus = [item, ...nexusList.filter((i: any) => i.id !== item.id)];
-      localStorage.setItem(nexusKey, JSON.stringify(updatedNexus));
-    }
   } catch {}
 }
 
@@ -574,22 +571,6 @@ function removeStoredMockItem(url: string, id: string): void {
     const existing = getStoredMockItems(url);
     const updated = existing.filter((i) => i.id !== id);
     localStorage.setItem(key, JSON.stringify(updated));
-
-    let nexusKey = "";
-    if (url.includes("customer")) nexusKey = "nexus_customers_demo_org_101";
-    else if (url.includes("supplier")) nexusKey = "nexus_suppliers_demo_org_101";
-    else if (url.includes("invoice")) nexusKey = "nexus_invoices_demo_org_101";
-    else if (url.includes("quotation")) nexusKey = "nexus_quotations_demo_org_101";
-    else if (url.includes("bill")) nexusKey = "nexus_bills_demo_org_101";
-    else if (url.includes("item") || url.includes("catalog")) nexusKey = "nexus_catalog_demo_org_101";
-    else if (url.includes("journal")) nexusKey = "nexus_journal_entries_demo_org_101";
-
-    if (nexusKey) {
-      const rawNexus = localStorage.getItem(nexusKey);
-      const nexusList = rawNexus ? JSON.parse(rawNexus) : [];
-      const updatedNexus = nexusList.filter((i: any) => i.id !== id);
-      localStorage.setItem(nexusKey, JSON.stringify(updatedNexus));
-    }
   } catch {}
 }
 
@@ -610,6 +591,51 @@ function synthesizeMutationSuccess<T>(url: string, body: any, method: string): T
     }
   } else if (body && typeof body === "object") {
     bodyObj = body as Record<string, any>;
+  }
+
+  if (url.includes("organization")) {
+    const orgId = bodyObj.id || `org_${Date.now()}`;
+    const newOrg = {
+      id: orgId,
+      legalNameEnglish: bodyObj.legalNameEnglish || "My Business Enterprise",
+      legalNameArabic: bodyObj.legalNameArabic || "",
+      tradingNameEnglish: bodyObj.tradingNameEnglish || bodyObj.legalNameEnglish || "My Business",
+      tradingNameArabic: bodyObj.tradingNameArabic || "",
+      businessType: bodyObj.businessType || "limited_liability_company",
+      country: bodyObj.country || "Saudi Arabia",
+      commercialRegistrationNumber: bodyObj.commercialRegistrationNumber || "",
+      vatNumber: bodyObj.vatNumber || "",
+      city: bodyObj.city || "",
+      district: bodyObj.district || "",
+      streetName: bodyObj.streetName || "",
+      buildingNumber: bodyObj.buildingNumber || "",
+      postalCode: bodyObj.postalCode || "",
+      currency: bodyObj.currency || "SAR",
+      defaultLanguage: bodyObj.defaultLanguage || "en",
+      invoiceLanguage: bodyObj.invoiceLanguage || "bilingual",
+      fiscalYearStart: bodyObj.fiscalYearStart || "01-01",
+      onboardingCompleted: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ...bodyObj,
+    };
+
+    try {
+      let userId = "user_default";
+      const storedUser = localStorage.getItem("nexus_user_profile");
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        userId = parsed.id || userId;
+      }
+      const rawOrgs = localStorage.getItem(`nexus_user_orgs_${userId}`) || localStorage.getItem("nexus_user_orgs");
+      const orgsList = rawOrgs ? JSON.parse(rawOrgs) : [];
+      const updatedOrgs = [{ organization: newOrg, role: "owner" }, ...orgsList.filter((o: any) => (o.organization?.id || o.id) !== orgId)];
+      localStorage.setItem(`nexus_user_orgs_${userId}`, JSON.stringify(updatedOrgs));
+      localStorage.setItem("nexus_user_orgs", JSON.stringify(updatedOrgs));
+      localStorage.setItem("nexus_current_org_id", orgId);
+    } catch {}
+
+    return newOrg as unknown as T;
   }
 
   if (url.includes("duplicate") || url.includes("check")) {
@@ -667,6 +693,51 @@ function synthesizeMutationSuccess<T>(url: string, body: any, method: string): T
 }
 
 function synthesizeGetSuccess<T>(url: string): T {
+  if (url.includes("session") || url.includes("/me")) {
+    let userEmail = "user@example.com";
+    let userName = "Workspace User";
+    let userId = "user_default";
+
+    try {
+      const storedUser = localStorage.getItem("nexus_user_profile");
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        userEmail = parsed.email || userEmail;
+        userName = parsed.displayName || userName;
+        userId = parsed.id || userId;
+      }
+    } catch {}
+
+    let userOrgs: any[] = [];
+    try {
+      const rawOrgs = localStorage.getItem(`nexus_user_orgs_${userId}`) || localStorage.getItem("nexus_user_orgs");
+      if (rawOrgs) {
+        userOrgs = JSON.parse(rawOrgs);
+      }
+    } catch {}
+
+    const currentOrgId = localStorage.getItem("nexus_current_org_id") || (userOrgs[0]?.organization?.id ?? null);
+
+    return {
+      user: {
+        id: userId,
+        email: userEmail,
+        displayName: userName,
+      },
+      organizations: userOrgs.map((o: any) => ({
+        organization: o.organization || o,
+        role: o.role || "owner",
+      })),
+      preferences: {
+        language: (localStorage.getItem("nexus_lang") as "en" | "ar") || "en",
+        appearance: (localStorage.getItem("nexus_theme") as "light" | "dark") || "light",
+        density: "comfortable",
+        sidebarCollapsed: false,
+        currentOrganizationId: currentOrgId,
+      },
+    } as unknown as T;
+  }
+
   if (url.includes("analytics") || url.includes("dashboard")) {
     const invoices = getStoredMockItems("invoices");
     const bills = getStoredMockItems("bills");
