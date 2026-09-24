@@ -149,7 +149,7 @@ function SessionGuard({ children }: { children: React.ReactNode }) {
     item => item.organization.id === session?.preferences?.currentOrganizationId,
   )?.organization ?? session?.organizations?.[0]?.organization;
 
-  const isOnboarded = hasOrganizations && Boolean(activeOrg);
+  const isOnboarded = hasOrganizations && Boolean(activeOrg && activeOrg.onboardingCompleted === true);
 
   // If user has not completed onboarding and is not on /onboarding page, redirect to onboarding
   if (!isOnboarded && location !== '/onboarding') {

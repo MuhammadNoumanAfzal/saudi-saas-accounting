@@ -540,16 +540,14 @@ function getStoredMockItems(url: string): any[] {
   try {
     const key = getMockStorageKey(url);
     const raw = localStorage.getItem(key);
-    if (raw) {
+    if (raw !== null) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         return parsed;
       }
     }
     const seeds = getInitialSeedData(url);
-    if (seeds.length > 0) {
-      localStorage.setItem(key, JSON.stringify(seeds));
-    }
+    localStorage.setItem(key, JSON.stringify(seeds));
     return seeds;
   } catch {
     return getInitialSeedData(url);
@@ -614,7 +612,7 @@ function synthesizeMutationSuccess<T>(url: string, body: any, method: string): T
       defaultLanguage: bodyObj.defaultLanguage || "en",
       invoiceLanguage: bodyObj.invoiceLanguage || "bilingual",
       fiscalYearStart: bodyObj.fiscalYearStart || "01-01",
-      onboardingCompleted: true,
+      onboardingCompleted: bodyObj.onboardingCompleted ?? false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       ...bodyObj,
@@ -747,13 +745,15 @@ function synthesizeGetSuccess<T>(url: string): T {
     const billTotal = bills.reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0);
     const expTotal = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
 
-    const totalRevenueYtd = invTotal > 0 ? invTotal : 10500.0;
-    const totalExpensesYtd = (billTotal + expTotal) > 0 ? (billTotal + expTotal) : 500.0;
+    const isDemo = getActiveOrgId() === "demo_org_101";
+
+    const totalRevenueYtd = invTotal > 0 ? invTotal : (isDemo ? 10500.0 : 0);
+    const totalExpensesYtd = (billTotal + expTotal) > 0 ? (billTotal + expTotal) : (isDemo ? 500.0 : 0);
     const netProfitYtd = totalRevenueYtd - totalExpensesYtd;
-    const netMarginPercentage = totalRevenueYtd > 0 ? Number(((netProfitYtd / totalRevenueYtd) * 100).toFixed(1)) : 95.2;
-    const netVatLiability = Math.round(totalRevenueYtd * 0.15 - totalExpensesYtd * 0.15) || 1500.0;
-    const totalReceivables = invoices.filter(i => i.status !== 'PAID').reduce((sum, i) => sum + (Number(i.totalAmount) || 0), 0) || 1725.0;
-    const totalPayables = bills.filter(b => b.status !== 'PAID').reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0) || 0.0;
+    const netMarginPercentage = totalRevenueYtd > 0 ? Number(((netProfitYtd / totalRevenueYtd) * 100).toFixed(1)) : 0;
+    const netVatLiability = Math.round(totalRevenueYtd * 0.15 - totalExpensesYtd * 0.15);
+    const totalReceivables = invoices.filter(i => i.status !== 'PAID').reduce((sum, i) => sum + (Number(i.totalAmount) || 0), 0);
+    const totalPayables = bills.filter(b => b.status !== 'PAID').reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0);
 
     return {
       currency: "SAR",
@@ -764,11 +764,13 @@ function synthesizeGetSuccess<T>(url: string): T {
       netVatLiability,
       totalReceivables,
       totalPayables,
-      monthlyTrends: [
-        { month: "Apr 2026", monthKey: "2026-04", monthNameEn: "Apr", monthNameAr: "أبريل", revenue: 2500, expenses: 0, expense: 0 },
-        { month: "May 2026", monthKey: "2026-05", monthNameEn: "May", monthNameAr: "مايو", revenue: 3000, expenses: 150, expense: 150 },
-        { month: "Jun 2026", monthKey: "2026-06", monthNameEn: "Jun", monthNameAr: "يونيو", revenue: 5000, expenses: 350, expense: 350 },
-      ],
+      monthlyTrends: isDemo
+        ? [
+            { month: "Apr 2026", monthKey: "2026-04", monthNameEn: "Apr", monthNameAr: "أبريل", revenue: 2500, expenses: 0, expense: 0 },
+            { month: "May 2026", monthKey: "2026-05", monthNameEn: "May", monthNameAr: "مايو", revenue: 3000, expenses: 150, expense: 150 },
+            { month: "Jun 2026", monthKey: "2026-06", monthNameEn: "Jun", monthNameAr: "يونيو", revenue: 5000, expenses: 350, expense: 350 },
+          ]
+        : [],
       arAging: [
         { bucket: "0-30 days", labelEn: "0-30 Days (Current)", labelAr: "0-30 يوم (حالي)", count: invoices.length, percentage: 100, amount: totalReceivables },
         { bucket: "31-60 days", labelEn: "31-60 Days", labelAr: "31-60 يوم", count: 0, percentage: 0, amount: 0 },
