@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/lib/utils';
-import { useGetCurrentSession } from '@workspace/api-client-react';
+import { customFetch, useGetCurrentSession } from '@workspace/api-client-react';
 import { Store, Zap, ShieldCheck, QrCode, CheckCircle2, KeyRound, Building2, Send, RefreshCw, AlertCircle, Sparkles, Server } from 'lucide-react';
 
 async function readJsonResponse(res: Response) {
@@ -52,8 +52,7 @@ export function ZatcaSettings() {
       }
     }
     if (orgId) {
-      fetch(`/api/organizations/${orgId}/zatca/status`, { credentials: 'include' })
-        .then(readJsonResponse)
+      customFetch<any>(`/api/organizations/${orgId}/zatca/status`, { responseType: 'json' })
         .then(data => {
           if (data && data.csidActive) {
             setCsidActive(true);
@@ -78,10 +77,9 @@ export function ZatcaSettings() {
     const activeOrgId = orgId || 'current';
     setLoading(true);
     try {
-      const res = await fetch(`/api/organizations/${activeOrgId}/zatca/onboard`, {
+      const data = await customFetch<any>(`/api/organizations/${activeOrgId}/zatca/onboard`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        responseType: 'json',
         body: JSON.stringify({
           otpCode,
           vatNumber,
@@ -89,10 +87,9 @@ export function ZatcaSettings() {
           envMode,
         }),
       });
-      const data = await readJsonResponse(res);
       setLoading(false);
 
-      if (res.ok && data.success) {
+      if (data.success) {
         setCsidActive(true);
         alert(t(data.message || 'ZATCA Compliance CSID Certificate successfully issued!', 'تم إصدار شهادة CSID وتوثيقها بنجاح!'));
       } else {
@@ -116,14 +113,12 @@ export function ZatcaSettings() {
 
     setTestResult({ status: 'testing' });
     try {
-      const res = await fetch(`/api/organizations/${activeOrgId}/zatca/compliance-test`, {
+      const data = await customFetch<any>(`/api/organizations/${activeOrgId}/zatca/compliance-test`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        responseType: 'json',
       });
-      const data = await readJsonResponse(res);
 
-      if (res.ok && data.success) {
+      if (data.success) {
         setTestResult({
           status: 'success',
           message: data.message || 'Invoice Clearance Simulation Passed!',
