@@ -139,23 +139,28 @@ export function PartyEditSheet({
       return;
     }
 
+    const previousLegalEn = partyData.legalNameEnglish || partyData.businessNameEnglish || partyData.displayName || '';
+    const previousLegalAr = partyData.legalNameArabic || partyData.businessNameArabic || '';
+    const nextLegalEn = legalEn.trim() && legalEn.trim() !== previousLegalEn ? legalEn.trim() : finalNameEn;
+    const nextLegalAr = legalAr.trim() && legalAr.trim() !== previousLegalAr ? legalAr.trim() : finalNameAr;
+
     const payload = {
       partyType: type,
       businessNameEnglish: type === 'organization' ? finalNameEn : null,
       businessNameArabic: type === 'organization' ? (finalNameAr || null) : null,
-      firstName: type === 'individual' ? firstName : null,
-      lastName: type === 'individual' ? lastName : null,
-      arabicName: type === 'individual' ? arabicName : null,
+      firstName: type === 'individual' ? firstName.trim() : null,
+      lastName: type === 'individual' ? (lastName.trim() || null) : null,
+      arabicName: type === 'individual' ? (arabicName.trim() || null) : null,
       vatRegistered,
-      vatNumber: vatRegistered ? vatNumber : null,
-      commercialRegistrationNumber: crNumber || null,
-      primaryEmail: email || null,
-      primaryPhone: phone || null,
-      city: city || null,
-      legalNameEnglish: legalEn || finalNameEn || null,
-      legalNameArabic: legalAr || finalNameAr || null,
-      website: website || null,
-      notes: notes || null
+      vatNumber: vatRegistered ? vatNumber.trim() : null,
+      commercialRegistrationNumber: crNumber.trim() || null,
+      primaryEmail: email.trim() || null,
+      primaryPhone: phone.trim() || null,
+      city: city.trim() || null,
+      legalNameEnglish: type === 'organization' ? (nextLegalEn || null) : null,
+      legalNameArabic: type === 'organization' ? (nextLegalAr || null) : null,
+      website: website.trim() || null,
+      notes: notes.trim() || null
     };
 
     const mutation = isCustomer ? updateCustomer : updateSupplier;

@@ -4,6 +4,8 @@ import type { PartyDetail } from '@workspace/api-client-react';
 export function OverviewTab({ data, orgId, isCustomer }: { data: PartyDetail, orgId: string, isCustomer: boolean }) {
   const { t } = useTranslation();
   const partyAny = data as any;
+  const displayNameEn = partyAny.businessNameEnglish || partyAny.legalNameEnglish || data.displayName || '-';
+  const displayNameAr = partyAny.businessNameArabic || partyAny.legalNameArabic || partyAny.arabicName || '';
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -13,12 +15,12 @@ export function OverviewTab({ data, orgId, isCustomer }: { data: PartyDetail, or
           <div className="space-y-3 text-sm">
             <div className="grid grid-cols-3 gap-2">
               <span className="text-muted-foreground">{t('Legal Name (En)', 'الاسم القانوني (إنجليزي)')}</span>
-              <span className="col-span-2 font-medium">{partyAny.legalNameEnglish || data.displayName || '-'}</span>
+              <span className="col-span-2 font-medium">{displayNameEn}</span>
             </div>
-            {partyAny.legalNameArabic && (
+            {displayNameAr && (
               <div className="grid grid-cols-3 gap-2">
                 <span className="text-muted-foreground">{t('Legal Name (Ar)', 'الاسم القانوني (عربي)')}</span>
-                <span className="col-span-2 font-medium arabic" dir="rtl">{partyAny.legalNameArabic}</span>
+                <span className="col-span-2 font-medium arabic" dir="rtl">{displayNameAr}</span>
               </div>
             )}
             <div className="grid grid-cols-3 gap-2">
