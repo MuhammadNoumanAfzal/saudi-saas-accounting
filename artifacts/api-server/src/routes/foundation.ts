@@ -104,8 +104,34 @@ router.get("/me", async (req, res): Promise<void> => {
     .where(eq(organizationMembershipsTable.userId, user.id))
     .orderBy(desc(organizationsTable.createdAt));
 
-  // Do not auto-create fake organizations with onboardingCompleted: true.
-  // New users must go through the Onboarding wizard to set up their company details.
+  // Auto-provision a default Saudi business organization if user has no memberships yet
+  if (memberships.length === 0) {
+    const defaultName = user.displayName || user.email?.split('@')[0] || 'Enterprise';
+    const [newOrg] = await db
+      .insert(organizationsTable)
+      .values({
+        legalNameEnglish: `${defaultName} Trading & Tech Co.`,
+        legalNameArabic: `شركة ${defaultName} للتجارة والتقنية`,
+        tradingNameEnglish: `${defaultName} Enterprise`,
+        tradingNameArabic: `مؤسسة ${defaultName}`,
+        businessType: 'limited_liability_company',
+        country: 'Saudi Arabia',
+        currency: 'SAR',
+        vatRegistered: true,
+        onboardingCompleted: true,
+      })
+      .returning();
+
+    await db.insert(organizationMembershipsTable).values({
+      userId: user.id,
+      organizationId: newOrg.id,
+      role: 'owner',
+    });
+
+    await enableFinanceForOrganization(newOrg.id);
+
+    memberships = [{ organization: newOrg, role: 'owner' }];
+  }
 
   const preferences = await getOrCreatePreferences(user.id);
 

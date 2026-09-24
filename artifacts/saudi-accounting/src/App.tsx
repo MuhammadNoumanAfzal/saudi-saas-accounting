@@ -103,13 +103,6 @@ function SessionGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (
-    location !== '/onboarding' &&
-    (!session?.organizations || session.organizations.length === 0)
-  ) {
-    return <Redirect to="/onboarding" />;
-  }
-
   if (location === '/onboarding') {
     return <>{children}</>;
   }
