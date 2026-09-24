@@ -12,12 +12,24 @@ export function AppearanceSettings() {
   const prefs = session?.preferences;
 
   const setAppearance = (appearance: 'light' | 'dark' | 'system') => {
-    // Apply immediate class toggle for instant feedback
     if (appearance === 'dark') {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('nexus_theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('nexus_theme', 'light');
     }
+
+    queryClient.setQueryData(getGetCurrentSessionQueryKey(), (oldData: any) => {
+      if (!oldData) return oldData;
+      return {
+        ...oldData,
+        preferences: {
+          ...oldData.preferences,
+          appearance
+        }
+      };
+    });
 
     update.mutate({ data: { appearance } }, {
       onSuccess: () => {
@@ -25,9 +37,7 @@ export function AppearanceSettings() {
         showAlert.toast(
           appearance === 'dark' 
             ? t('Dark theme enabled.', 'تم تفعيل السمة الداكنة.') 
-            : appearance === 'light' 
-              ? t('Light theme enabled.', 'تم تفعيل السمة الفاتحة.')
-              : t('System theme synced.', 'تم المزامنة مع سمة النظام.')
+            : t('Light theme enabled.', 'تم تفعيل السمة الفاتحة.')
         );
       }
     });

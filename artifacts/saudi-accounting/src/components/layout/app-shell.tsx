@@ -42,7 +42,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [session?.preferences?.sidebarCollapsed]);
 
   useEffect(() => {
-    const appearance = session?.preferences?.appearance;
+    const localTheme = localStorage.getItem('nexus_theme');
+    const appearance = localTheme || session?.preferences?.appearance || 'light';
     if (appearance === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
