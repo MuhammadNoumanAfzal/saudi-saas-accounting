@@ -844,35 +844,6 @@ export function PublicHome() {
         </div>
       </section>
 
-      {/* HIGH INTENT SEO KEYWORDS FOOTER HUB */}
-      <section className="border-t border-[#e2dcce] bg-[#efeade] py-12 text-xs">
-        <div className="mx-auto max-w-[1280px] px-6 lg:px-10">
-          <div className="text-center mb-6">
-            <h3 className="font-bold text-[#071f19] uppercase tracking-wider text-[11px]">
-              {t('KSA Enterprise Search Keywords & Compliance Index', 'دليل الكلمات والخدمات الأكثر بحثاً والامتثال بالمنشآت السعودية')}
-            </h3>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[11px] text-[#566861]">
-            <div className="rounded-xl border border-[#dcd6c8] bg-white/60 p-3">
-              <strong className="block text-[#071f19] font-bold mb-1">{t('E-Invoicing & ZATCA', 'الفوترة والزكاة')}</strong>
-              <span>{t('Certified E-Invoicing Software | ZATCA Phase 2 E-Invoicing | Base64 TLV QR Code', 'برنامج فوترة إلكترونية معتمد | ZATCA Phase 2 E-Invoicing | رمز كيو آر Base64 TLV | هيئة الزكاة والضريبة والجمارك')}</span>
-            </div>
-            <div className="rounded-xl border border-[#dcd6c8] bg-white/60 p-3">
-              <strong className="block text-[#071f19] font-bold mb-1">{t('Accounting & Reports', 'المحاسبة والإقرارات')}</strong>
-              <span>{t('15% VAT Declaration | Form 21 | SOCPA GAAP | Balance Sheet & P&L', 'إقرار ضريبة القيمة المضافة 15% | نموذج 21 | معايير SOCPA | ميزانية عمومية وقائمة الأرباح والخسائر')}</span>
-            </div>
-            <div className="rounded-xl border border-[#dcd6c8] bg-white/60 p-3">
-              <strong className="block text-[#071f19] font-bold mb-1">{t('Migration & Transfer', 'التحول والنقل')}</strong>
-              <span>{t('Import from QuickBooks | Excel Upload | Odoo ERP Migration | Cloud Accounting', 'الاستيراد من كويك بوكس | استيراد ملفات أكسل | نقل البيانات من أودو | برنامج محاسبة سحابي بديل')}</span>
-            </div>
-            <div className="rounded-xl border border-[#dcd6c8] bg-white/60 p-3">
-              <strong className="block text-[#071f19] font-bold mb-1">{t('Security & Branches', 'الأمان والفروع')}</strong>
-              <span>{t('KSA Local Cloud Hosting | 256-Bit AES Encryption | Multi-CR Branch Management', 'استضافة سحابية داخل السعودية | تشفير 256-Bit AES | إدارة الفروع والسجلات التجارية | باقات أسعار اقتصادية')}</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* CTA BANNER */}
       <section className="relative overflow-hidden bg-[#071f19] px-6 py-20 text-white lg:px-10">
         <div className="mx-auto flex max-w-[1280px] flex-col items-center text-center">

@@ -5,7 +5,7 @@ import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient';
-import { getListOrganizationModulesQueryKey, setAuthTokenGetter, useGetCurrentSession, useListOrganizationModules } from '@workspace/api-client-react';
+import { getGetCurrentSessionQueryKey, getListOrganizationModulesQueryKey, setAuthTokenGetter, useGetCurrentSession, useListOrganizationModules } from '@workspace/api-client-react';
 import type { ModuleKey } from '@workspace/platform-core';
 
 import { showAlert } from './lib/alerts';
