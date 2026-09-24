@@ -669,6 +669,58 @@ function synthesizeGetSuccess<T>(url: string): T {
   }
 
   const storedItems = getStoredMockItems(url);
+  const cleanPath = url.split("?")[0].replace(/\/+$/, "");
+  const parts = cleanPath.split("/");
+  const lastPart = parts[parts.length - 1];
+  const listEndpoints = ["customers", "suppliers", "invoices", "quotations", "bills", "items", "catalog", "expenses", "journal-entries", "export", "analytics", "summary", "parties", "modules", "preferences"];
+
+  const isDetail = !listEndpoints.includes(lastPart);
+
+  if (isDetail) {
+    const detailId = lastPart;
+    const found = storedItems.find((i) => i.id === detailId);
+    if (found) {
+      return found as unknown as T;
+    }
+    const isCust = url.includes("customer") || detailId.startsWith("cust");
+    const isSupp = url.includes("supplier") || detailId.startsWith("supp");
+    return {
+      id: detailId,
+      displayName: isCust ? "Riyadh Tech Solutions Co." : isSupp ? "Saudi National Cloud Services" : "Saudi Enterprise Record",
+      businessNameEnglish: isCust ? "Riyadh Tech Solutions Co." : isSupp ? "Saudi National Cloud Services" : "Saudi Enterprise Record",
+      businessNameArabic: isCust ? "شركة حلول الرياض التقنية" : isSupp ? "الشركة الوطنية للخدمات السحابية" : "منشأة تجارية سعودية",
+      name: "Enterprise Product / Service",
+      code: "ITEM-1001",
+      partyNumber: isCust ? "CUST-1001" : "SUPP-2001",
+      invoiceNumber: detailId.startsWith("inv") ? detailId : "INV-2026-001",
+      quotationNumber: detailId.startsWith("qt") ? detailId : "QT-2026-001",
+      billNumber: detailId.startsWith("bill") ? detailId : "BILL-2026-001",
+      entryNumber: detailId.startsWith("je") ? detailId : "JE-2026-001",
+      customerName: "Riyadh Tech Solutions Co.",
+      supplierName: "Saudi National Cloud Services",
+      status: "active",
+      partyType: "organization",
+      vatRegistered: true,
+      vatNumber: "310123456780003",
+      commercialRegistrationNumber: "1010123456",
+      primaryEmail: "info@saudienterprise.sa",
+      primaryPhone: "+966 50 123 4567",
+      city: "Riyadh",
+      totalAmount: 11500.0,
+      subtotal: 10000.0,
+      vatTotal: 1500.0,
+      issueDate: new Date().toISOString().split("T")[0],
+      dueDate: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      roles: [{ partyNumber: "P-1001", role: isCust ? "customer" : "supplier" }],
+      lines: [
+        { id: "line_1", description: "Saudi SaaS Accounting Subscription", quantity: 1, unitPrice: 10000.0, amount: 10000.0, taxRate: 15 }
+      ],
+      items: [],
+      success: true,
+    } as unknown as T;
+  }
 
   if (
     url.includes("customer") ||
