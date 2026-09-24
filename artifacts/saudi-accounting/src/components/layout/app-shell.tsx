@@ -746,16 +746,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
                   <button 
                     onClick={async () => {
-                      const confirm = await showAlert.confirm(
-                        t('Are you sure you want to sign out?', 'هل أنت تأكد من رغبتك في تسجيل الخروج؟'),
-                        t('Sign Out', 'تسجيل الخروج')
+                      const confirmed = await showAlert.confirm(
+                        t('Are you sure you want to sign out of KHANBAS NEXUS?', 'هل أنت تأكد من رغبتك في تسجيل الخروج من منصة نكسس؟'),
+                        t('Sign Out Confirmation', 'تأكيد تسجيل الخروج'),
+                        t('Yes, Sign Out', 'نعم، تسجيل الخروج'),
+                        t('Cancel', 'إلغاء')
                       );
-                      if (confirm) {
+                      if (confirmed) {
+                        showAlert.toast(t('Signed Out Successfully', 'تم تسجيل الخروج بنجاح'), 'info');
+                        try { sessionStorage.clear(); } catch (e) {}
                         setOverlay(null);
                         signOut({ redirectUrl: basePath || '/' });
                       }
                     }} 
-                    className="flex items-center gap-2 text-xs font-bold text-destructive hover:bg-destructive/10 px-3 py-2 rounded-lg transition-colors"
+                    className="flex items-center gap-2 text-xs font-bold text-destructive hover:bg-destructive/10 px-3 py-2 rounded-lg transition-colors cursor-pointer"
                   >
                     <span>{t('Sign out', 'تسجيل الخروج')}</span>
                   </button>

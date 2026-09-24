@@ -8,6 +8,42 @@ import { queryClient } from './lib/queryClient';
 import { getListOrganizationModulesQueryKey, setAuthTokenGetter, useGetCurrentSession, useListOrganizationModules } from '@workspace/api-client-react';
 import type { ModuleKey } from '@workspace/platform-core';
 
+import { showAlert } from './lib/alerts';
+
+function AuthAlertNotifier() {
+  const { isSignedIn, isLoaded } = useAuth();
+  const { user } = useUser();
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn && user?.id) {
+      const storageKey = `nexus_auth_alert_${user.id}`;
+      const hasAlerted = sessionStorage.getItem(storageKey);
+      
+      if (!hasAlerted) {
+        sessionStorage.setItem(storageKey, 'true');
+        
+        const createdAtTime = user.createdAt ? new Date(user.createdAt).getTime() : Date.now();
+        const isNewAccount = (Date.now() - createdAtTime) < 15 * 60 * 1000;
+
+        if (isNewAccount) {
+          showAlert.success(
+            t('Account Verified & Workspace Created! 🎉', 'تم إنشاء وتفعيل الحساب بنجاح! 🎉'),
+            t('Welcome to KHANBAS NEXUS! Your ZATCA Phase 1 & 2 compliant accounting workspace is now active.', 'مرحباً بك في منصة نكسس! مساحة عملك المحاسبية المعتمدة نشطة وجاهزة الآن.')
+          );
+        } else {
+          showAlert.toast(
+            t('Signed In Successfully!', 'تم تسجيل الدخول بنجاح!'),
+            'success'
+          );
+        }
+      }
+    }
+  }, [isSignedIn, isLoaded, user, t]);
+
+  return null;
+}
+
 function ClerkTokenInitializer({ children }: { children: React.ReactNode }) {
   const { getToken } = useAuth();
   useEffect(() => {
@@ -20,7 +56,12 @@ function ClerkTokenInitializer({ children }: { children: React.ReactNode }) {
     });
   }, [getToken]);
 
-  return <>{children}</>;
+  return (
+    <>
+      <AuthAlertNotifier />
+      {children}
+    </>
+  );
 }
 
 import { AppShell } from './components/layout/app-shell';
