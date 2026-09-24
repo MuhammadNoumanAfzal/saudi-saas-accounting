@@ -336,8 +336,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <div className="truncate font-bold text-white text-xs">{user?.fullName || user?.firstName || session?.user.displayName || user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || t('User', 'المستخدم')}</div>
-              <div className="truncate text-[10px] text-white/70">{user?.emailAddresses?.[0]?.emailAddress || session?.user.email}</div>
+              <div className="truncate font-bold text-white text-xs">{user?.fullName || user?.firstName || session?.user?.displayName || user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || t('User', 'المستخدم')}</div>
+              <div className="truncate text-[10px] text-white/70">{user?.emailAddresses?.[0]?.emailAddress || session?.user?.email}</div>
             </div>
           )}
         </button>
@@ -688,10 +688,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-base text-foreground truncate">
-                      {user?.fullName || user?.firstName || session?.user.displayName || t('User', 'المستخدم')}
+                      {user?.fullName || user?.firstName || session?.user?.displayName || t('User', 'المستخدم')}
                     </div>
                     <div className="text-xs text-muted-foreground truncate mt-0.5">
-                      {user?.emailAddresses?.[0]?.emailAddress || session?.user.email}
+                      {user?.emailAddresses?.[0]?.emailAddress || session?.user?.email}
                     </div>
                     <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">
                       <ShieldCheck size={12} />
