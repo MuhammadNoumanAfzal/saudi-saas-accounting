@@ -336,13 +336,210 @@ function getMockStorageKey(url: string): string {
   return MOCK_STORAGE_KEY_PREFIX + "general";
 }
 
+function getInitialSeedData(url: string): any[] {
+  if (url.includes("customer")) {
+    return [
+      {
+        id: "cust_101",
+        displayName: "Riyadh Tech Solutions Co.",
+        businessNameEnglish: "Riyadh Tech Solutions Co.",
+        businessNameArabic: "شركة حلول الرياض التقنية",
+        partyType: "organization",
+        partyNumber: "CUST-1001",
+        vatRegistered: true,
+        vatNumber: "310123456780003",
+        commercialRegistrationNumber: "1010123456",
+        primaryEmail: "info@riyadhtech.sa",
+        primaryPhone: "+966 50 123 4567",
+        city: "Riyadh",
+        status: "active",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        roles: [{ partyNumber: "CUST-1001", role: "customer" }],
+      },
+      {
+        id: "cust_102",
+        displayName: "Jeddah Digital Logistics",
+        businessNameEnglish: "Jeddah Digital Logistics",
+        businessNameArabic: "جدة اللوجستية الرقمية",
+        partyType: "organization",
+        partyNumber: "CUST-1002",
+        vatRegistered: true,
+        vatNumber: "310987654320003",
+        commercialRegistrationNumber: "4030987654",
+        primaryEmail: "contact@jeddahlogistics.sa",
+        primaryPhone: "+966 52 987 6543",
+        city: "Jeddah",
+        status: "active",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        roles: [{ partyNumber: "CUST-1002", role: "customer" }],
+      }
+    ];
+  }
+  if (url.includes("supplier")) {
+    return [
+      {
+        id: "supp_201",
+        displayName: "Saudi National Cloud Services",
+        businessNameEnglish: "Saudi National Cloud Services",
+        businessNameArabic: "الشركة الوطنية للخدمات السحابية",
+        partyType: "organization",
+        partyNumber: "SUPP-2001",
+        vatRegistered: true,
+        vatNumber: "310456789010003",
+        commercialRegistrationNumber: "1010456789",
+        primaryEmail: "billing@saudicloud.sa",
+        primaryPhone: "+966 11 456 7890",
+        city: "Riyadh",
+        status: "active",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        roles: [{ partyNumber: "SUPP-2001", role: "supplier" }],
+      },
+      {
+        id: "supp_202",
+        displayName: "Al-Khobar Office Supplies",
+        businessNameEnglish: "Al-Khobar Office Supplies",
+        businessNameArabic: "تجهيزات الخبر المكتبية",
+        partyType: "organization",
+        partyNumber: "SUPP-2002",
+        vatRegistered: true,
+        vatNumber: "310654321090003",
+        commercialRegistrationNumber: "2050654321",
+        primaryEmail: "sales@khobaroffice.sa",
+        primaryPhone: "+966 13 654 3210",
+        city: "Khobar",
+        status: "active",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        roles: [{ partyNumber: "SUPP-2002", role: "supplier" }],
+      }
+    ];
+  }
+  if (url.includes("invoice")) {
+    return [
+      {
+        id: "inv_301",
+        invoiceNumber: "INV-2026-001",
+        customerName: "Riyadh Tech Solutions Co.",
+        customerVatNumber: "310123456780003",
+        issueDate: new Date().toISOString().split("T")[0],
+        dueDate: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
+        subtotal: 10000.0,
+        vatTotal: 1500.0,
+        totalAmount: 11500.0,
+        status: "ISSUED",
+        zatcaStatus: "REPORTED",
+        createdAt: new Date().toISOString(),
+      }
+    ];
+  }
+  if (url.includes("quotation")) {
+    return [
+      {
+        id: "qt_401",
+        quotationNumber: "QT-2026-001",
+        customerName: "Jeddah Digital Logistics",
+        issueDate: new Date().toISOString().split("T")[0],
+        expiryDate: new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0],
+        totalAmount: 17250.0,
+        status: "SENT",
+        createdAt: new Date().toISOString(),
+      }
+    ];
+  }
+  if (url.includes("bill")) {
+    return [
+      {
+        id: "bill_501",
+        billNumber: "BILL-2026-001",
+        supplierName: "Saudi National Cloud Services",
+        issueDate: new Date().toISOString().split("T")[0],
+        dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split("T")[0],
+        totalAmount: 5750.0,
+        status: "OPEN",
+        createdAt: new Date().toISOString(),
+      }
+    ];
+  }
+  if (url.includes("expense")) {
+    return [
+      {
+        id: "exp_601",
+        expenseNumber: "EXP-2026-001",
+        category: "Office Utilities & Cloud Infrastructure",
+        amount: 1250.0,
+        vatAmount: 163.04,
+        paymentMethod: "BANK_TRANSFER",
+        date: new Date().toISOString().split("T")[0],
+        status: "PAID",
+        createdAt: new Date().toISOString(),
+      }
+    ];
+  }
+  if (url.includes("item") || url.includes("catalog")) {
+    return [
+      {
+        id: "item_701",
+        name: "Enterprise ERP Software Subscription",
+        nameArabic: "اشتراك نظام إدارة الموارد Enterprise ERP",
+        code: "ITEM-1001",
+        type: "SERVICE",
+        unitPrice: 5000.0,
+        taxRate: 15,
+        unit: "MONTH",
+        status: "ACTIVE",
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: "item_702",
+        name: "ZATCA Phase 2 Integration Hardware",
+        nameArabic: "جهاز الربط المباشر هيئة الزكاة والضريبة",
+        code: "ITEM-1002",
+        type: "PRODUCT",
+        unitPrice: 2500.0,
+        taxRate: 15,
+        unit: "PCS",
+        status: "ACTIVE",
+        createdAt: new Date().toISOString(),
+      }
+    ];
+  }
+  if (url.includes("journal")) {
+    return [
+      {
+        id: "je_801",
+        entryNumber: "JE-2026-001",
+        date: new Date().toISOString().split("T")[0],
+        narration: "Initial Opening Balance & Capital Injection",
+        debitTotal: 100000.0,
+        creditTotal: 100000.0,
+        status: "POSTED",
+        createdAt: new Date().toISOString(),
+      }
+    ];
+  }
+  return [];
+}
+
 function getStoredMockItems(url: string): any[] {
   try {
     const key = getMockStorageKey(url);
     const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : [];
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+    const seeds = getInitialSeedData(url);
+    if (seeds.length > 0) {
+      localStorage.setItem(key, JSON.stringify(seeds));
+    }
+    return seeds;
   } catch {
-    return [];
+    return getInitialSeedData(url);
   }
 }
 

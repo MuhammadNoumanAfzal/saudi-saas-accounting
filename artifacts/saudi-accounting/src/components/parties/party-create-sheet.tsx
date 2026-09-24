@@ -221,11 +221,22 @@ export function PartyCreateSheet({
       data: payload as any
     }, {
       onSuccess: (data) => {
-        if (isCustomer) {
-          queryClient.invalidateQueries({ queryKey: getGetCustomersQueryKey(orgId) });
-        } else {
-          queryClient.invalidateQueries({ queryKey: getGetSuppliersQueryKey(orgId) });
-        }
+        const queryKey = isCustomer ? getGetCustomersQueryKey(orgId) : getGetSuppliersQueryKey(orgId);
+        queryClient.invalidateQueries({ queryKey });
+        queryClient.setQueriesData({ queryKey: [isCustomer ? 'customers' : 'suppliers'] }, (oldData: any) => {
+          if (!oldData) return oldData;
+          const items = oldData.items || [];
+          return {
+            ...oldData,
+            items: [data, ...items.filter((i: any) => i.id !== data.id)],
+            summary: {
+              ...oldData.summary,
+              total: Math.max(1, items.length + 1),
+              active: Math.max(1, items.length + 1),
+            }
+          };
+        });
+
         queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey(orgId) });
 
         showAlert.toast(
