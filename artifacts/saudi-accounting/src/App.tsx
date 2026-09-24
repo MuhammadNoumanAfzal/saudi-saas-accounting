@@ -124,7 +124,7 @@ import { useTranslation } from './lib/utils';
 
 function AuthLayout({ children, title, subtitle }: { children: React.ReactNode; title: string; subtitle: string }) {
   return (
-    <div className="flex min-h-[100dvh] w-full bg-background text-foreground">
+    <div className="flex min-h-[100dvh] w-full bg-background text-foreground overflow-hidden">
       {/* Left Column: Premium Branding & Saudi Enterprise Showcase */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between sidebar-bg p-12 relative overflow-hidden">
         {/* Decorative background glow */}
@@ -181,15 +181,16 @@ function AuthLayout({ children, title, subtitle }: { children: React.ReactNode; 
         </div>
       </div>
 
-      {/* Right Column: Clean Clerk Auth Form Card */}
-      <div className="flex-1 flex flex-col justify-center items-center p-6 md:p-12 relative bg-card/30">
-        <div className="w-full max-w-md flex flex-col items-center">
+      {/* Right Column: Clean Clerk Auth Form Card with Stable Backdrop */}
+      <div className="flex-1 flex flex-col justify-center items-center p-6 md:p-12 relative bg-muted/30 dark:bg-background">
+        <div className="absolute top-1/4 right-1/4 w-80 h-80 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+        <div className="w-full max-w-md flex flex-col items-center relative z-10">
           <Link href="/" className="lg:hidden flex items-center gap-2 mb-6 group cursor-pointer" title="Back to Home Page">
             <img src={`${basePath}/logo.svg`} className="h-9 w-9 rounded-lg group-hover:scale-105 transition-transform" alt="NEXUS" />
             <span className="text-lg font-bold text-foreground">NEXUS ERP</span>
           </Link>
 
-          <div className="w-full flex justify-center">
+          <div className="w-full flex justify-center min-h-[480px]">
             {children}
           </div>
         </div>
@@ -335,24 +336,33 @@ const clerkAppearance = {
     fontFamily: "var(--app-font-sans)",
   },
   elements: {
-    rootBox: "w-full flex justify-center",
-    cardBox: "bg-card rounded-[22px] shadow-2xl w-[440px] max-w-full overflow-hidden border border-border/80 p-1",
-    card: "!shadow-none !border-0 !bg-transparent !rounded-none p-6",
-    footer: "bg-muted/20 border-t border-border/40 py-3 text-center flex justify-center items-center",
+    rootBox: "w-full flex justify-center min-h-[480px]",
+    cardBox: "bg-card rounded-[24px] shadow-2xl w-[460px] max-w-full overflow-hidden border border-border/80 p-1 transition-all duration-300 min-h-[480px] flex flex-col justify-between",
+    card: "w-full !shadow-none !border-0 !bg-card !rounded-none p-6 sm:p-8 flex flex-col justify-between min-h-[460px]",
+    footer: "bg-muted/30 border-t border-border/40 py-3.5 text-center flex justify-center items-center rounded-b-[22px]",
     footerAction: "flex items-center justify-center gap-1.5 text-xs text-muted-foreground font-medium",
     footerActionLink: "text-primary font-bold hover:underline ml-1",
     footerActionText: "text-muted-foreground text-xs",
     devModeBadge: "!hidden",
     internalB3fy6s: "!hidden",
-    headerTitle: "text-foreground font-bold tracking-tight text-xl text-center",
-    headerSubtitle: "text-muted-foreground text-xs text-center mt-1",
+    headerTitle: "text-foreground font-black tracking-tight text-xl text-center",
+    headerSubtitle: "text-muted-foreground text-xs text-center mt-1 leading-relaxed",
     socialButtonsBlockButton: "border-border hover:bg-muted font-semibold rounded-xl text-xs py-2.5 transition-all",
     socialButtonsBlockButtonText: "text-foreground font-semibold text-xs",
     dividerRow: "my-4",
     dividerText: "text-xs text-muted-foreground uppercase font-bold tracking-wider",
     formFieldLabel: "text-foreground font-bold text-xs uppercase tracking-wide mb-1.5",
-    formFieldInput: "field rounded-xl text-sm py-2.5",
-    formButtonPrimary: "bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md rounded-xl py-3 text-sm transition-all mt-2",
+    formFieldInput: "field rounded-xl text-sm py-2.5 bg-background text-foreground border-border focus:border-emerald-600 font-medium",
+    formButtonPrimary: "btn-primary bg-emerald-700 hover:bg-emerald-800 text-white font-bold shadow-lg shadow-emerald-700/25 rounded-xl py-3 text-sm transition-all mt-3 cursor-pointer w-full flex items-center justify-center gap-2",
+
+    /* OTP Verification Screen & Identity Preview Styling */
+    otpCodeField: "flex justify-center gap-2 my-4",
+    otpCodeFieldInputs: "flex justify-center gap-2 my-3",
+    otpCodeFieldInput: "w-11 h-14 border-2 border-emerald-500/40 focus:border-emerald-600 rounded-xl text-center text-xl font-bold font-mono bg-background text-foreground shadow-sm focus:ring-2 focus:ring-emerald-500/20 transition-all",
+    identityPreview: "p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-medium text-xs flex items-center justify-between my-3 shadow-xs",
+    identityPreviewText: "font-semibold text-xs text-foreground",
+    identityPreviewEditButton: "text-xs font-bold text-emerald-600 hover:text-emerald-700 underline ml-2 cursor-pointer",
+    formResendCodeLink: "text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer my-2 text-center block",
   }
 };
 
