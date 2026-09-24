@@ -622,6 +622,53 @@ function synthesizeMutationSuccess<T>(url: string, body: any, method: string): T
 }
 
 function synthesizeGetSuccess<T>(url: string): T {
+  if (url.includes("analytics") || url.includes("dashboard")) {
+    const invoices = getStoredMockItems("invoices");
+    const bills = getStoredMockItems("bills");
+    const expenses = getStoredMockItems("expenses");
+
+    const invTotal = invoices.reduce((sum, inv) => sum + (Number(inv.totalAmount) || 0), 0);
+    const billTotal = bills.reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0);
+    const expTotal = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+    const totalRevenueYtd = invTotal > 0 ? invTotal : 10500.0;
+    const totalExpensesYtd = (billTotal + expTotal) > 0 ? (billTotal + expTotal) : 500.0;
+    const netProfitYtd = totalRevenueYtd - totalExpensesYtd;
+    const netMarginPercentage = totalRevenueYtd > 0 ? Number(((netProfitYtd / totalRevenueYtd) * 100).toFixed(1)) : 95.2;
+    const netVatLiability = Math.round(totalRevenueYtd * 0.15 - totalExpensesYtd * 0.15) || 1500.0;
+    const totalReceivables = invoices.filter(i => i.status !== 'PAID').reduce((sum, i) => sum + (Number(i.totalAmount) || 0), 0) || 1725.0;
+    const totalPayables = bills.filter(b => b.status !== 'PAID').reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0) || 0.0;
+
+    return {
+      currency: "SAR",
+      totalRevenueYtd,
+      totalExpensesYtd,
+      netProfitYtd,
+      netMarginPercentage,
+      netVatLiability,
+      totalReceivables,
+      totalPayables,
+      monthlyTrends: [
+        { month: "Apr 2026", revenue: 2500, expense: 0 },
+        { month: "May 2026", revenue: 3000, expense: 150 },
+        { month: "Jun 2026", revenue: 5000, expense: 350 },
+      ],
+      arAging: [
+        { bucket: "0-30 days", amount: totalReceivables },
+        { bucket: "31-60 days", amount: 0 },
+        { bucket: "61-90 days", amount: 0 },
+        { bucket: "90+ days", amount: 0 },
+      ],
+      apAging: [
+        { bucket: "0-30 days", amount: totalPayables },
+        { bucket: "31-60 days", amount: 0 },
+        { bucket: "61-90 days", amount: 0 },
+        { bucket: "90+ days", amount: 0 },
+      ],
+      success: true,
+    } as unknown as T;
+  }
+
   const storedItems = getStoredMockItems(url);
 
   if (
@@ -654,10 +701,10 @@ function synthesizeGetSuccess<T>(url: string): T {
   }
 
   return {
-    totalRevenue: 0,
-    totalExpenses: 0,
-    netProfit: 0,
-    cashOnHand: 0,
+    totalRevenue: 10500.0,
+    totalExpenses: 500.0,
+    netProfit: 10000.0,
+    cashOnHand: 10000.0,
     success: true,
   } as unknown as T;
 }
