@@ -194,7 +194,7 @@ export function PublicHome() {
             <span>{t('KHANBAS NEXUS | Saudi Enterprise Accounting Platform', 'KHANBAS NEXUS | منصة نكسس المالية المحاسبية بالسعودية')}</span>
           </div>
 
-          <h1 className="text-[clamp(2.3rem,4.2vw,4.2rem)] font-black leading-[1.08] tracking-tight text-[#071f19]">
+          <h1 className={isRtl ? "text-[clamp(1.65rem,2.7vw,2.7rem)] font-extrabold leading-[1.25] text-[#071f19]" : "text-[clamp(2rem,3.4vw,3.5rem)] font-black leading-[1.1] tracking-tight text-[#071f19]"}>
             {t('Saudi Enterprise Accounting.', 'المحاسبة والفوترة الإلكترونية للمنشآت السعودية.')} <br />
             <span className="animated-gradient-text">
               {t('Smarter, Faster & ZATCA Compliant.', 'أسهل، أسرع، ومعتمدة من هيئة الزكاة (ZATCA).')}
