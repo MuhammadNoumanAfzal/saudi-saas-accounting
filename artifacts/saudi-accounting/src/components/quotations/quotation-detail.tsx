@@ -38,7 +38,7 @@ export function QuotationDetail({ id }: { id: string }) {
   const [, setLocation] = useLocation();
   const { data: session } = useGetCurrentSession();
   const rawOrgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization.id || '';
-  const orgId = rawOrgId || 'demo_org_101';
+  const orgId = rawOrgId || '';
   const org = session?.organizations?.find(o => o.organization.id === orgId)?.organization || session?.organizations?.[0]?.organization;
   const queryClient = useQueryClient();
 
@@ -46,37 +46,12 @@ export function QuotationDetail({ id }: { id: string }) {
 
   const { data: fetchedQuotation, isLoading, refetch } = useGetQuotation(orgId, id, {
     query: {
-      enabled: !!id,
+      enabled: Boolean(orgId) && !!id,
       queryKey: getGetQuotationQueryKey(orgId, id),
     },
   });
 
-  const quotation = (fetchedQuotation && (fetchedQuotation as any).id) ? fetchedQuotation : (() => {
-    try {
-      const stored = localStorage.getItem(`nexus_quotations_${orgId}`);
-      if (stored) {
-        const list = JSON.parse(stored);
-        const match = list.find((x: any) => String(x.id) === String(id) || String(x.quotationNumber) === String(id));
-        if (match) return match;
-      }
-    } catch (e) {}
-    return {
-      id: id || 'quote_101',
-      quotationNumber: id && id.length > 3 ? id : 'QT-2026-001',
-      customerName: 'Al-Madinah Tech Enterprise',
-      customerVatNumber: '310998877600003',
-      issueDate: '2026-09-24',
-      validUntil: '2026-10-24',
-      status: 'SENT',
-      subtotal: '2500.00',
-      taxAmount: '375.00',
-      totalAmount: '2875.00',
-      currency: 'SAR',
-      items: [
-        { id: '1', itemName: 'Enterprise ERP System Customization & Onboarding', quantity: 1, unitPrice: '2500.00', taxAmount: '375.00', lineTotal: '2875.00' }
-      ]
-    };
-  })();
+  const quotation = (fetchedQuotation && (fetchedQuotation as any).id) ? fetchedQuotation : null;
 
   const { mutateAsync: updateStatus } = useUpdateQuotationStatus();
   const { mutateAsync: convertQuotation } = useConvertQuotationToInvoice();

@@ -135,7 +135,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 function SessionGuard({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { data: session, isLoading } = useGetCurrentSession({
-    query: { staleTime: 10 * 60 * 1000 }
+    query: { queryKey: getGetCurrentSessionQueryKey(), staleTime: 10 * 60 * 1000 }
   });
   
   if (isLoading && !session) {
@@ -284,7 +284,7 @@ function SignInPage() {
           </div>
           <div className="pt-2 flex flex-col gap-2">
             <button
-              onClick={() => setLocation('/home')}
+              onClick={() => setLocation('/dashboard')}
               className="w-full py-2.5 px-4 rounded-xl bg-primary text-primary-foreground font-bold text-xs shadow-md hover:bg-primary/90 transition-all"
             >
               {t('Go to Workspace / Dashboard', 'الانتقال إلى مساحة العمل / لوحة التحكم')}
@@ -310,8 +310,6 @@ function SignInPage() {
         routing="path"
         path={`${basePath}/sign-in`}
         signUpUrl={`${basePath}/sign-up`}
-        fallbackRedirectUrl={`${basePath}/home`}
-        forceRedirectUrl={`${basePath}/home`}
       />
     </AuthLayout>
   );
@@ -344,7 +342,7 @@ function SignUpPage() {
           </div>
           <div className="pt-2 flex flex-col gap-2">
             <button
-              onClick={() => setLocation('/home')}
+              onClick={() => setLocation('/dashboard')}
               className="w-full py-2.5 px-4 rounded-xl bg-primary text-primary-foreground font-bold text-xs shadow-md hover:bg-primary/90 transition-all"
             >
               {t('Go to Workspace / Dashboard', 'الانتقال إلى مساحة العمل / لوحة التحكم')}
@@ -370,8 +368,8 @@ function SignUpPage() {
         routing="path"
         path={`${basePath}/sign-up`}
         signInUrl={`${basePath}/sign-in`}
-        fallbackRedirectUrl={`${basePath}/home`}
-        forceRedirectUrl={`${basePath}/home`}
+        fallbackRedirectUrl={`${basePath}/onboarding`}
+        forceRedirectUrl={`${basePath}/onboarding`}
       />
     </AuthLayout>
   );
@@ -433,8 +431,6 @@ export default function App() {
         appearance={clerkAppearance}
         signInUrl={`${basePath}/sign-in`}
         signUpUrl={`${basePath}/sign-up`}
-        fallbackRedirectUrl={`${basePath}/home`}
-        forceRedirectUrl={`${basePath}/home`}
       >
         <ClerkTokenInitializer>
           <QueryClientProvider client={queryClient}>

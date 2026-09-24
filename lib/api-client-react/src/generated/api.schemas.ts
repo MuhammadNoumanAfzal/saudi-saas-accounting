@@ -101,6 +101,7 @@ export interface Organization {
   numberFormat?: OrganizationNumberFormat;
   invoiceLanguage?: OrganizationInvoiceLanguage;
   onboardingCompleted?: boolean;
+  onboardingCurrentStep?: number;
   createdAt?: string;
 }
 
@@ -188,6 +189,7 @@ export interface OrganizationInput {
   numberFormat?: OrganizationInputNumberFormat;
   invoiceLanguage?: OrganizationInputInvoiceLanguage;
   onboardingCompleted?: boolean;
+  onboardingCurrentStep?: number;
 }
 
 export type OrganizationUpdate = OrganizationInput;

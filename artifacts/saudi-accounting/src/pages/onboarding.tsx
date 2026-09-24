@@ -28,10 +28,7 @@ export function Onboarding() {
   const t = (en: string, ar: string) => (language === 'ar' ? ar : en);
   const [, setLocation] = useLocation();
 
-  const [step, setStep] = useState<number>(() => {
-    const saved = localStorage.getItem('nexus_onboarding_step');
-    return saved ? Math.min(Math.max(parseInt(saved, 10), 1), 5) : 1;
-  });
+  const [step, setStep] = useState<number>(1);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const create = useCreateOrganization();
@@ -51,19 +48,12 @@ export function Onboarding() {
       item => item.organization.id === session.preferences.currentOrganizationId,
     )?.organization ?? session?.organizations?.[0]?.organization;
 
-  const [createdOrganizationId, setCreatedOrganizationId] = useState<string>(() => {
-    return localStorage.getItem('nexus_onboarding_org_id') || '';
-  });
+  const [createdOrganizationId, setCreatedOrganizationId] = useState<string>('');
 
   const existingOrgId = createNew ? createdOrganizationId : (createdOrganizationId || selectedOrganization?.id);
   const existingOrg = createNew ? undefined : selectedOrganization;
 
   const [form, setForm] = useState<Partial<OrganizationInput>>(() => {
-    const saved = localStorage.getItem('nexus_onboarding_form');
-    let parsed = {};
-    if (saved) {
-      try { parsed = JSON.parse(saved); } catch {}
-    }
     return {
       legalNameEnglish: '',
       legalNameArabic: '',
@@ -78,22 +68,15 @@ export function Onboarding() {
       timezone: 'Asia/Riyadh',
       fiscalYearStart: '01-01',
       numberFormat: 'western',
-      invoiceLanguage: 'bilingual',
-      ...parsed
+      invoiceLanguage: 'bilingual'
     };
   });
 
-  useEffect(() => {
-    localStorage.setItem('nexus_onboarding_step', step.toString());
-  }, [step]);
-
-  useEffect(() => {
-    localStorage.setItem('nexus_onboarding_form', JSON.stringify(form));
-  }, [form]);
 
   useEffect(() => {
     if (existingOrg && !createNew) {
-      setForm(prev => ({ ...existingOrg, ...prev }));
+      setForm(prev => ({ ...prev, ...existingOrg }));
+      setStep(Math.min(Math.max(existingOrg.onboardingCurrentStep ?? 1, 1), 5));
     }
   }, [existingOrg, createNew]);
 
@@ -152,10 +135,9 @@ export function Onboarding() {
     }
 
     if (step === 1 && !existingOrgId) {
-      create.mutate({ data: { legalNameEnglish: form.legalNameEnglish || '', ...form } as OrganizationInput }, {
+      create.mutate({ data: { legalNameEnglish: form.legalNameEnglish || '', ...form, onboardingCurrentStep: 2, onboardingCompleted: false } as OrganizationInput }, {
         onSuccess: (org) => {
           setCreatedOrganizationId(org.id);
-          localStorage.setItem('nexus_onboarding_org_id', org.id);
           updatePreferences.mutate(
             { data: { currentOrganizationId: org.id } },
             {
@@ -169,36 +151,31 @@ export function Onboarding() {
             },
           );
         },
-        onError: () => {
-          // Resilient Fallback: Set local org ID and proceed to Step 2 smoothly
-          const fallbackId = `org_${Date.now()}`;
-          setCreatedOrganizationId(fallbackId);
-          localStorage.setItem('nexus_onboarding_org_id', fallbackId);
-          setStep(2);
+        onError: (error) => {
+          showAlert.error(t('Unable to create organization', 'Unable to create organization'), error instanceof Error ? error.message : t('Please try again.', 'Please try again.'));
         }
       });
     } else if (existingOrgId) {
-      setStep(prev => Math.min(prev + 1, 5));
-      update.mutate({ organizationId: existingOrgId, data: { ...form, legalNameEnglish: form.legalNameEnglish || existingOrg?.legalNameEnglish || 'Organization' } }, {
+      const nextStep = Math.min(step + 1, 5);
+      update.mutate({ organizationId: existingOrgId, data: { ...form, legalNameEnglish: form.legalNameEnglish || existingOrg?.legalNameEnglish || 'Organization', onboardingCurrentStep: nextStep, onboardingCompleted: false } }, {
         onSuccess: () => {
+          setStep(nextStep);
           queryClient.invalidateQueries({ queryKey: getGetCurrentSessionQueryKey() });
+        },
+        onError: (error) => {
+          showAlert.error(t('Unable to save onboarding progress', 'Unable to save onboarding progress'), error instanceof Error ? error.message : t('Please try again.', 'Please try again.'));
         }
       });
-    } else {
-      setStep(prev => Math.min(prev + 1, 5));
     }
   };
 
   const submitFinal = () => {
     if (!existingOrgId) {
-      setLocation('/finance');
+      showAlert.error(t('Organization is required', 'Organization is required'), t('Complete step 1 before launching the workspace.', 'Complete step 1 before launching the workspace.'));
       return;
     }
-    update.mutate({ organizationId: existingOrgId, data: { ...form, legalNameEnglish: form.legalNameEnglish || existingOrg?.legalNameEnglish || 'Organization', onboardingCompleted: true } }, {
+    update.mutate({ organizationId: existingOrgId, data: { ...form, legalNameEnglish: form.legalNameEnglish || existingOrg?.legalNameEnglish || 'Organization', onboardingCompleted: true, onboardingCurrentStep: 5 } }, {
       onSuccess: () => {
-        localStorage.removeItem('nexus_onboarding_step');
-        localStorage.removeItem('nexus_onboarding_form');
-        localStorage.removeItem('nexus_onboarding_org_id');
         updatePreferences.mutate(
           {
             data: {
@@ -211,17 +188,14 @@ export function Onboarding() {
               await queryClient.invalidateQueries({ queryKey: getGetCurrentSessionQueryKey() });
               setLocation('/finance');
             },
-            onError: () => {
-              setLocation('/finance');
+            onError: (error) => {
+              showAlert.error(t('Unable to save preferences', 'Unable to save preferences'), error instanceof Error ? error.message : t('Please try again.', 'Please try again.'));
             }
           },
         );
       },
-      onError: () => {
-        localStorage.removeItem('nexus_onboarding_step');
-        localStorage.removeItem('nexus_onboarding_form');
-        localStorage.removeItem('nexus_onboarding_org_id');
-        setLocation('/finance');
+      onError: (error) => {
+        showAlert.error(t('Unable to finish onboarding', 'Unable to finish onboarding'), error instanceof Error ? error.message : t('Please try again.', 'Please try again.'));
       }
     });
   };

@@ -22,7 +22,7 @@ export function BillsList({ onSelectBill }: BillsListProps) {
   const { t, isRtl } = useTranslation();
   const [, setLocation] = useLocation();
   const { data: session } = useGetCurrentSession();
-  const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization?.id || 'demo_org_101';
+  const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization?.id || '';
   
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
@@ -42,36 +42,14 @@ export function BillsList({ onSelectBill }: BillsListProps) {
 
   const { data, isLoading, refetch } = useListPurchaseBills(orgId, queryParams as any, {
     query: { 
-      enabled: true, 
+      enabled: Boolean(orgId), 
       staleTime: 5 * 60 * 1000,
       gcTime: 30 * 60 * 1000,
       queryKey: getListPurchaseBillsQueryKey(orgId, queryParams as any) 
     }
   });
 
-  const getLocalBills = () => {
-    try {
-      const raw = localStorage.getItem("saudi_accounting_mock_db_bills");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    return [
-      {
-        id: "bill_501",
-        billNumber: "BILL-2026-001",
-        supplierName: "Saudi National Cloud Services",
-        issueDate: new Date().toISOString().split("T")[0],
-        dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split("T")[0],
-        totalAmount: 5750.0,
-        status: "OPEN",
-        createdAt: new Date().toISOString(),
-      }
-    ];
-  };
-
-  const rawBills = (data?.items && data.items.length > 0) ? data.items : getLocalBills();
+  const rawBills = data?.items ?? [];
   const bills: PurchaseBill[] = rawBills.filter((b: any) => {
     if (search) {
       const s = search.toLowerCase();

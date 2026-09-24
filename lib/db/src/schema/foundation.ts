@@ -3,6 +3,7 @@ import {
   boolean,
   index,
   jsonb,
+  integer,
   pgEnum,
   pgTable,
   text,
@@ -93,6 +94,9 @@ export const organizationsTable = pgTable(
     onboardingCompleted: boolean("onboarding_completed")
       .notNull()
       .default(false),
+    onboardingCurrentStep: integer("onboarding_current_step")
+      .notNull()
+      .default(1),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

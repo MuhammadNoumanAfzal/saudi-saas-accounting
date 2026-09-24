@@ -54,4 +54,5 @@ export interface OrganizationInput {
   numberFormat?: OrganizationInputNumberFormat;
   invoiceLanguage?: OrganizationInputInvoiceLanguage;
   onboardingCompleted?: boolean;
+  onboardingCurrentStep?: number;
 }

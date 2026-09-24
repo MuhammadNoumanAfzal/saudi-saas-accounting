@@ -1382,6 +1382,10 @@ components:
           enum: [en, ar, bilingual]
         onboardingCompleted:
           type: boolean
+        onboardingCurrentStep:
+          type: integer
+          minimum: 1
+          maximum: 5
         createdAt:
           type: string
           format: date-time
@@ -1462,6 +1466,11 @@ components:
         onboardingCompleted:
           type: boolean
           default: false
+        onboardingCurrentStep:
+          type: integer
+          minimum: 1
+          maximum: 5
+          default: 1
     OrganizationUpdate:
       allOf:
         - $ref: "#/components/schemas/OrganizationInput"

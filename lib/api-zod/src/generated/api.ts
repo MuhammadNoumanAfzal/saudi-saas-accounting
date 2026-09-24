@@ -56,6 +56,7 @@ export const GetCurrentSessionResponse = zod.object({
   "numberFormat": zod.enum(['western', 'arabic']).optional(),
   "invoiceLanguage": zod.enum(['en', 'ar', 'bilingual']).optional(),
   "onboardingCompleted": zod.boolean().optional(),
+  "onboardingCurrentStep": zod.number().int().min(1).max(5).optional(),
   "createdAt": zod.coerce.date().optional()
 }),
   "role": zod.enum(['owner', 'admin', 'accountant', 'sales', 'purchasing', 'viewer'])
@@ -103,6 +104,7 @@ export const createOrganizationBodyVatRegisteredDefault = false;
 export const createOrganizationBodyNumberFormatDefault = `western`;
 export const createOrganizationBodyInvoiceLanguageDefault = `bilingual`;
 export const createOrganizationBodyOnboardingCompletedDefault = false;
+export const createOrganizationBodyOnboardingCurrentStepDefault = 1;
 
 export const CreateOrganizationBody = zod.object({
   "legalNameEnglish": zod.string().min(1),
@@ -130,7 +132,8 @@ export const CreateOrganizationBody = zod.object({
   "vatRegistered": zod.boolean().default(createOrganizationBodyVatRegisteredDefault),
   "numberFormat": zod.enum(['western', 'arabic']).default(createOrganizationBodyNumberFormatDefault),
   "invoiceLanguage": zod.enum(['en', 'ar', 'bilingual']).default(createOrganizationBodyInvoiceLanguageDefault),
-  "onboardingCompleted": zod.boolean().default(createOrganizationBodyOnboardingCompletedDefault)
+  "onboardingCompleted": zod.boolean().default(createOrganizationBodyOnboardingCompletedDefault),
+  "onboardingCurrentStep": zod.number().int().min(1).max(5).default(createOrganizationBodyOnboardingCurrentStepDefault)
 })
 
 export const CreateOrganizationResponse = zod.object({
@@ -162,6 +165,7 @@ export const CreateOrganizationResponse = zod.object({
   "numberFormat": zod.enum(['western', 'arabic']).optional(),
   "invoiceLanguage": zod.enum(['en', 'ar', 'bilingual']).optional(),
   "onboardingCompleted": zod.boolean().optional(),
+  "onboardingCurrentStep": zod.number().int().min(1).max(5).optional(),
   "createdAt": zod.coerce.date().optional()
 })
 
@@ -202,6 +206,7 @@ export const GetOrganizationResponse = zod.object({
   "numberFormat": zod.enum(['western', 'arabic']).optional(),
   "invoiceLanguage": zod.enum(['en', 'ar', 'bilingual']).optional(),
   "onboardingCompleted": zod.boolean().optional(),
+  "onboardingCurrentStep": zod.number().int().min(1).max(5).optional(),
   "createdAt": zod.coerce.date().optional()
 })
 
@@ -223,6 +228,7 @@ export const updateOrganizationBodyOneVatRegisteredDefault = false;
 export const updateOrganizationBodyOneNumberFormatDefault = `western`;
 export const updateOrganizationBodyOneInvoiceLanguageDefault = `bilingual`;
 export const updateOrganizationBodyOneOnboardingCompletedDefault = false;
+export const updateOrganizationBodyOneOnboardingCurrentStepDefault = 1;
 
 export const UpdateOrganizationBody = zod.object({
   "legalNameEnglish": zod.string().min(1),
@@ -250,7 +256,8 @@ export const UpdateOrganizationBody = zod.object({
   "vatRegistered": zod.boolean().default(updateOrganizationBodyOneVatRegisteredDefault),
   "numberFormat": zod.enum(['western', 'arabic']).default(updateOrganizationBodyOneNumberFormatDefault),
   "invoiceLanguage": zod.enum(['en', 'ar', 'bilingual']).default(updateOrganizationBodyOneInvoiceLanguageDefault),
-  "onboardingCompleted": zod.boolean().default(updateOrganizationBodyOneOnboardingCompletedDefault)
+  "onboardingCompleted": zod.boolean().default(updateOrganizationBodyOneOnboardingCompletedDefault),
+  "onboardingCurrentStep": zod.number().int().min(1).max(5).default(updateOrganizationBodyOneOnboardingCurrentStepDefault)
 })
 
 export const UpdateOrganizationResponse = zod.object({
@@ -282,6 +289,7 @@ export const UpdateOrganizationResponse = zod.object({
   "numberFormat": zod.enum(['western', 'arabic']).optional(),
   "invoiceLanguage": zod.enum(['en', 'ar', 'bilingual']).optional(),
   "onboardingCompleted": zod.boolean().optional(),
+  "onboardingCurrentStep": zod.number().int().min(1).max(5).optional(),
   "createdAt": zod.coerce.date().optional()
 })
 

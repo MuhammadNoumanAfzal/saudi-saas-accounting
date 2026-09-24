@@ -23,12 +23,12 @@ export function CatalogProfile({ id }: { id: string }) {
   const [location, setLocation] = useLocation();
   const { data: session } = useGetCurrentSession();
   const rawOrgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization.id || '';
-  const orgId = rawOrgId || 'demo_org_101';
+  const orgId = rawOrgId || '';
   
   const [editOpen, setEditOpen] = useState(false);
 
   const { data: fetchedData, isLoading } = useGetCatalogItem(orgId, id, {
-    query: { enabled: !!id, queryKey: getGetCatalogItemQueryKey(orgId, id) }
+    query: { enabled: Boolean(orgId) && !!id, queryKey: getGetCatalogItemQueryKey(orgId, id) }
   });
 
   const data = (fetchedData && (fetchedData as any).id) ? fetchedData : (() => {

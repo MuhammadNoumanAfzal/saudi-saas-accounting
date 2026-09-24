@@ -20,7 +20,7 @@ export function InvoicesList({ onSelectInvoice }: InvoicesListProps) {
   const { t, isRtl } = useTranslation();
   const [, setLocation] = useLocation();
   const { data: session } = useGetCurrentSession();
-  const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization?.id || 'demo_org_101';
+  const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization?.id || '';
   
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
@@ -42,38 +42,12 @@ export function InvoicesList({ onSelectInvoice }: InvoicesListProps) {
 
   const { data, isLoading, refetch } = useListInvoices(orgId, queryParams as any, {
     query: { 
-      enabled: true, 
+      enabled: Boolean(orgId), 
       queryKey: getListInvoicesQueryKey(orgId, queryParams as any) 
     }
   });
 
-  const getLocalInvoices = () => {
-    try {
-      const raw = localStorage.getItem("saudi_accounting_mock_db_invoices");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    return [
-      {
-        id: "inv_301",
-        invoiceNumber: "INV-2026-001",
-        customerName: "Riyadh Tech Solutions Co.",
-        customerVatNumber: "310123456780003",
-        issueDate: new Date().toISOString().split("T")[0],
-        dueDate: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
-        subtotal: 10000.0,
-        vatTotal: 1500.0,
-        totalAmount: 11500.0,
-        status: "ISSUED",
-        zatcaStatus: "REPORTED",
-        createdAt: new Date().toISOString(),
-      }
-    ];
-  };
-
-  const rawInvoices = (data?.items && data.items.length > 0) ? data.items : getLocalInvoices();
+  const rawInvoices = data?.items ?? [];
   const invoices: Invoice[] = rawInvoices.filter((i: any) => {
     if (search) {
       const q = search.toLowerCase();

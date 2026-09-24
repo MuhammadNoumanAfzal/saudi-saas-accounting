@@ -25,45 +25,17 @@ export function BillDetail({ billId }: BillDetailProps) {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { data: session } = useGetCurrentSession();
-  const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization?.id || 'demo_org_101';
+  const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization?.id || '';
   const org = session?.organizations?.find(o => o.organization.id === orgId)?.organization || session?.organizations?.[0]?.organization;
 
   const { data: rawBill, isLoading: queryLoading, refetch } = useGetPurchaseBill(orgId, billId, {
     query: {
-      enabled: !!billId,
+      enabled: Boolean(orgId) && !!billId,
       queryKey: getGetPurchaseBillQueryKey(orgId, billId)
     }
   });
 
-  const getFallbackBill = () => {
-    try {
-      const raw = localStorage.getItem("saudi_accounting_mock_db_bills");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          const match = parsed.find((i: any) => i.id === billId);
-          if (match) return match;
-        }
-      }
-    } catch {}
-    return {
-      id: billId,
-      billNumber: billId.startsWith("bill") ? billId : "BILL-2026-001",
-      supplierName: "Saudi National Cloud Services",
-      issueDate: new Date().toISOString().split("T")[0],
-      dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split("T")[0],
-      totalAmount: 5750.0,
-      subtotal: 5000.0,
-      vatTotal: 750.0,
-      status: "OPEN",
-      createdAt: new Date().toISOString(),
-      lines: [
-        { id: "line_1", description: "Cloud Infrastructure Hosting Services", quantity: 1, unitPrice: 5000.0, amount: 5000.0, taxRate: 15 }
-      ]
-    };
-  };
-
-  const bill = rawBill || getFallbackBill();
+  const bill = rawBill;
   const isLoading = queryLoading && !bill;
 
   const updateStatusMutation = useUpdatePurchaseBillStatus();

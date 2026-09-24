@@ -23,7 +23,7 @@ export function QuotationsList({ onSelectQuotation }: QuotationsListProps) {
   const { t, isRtl } = useTranslation();
   const [, setLocation] = useLocation();
   const { data: session } = useGetCurrentSession();
-  const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization?.id || 'demo_org_101';
+  const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization?.id || '';
   
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
@@ -43,34 +43,12 @@ export function QuotationsList({ onSelectQuotation }: QuotationsListProps) {
 
   const { data, isLoading, refetch } = useListQuotations(orgId, queryParams as any, {
     query: { 
-      enabled: true, 
+      enabled: Boolean(orgId), 
       queryKey: getListQuotationsQueryKey(orgId, queryParams as any) 
     }
   });
 
-  const getLocalQuotations = () => {
-    try {
-      const raw = localStorage.getItem("saudi_accounting_mock_db_quotations");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    return [
-      {
-        id: "qt_401",
-        quotationNumber: "QT-2026-001",
-        customerName: "Jeddah Digital Logistics",
-        issueDate: new Date().toISOString().split("T")[0],
-        expiryDate: new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0],
-        totalAmount: 17250.0,
-        status: "SENT",
-        createdAt: new Date().toISOString(),
-      }
-    ];
-  };
-
-  const rawQuotations = (data?.items && data.items.length > 0) ? data.items : getLocalQuotations();
+  const rawQuotations = data?.items ?? [];
   const quotations: Quotation[] = rawQuotations.filter((q: any) => {
     if (search) {
       const s = search.toLowerCase();

@@ -21,7 +21,7 @@ export function PartyList({ role }: { role: 'customer' | 'supplier' }) {
   const { t, isRtl } = useTranslation();
   const [location, setLocation] = useLocation();
   const { data: session } = useGetCurrentSession();
-  const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization?.id || 'demo_org_101';
+  const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization?.id || '';
   
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
@@ -45,103 +45,17 @@ export function PartyList({ role }: { role: 'customer' | 'supplier' }) {
   const isCustomer = role === 'customer';
   
   const { data: customerData, isLoading: custLoading } = useGetCustomers(orgId, queryParams as any, {
-    query: { enabled: isCustomer, queryKey: getGetCustomersQueryKey(orgId, queryParams as any) }
+    query: { enabled: Boolean(orgId) && isCustomer, queryKey: getGetCustomersQueryKey(orgId, queryParams as any) }
   });
   
   const { data: supplierData, isLoading: suppLoading } = useGetSuppliers(orgId, queryParams as any, {
-    query: { enabled: !isCustomer, queryKey: getGetSuppliersQueryKey(orgId, queryParams as any) }
+    query: { enabled: Boolean(orgId) && !isCustomer, queryKey: getGetSuppliersQueryKey(orgId, queryParams as any) }
   });
 
   const data = isCustomer ? customerData : supplierData;
   const isLoading = isCustomer ? custLoading : suppLoading;
 
-  const localKey = isCustomer ? "saudi_accounting_mock_db_customers" : "saudi_accounting_mock_db_suppliers";
-  const getLocalItems = () => {
-    try {
-      const raw = localStorage.getItem(localKey);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    return isCustomer ? [
-      {
-        id: "cust_101",
-        displayName: "Riyadh Tech Solutions Co.",
-        businessNameEnglish: "Riyadh Tech Solutions Co.",
-        businessNameArabic: "شركة حلول الرياض التقنية",
-        partyType: "organization",
-        partyNumber: "CUST-1001",
-        vatRegistered: true,
-        vatNumber: "310123456780003",
-        commercialRegistrationNumber: "1010123456",
-        primaryEmail: "info@riyadhtech.sa",
-        primaryPhone: "+966 50 123 4567",
-        city: "Riyadh",
-        status: "active",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        roles: [{ partyNumber: "CUST-1001", role: "customer" }],
-      },
-      {
-        id: "cust_102",
-        displayName: "Jeddah Digital Logistics",
-        businessNameEnglish: "Jeddah Digital Logistics",
-        businessNameArabic: "جدة اللوجستية الرقمية",
-        partyType: "organization",
-        partyNumber: "CUST-1002",
-        vatRegistered: true,
-        vatNumber: "310987654320003",
-        commercialRegistrationNumber: "4030987654",
-        primaryEmail: "contact@jeddahlogistics.sa",
-        primaryPhone: "+966 52 987 6543",
-        city: "Jeddah",
-        status: "active",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        roles: [{ partyNumber: "CUST-1002", role: "customer" }],
-      }
-    ] : [
-      {
-        id: "supp_201",
-        displayName: "Saudi National Cloud Services",
-        businessNameEnglish: "Saudi National Cloud Services",
-        businessNameArabic: "الشركة الوطنية للخدمات السحابية",
-        partyType: "organization",
-        partyNumber: "SUPP-2001",
-        vatRegistered: true,
-        vatNumber: "310456789010003",
-        commercialRegistrationNumber: "1010456789",
-        primaryEmail: "billing@saudicloud.sa",
-        primaryPhone: "+966 11 456 7890",
-        city: "Riyadh",
-        status: "active",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        roles: [{ partyNumber: "SUPP-2001", role: "supplier" }],
-      },
-      {
-        id: "supp_202",
-        displayName: "Al-Khobar Office Supplies",
-        businessNameEnglish: "Al-Khobar Office Supplies",
-        businessNameArabic: "تجهيزات الخبر المكتبية",
-        partyType: "organization",
-        partyNumber: "SUPP-2002",
-        vatRegistered: true,
-        vatNumber: "310654321090003",
-        commercialRegistrationNumber: "2050654321",
-        primaryEmail: "sales@khobaroffice.sa",
-        primaryPhone: "+966 13 654 3210",
-        city: "Khobar",
-        status: "active",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        roles: [{ partyNumber: "SUPP-2002", role: "supplier" }],
-      }
-    ];
-  };
-
-  const rawItems: any[] = (data?.items && data.items.length > 0) ? data.items : getLocalItems();
+  const rawItems: any[] = data?.items ?? [];
   const filteredItems = rawItems.filter((i: any) => {
     if (search) {
       const q = search.toLowerCase();

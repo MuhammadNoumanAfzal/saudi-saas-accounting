@@ -56,5 +56,6 @@ export interface Organization {
   numberFormat?: OrganizationNumberFormat;
   invoiceLanguage?: OrganizationInvoiceLanguage;
   onboardingCompleted?: boolean;
+  onboardingCurrentStep?: number;
   createdAt?: Date;
 }

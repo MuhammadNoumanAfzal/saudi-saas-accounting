@@ -20,7 +20,7 @@ export function JournalEntryDetail({ entryId }: JournalEntryDetailProps) {
 
   const { data: session } = useGetCurrentSession();
   const rawOrgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization.id || '';
-  const orgId = rawOrgId || 'demo_org_101';
+  const orgId = rawOrgId || '';
 
   const { data: fetchedEntry, isLoading } = useGetJournalEntry(orgId, effectiveId, {
     query: {

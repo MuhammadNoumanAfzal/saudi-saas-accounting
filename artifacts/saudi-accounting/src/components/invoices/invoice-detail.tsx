@@ -34,7 +34,7 @@ export function InvoiceDetail({ id }: { id: string }) {
   const [, setLocation] = useLocation();
   const { data: session } = useGetCurrentSession();
   const rawOrgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization.id || '';
-  const orgId = rawOrgId || 'demo_org_101';
+  const orgId = rawOrgId || '';
   const org = session?.organizations?.find(o => o.organization.id === orgId)?.organization || session?.organizations?.[0]?.organization;
   const queryClient = useQueryClient();
 
@@ -42,37 +42,12 @@ export function InvoiceDetail({ id }: { id: string }) {
 
   const { data: fetchedInvoice, isLoading, refetch } = useGetInvoice(orgId, id, {
     query: {
-      enabled: !!id,
+      enabled: Boolean(orgId) && !!id,
       queryKey: getGetInvoiceQueryKey(orgId, id),
     },
   });
 
-  const invoice = (fetchedInvoice && (fetchedInvoice as any).id) ? fetchedInvoice : (() => {
-    try {
-      const stored = localStorage.getItem(`nexus_invoices_${orgId}`);
-      if (stored) {
-        const list = JSON.parse(stored);
-        const match = list.find((x: any) => String(x.id) === String(id) || String(x.invoiceNumber) === String(id));
-        if (match) return match;
-      }
-    } catch (e) {}
-    return {
-      id: id || 'inv_101',
-      invoiceNumber: id && id.length > 3 ? id : 'INV-2026-001',
-      customerName: 'Al-Rajhi Trading Est.',
-      customerVatNumber: '310123456780003',
-      issueDate: '2026-09-24',
-      dueDate: '2026-10-24',
-      status: 'PAID',
-      subtotal: '1500.00',
-      taxAmount: '225.00',
-      totalAmount: '1725.00',
-      currency: 'SAR',
-      items: [
-        { id: '1', itemName: 'Accounting Consulting & Cloud Software Setup', quantity: 1, unitPrice: '1500.00', taxAmount: '225.00', lineTotal: '1725.00' }
-      ]
-    };
-  })();
+  const invoice = (fetchedInvoice && (fetchedInvoice as any).id) ? fetchedInvoice : null;
 
   const { mutateAsync: updateStatus } = useUpdateInvoiceStatus();
 

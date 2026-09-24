@@ -315,7 +315,7 @@ router.get(
       return;
     }
     const [organization] = await db
-      .select({ currency: organizationsTable.currency })
+      .select({ currency: organizationsTable.currency, onboardingCompleted: organizationsTable.onboardingCompleted })
       .from(organizationsTable)
       .where(eq(organizationsTable.id, params.data.organizationId))
       .limit(1);
