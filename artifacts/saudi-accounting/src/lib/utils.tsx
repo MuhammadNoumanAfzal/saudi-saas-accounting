@@ -17,12 +17,12 @@ export function setGlobalLanguage(lang: 'ar' | 'en') {
 
 export function useTranslation() {
   const [localLang, setLocalLang] = useState<'ar' | 'en'>(() => {
-    return (localStorage.getItem('nexus_lang') as 'ar' | 'en') || 'ar';
+    return (localStorage.getItem('nexus_lang') as 'ar' | 'en') || 'en';
   });
 
   useEffect(() => {
     const onChange = () => {
-      const stored = (localStorage.getItem('nexus_lang') as 'ar' | 'en') || 'ar';
+      const stored = (localStorage.getItem('nexus_lang') as 'ar' | 'en') || 'en';
       setLocalLang(stored);
     };
     LISTENERS.add(onChange);
