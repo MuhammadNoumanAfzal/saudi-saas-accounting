@@ -44,8 +44,8 @@ export function PublicHome() {
     return (
       <PlatformLoader
         fullScreen
-        message="Verifying session security & cryptographic credentials..."
-        messageAr="جاري التحقق من الهوية والصلوحية..."
+        message="Opening KHANBAS NEXUS Workspace..."
+        messageAr="جاري تحضير منصة نكسس المحاسبية..."
       />
     );
   }
@@ -356,6 +356,39 @@ export function PublicHome() {
           </div>
         </div>
       </section>
+
+      {/* MOVING TEXT MARQUEE BANNER (LEFT-TO-RIGHT ANIMATED TICKER) */}
+      <div className="w-full overflow-hidden bg-[#071f19] py-3.5 border-y border-[#176752]/40 text-white relative z-20 shadow-inner">
+        <div className="flex animate-marquee-ltr whitespace-nowrap gap-10 text-xs font-black tracking-wider uppercase">
+          {/* Ticker Group 1 */}
+          <div className="flex items-center gap-10">
+            <span className="flex items-center gap-2 text-[#6ee7b7]"><Zap size={14} className="text-[#d4af37]" /> {t('ZATCA Phase 1 & 2 Approved E-Invoicing', 'الفوترة الإلكترونية المرحلة 1 و 2 المعتمدة')}</span>
+            <span className="text-white/25">•</span>
+            <span className="flex items-center gap-2 text-white"><Scale size={14} className="text-[#6ee7b7]" /> {t('SOCPA Double-Entry Accounting Engine', 'المحاسبة المزدوجة بمعايير SOCPA')}</span>
+            <span className="text-white/25">•</span>
+            <span className="flex items-center gap-2 text-[#fde68a]"><Receipt size={14} className="text-[#d4af37]" /> {t('Automatic 15% Saudi VAT & Form 21 Tax Return', 'إقرار ضريبة القيمة المضافة 15% نموذج 21')}</span>
+            <span className="text-white/25">•</span>
+            <span className="flex items-center gap-2 text-white"><ShieldCheck size={14} className="text-[#6ee7b7]" /> {t('Bank-Grade 256-Bit AES Saudi Cloud Security', 'تشفير سعودي سحابي بمستوى البنوك')}</span>
+            <span className="text-white/25">•</span>
+            <span className="flex items-center gap-2 text-[#6ee7b7]"><RefreshCw size={14} className="text-[#d4af37]" /> {t('1-Click QuickBooks, Odoo & Excel Migration', 'استيراد فوري بضغطة زر من الأنظمة القديمة')}</span>
+            <span className="text-white/25">•</span>
+          </div>
+
+          {/* Ticker Group 2 (Duplicate for Seamless Loop) */}
+          <div className="flex items-center gap-10">
+            <span className="flex items-center gap-2 text-[#6ee7b7]"><Zap size={14} className="text-[#d4af37]" /> {t('ZATCA Phase 1 & 2 Approved E-Invoicing', 'الفوترة الإلكترونية المرحلة 1 و 2 المعتمدة')}</span>
+            <span className="text-white/25">•</span>
+            <span className="flex items-center gap-2 text-white"><Scale size={14} className="text-[#6ee7b7]" /> {t('SOCPA Double-Entry Accounting Engine', 'المحاسبة المزدوجة بمعايير SOCPA')}</span>
+            <span className="text-white/25">•</span>
+            <span className="flex items-center gap-2 text-[#fde68a]"><Receipt size={14} className="text-[#d4af37]" /> {t('Automatic 15% Saudi VAT & Form 21 Tax Return', 'إقرار ضريبة القيمة المضافة 15% نموذج 21')}</span>
+            <span className="text-white/25">•</span>
+            <span className="flex items-center gap-2 text-white"><ShieldCheck size={14} className="text-[#6ee7b7]" /> {t('Bank-Grade 256-Bit AES Saudi Cloud Security', 'تشفير سعودي سحابي بمستوى البنوك')}</span>
+            <span className="text-white/25">•</span>
+            <span className="flex items-center gap-2 text-[#6ee7b7]"><RefreshCw size={14} className="text-[#d4af37]" /> {t('1-Click QuickBooks, Odoo & Excel Migration', 'استيراد فوري بضغطة زر من الأنظمة القديمة')}</span>
+            <span className="text-white/25">•</span>
+          </div>
+        </div>
+      </div>
 
       {/* ULTRA-COMPACT METRICS BAR */}
       <section className="border-y border-[#e2dcce] bg-[#efeade]/80 py-6">

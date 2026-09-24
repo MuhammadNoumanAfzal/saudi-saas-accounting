@@ -29,40 +29,46 @@ export function PlatformLoader({
 }) {
   const { t } = useTranslation();
 
-  const defaultEn = message || 'Syncing ZATCA Financial System & Real-Time Intelligence...';
-  const defaultAr = messageAr || 'جاري مزامنة نظام الزكاة والذكاء المالي...';
+  const defaultEn = message || 'Loading KHANBAS NEXUS Workspace...';
+  const defaultAr = messageAr || 'جاري تحضير منصة نكسس المحاسبية...';
 
   const content = (
-    <div className="flex flex-col items-center justify-center p-8 text-center space-y-4 max-w-sm">
-      {/* Concentric Emerald Glow Rings */}
-      <div className="relative flex items-center justify-center w-20 h-20">
-        <div className="absolute inset-0 rounded-full bg-emerald-500/10 border border-emerald-500/30 animate-emerald-ring" />
-        <div className="absolute inset-2 rounded-full bg-emerald-500/20 border border-emerald-400/40 animate-ping opacity-25" />
-        <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
-          <ShieldCheck className="w-6 h-6 animate-pulse" />
+    <div className="flex flex-col items-center justify-center p-8 text-center space-y-5 max-w-md fade-up">
+      {/* KHANBAS NEXUS Branded Spinning Aura */}
+      <div className="relative flex items-center justify-center w-24 h-24">
+        <div className="absolute inset-0 rounded-3xl bg-emerald-500/15 border border-emerald-500/30 animate-emerald-ring" />
+        <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-amber-400 opacity-20 blur-xl animate-pulse" />
+        <div className="relative w-16 h-16 rounded-2xl bg-[#071f19] text-[#10b981] flex items-center justify-center shadow-2xl border border-emerald-500/30">
+          <span className="font-black text-2xl tracking-tighter text-emerald-400">N</span>
         </div>
       </div>
 
-      {/* Dynamic Status Micro-Copy */}
-      <div className="space-y-1">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
-          <Sparkles className="w-3 h-3" />
+      {/* Title & Status */}
+      <div className="space-y-2">
+        <h3 className="text-xl font-extrabold tracking-tight text-foreground">KHANBAS NEXUS</h3>
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 text-xs font-bold badge-glow">
+          <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-spin" />
           <span>{t(defaultEn, defaultAr)}</span>
         </div>
+      </div>
+
+      {/* Smooth Loading Bar */}
+      <div className="w-48 h-1.5 bg-muted rounded-full overflow-hidden relative">
+        <div className="h-full bg-gradient-to-r from-emerald-600 via-emerald-400 to-amber-400 animate-top-bar rounded-full" />
       </div>
     </div>
   );
 
   if (fullScreen) {
     return (
-      <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-md flex items-center justify-center">
+      <div className="fixed inset-0 z-50 bg-background/90 backdrop-blur-lg flex items-center justify-center">
         {content}
       </div>
     );
   }
 
   return (
-    <div className="w-full min-h-[300px] flex items-center justify-center">
+    <div className="w-full min-h-[320px] flex items-center justify-center">
       {content}
     </div>
   );

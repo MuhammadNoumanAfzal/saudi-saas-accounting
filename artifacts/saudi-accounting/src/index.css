@@ -358,6 +358,22 @@ a { color: inherit; text-decoration: none; }
   animation: emeraldRingPulse 2s infinite ease-in-out;
 }
 
+/* Left-to-Right Moving Text Marquee Animation */
+@keyframes marqueeLeftToRight {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0%); }
+}
+
+.animate-marquee-ltr {
+  display: flex;
+  width: max-content;
+  animation: marqueeLeftToRight 28s linear infinite;
+}
+
+.animate-marquee-ltr:hover {
+  animation-play-state: paused;
+}
+
 .animate-float {
   animation: floatCardSlow 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
