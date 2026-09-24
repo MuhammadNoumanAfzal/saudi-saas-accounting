@@ -32,7 +32,7 @@ import {
 
 export function PublicHome() {
   const { isSignedIn, isLoaded } = useAuth();
-  const { lang, isRtl, t } = useTranslation();
+  const { lang, isRtl, toggleLanguage, t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'invoice' | 'ledger' | 'vat'>('invoice');
   const [annualBilling, setAnnualBilling] = useState(true);
   const [openFaq, setOpenFaq] = useState<number | null>(0);

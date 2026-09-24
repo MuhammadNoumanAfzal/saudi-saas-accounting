@@ -78,11 +78,11 @@ export function PublicLayout({ children }: PublicLayoutProps) {
       <div className="pointer-events-none absolute left-1/2 -top-24 -z-10 h-[550px] w-[1000px] -translate-x-1/2 rounded-full bg-gradient-to-b from-[#176752]/18 via-[#d4af37]/12 to-transparent blur-[140px]" />
 
       {/* Global Public Navigation Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#f8f6f0]/90 border-b border-[#e2dcce]/70 transition-all shadow-sm">
-        <div className="mx-auto flex max-w-[1280px] items-center justify-between px-6 py-3.5 lg:px-10">
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#f8f6f0]/95 border-b border-[#e2dcce] transition-all shadow-sm">
+        <div className="mx-auto flex max-w-[1280px] items-center justify-between px-4 py-3 lg:px-8">
           <Logo />
           
-          <nav className="hidden items-center gap-7 text-xs font-bold uppercase tracking-wider text-[#485b54] md:flex">
+          <nav className="hidden items-center gap-3 lg:gap-5 text-xs font-bold uppercase tracking-wider text-[#485b54] md:flex">
             <Link href="/" className={`hover:text-[#176752] transition-colors cursor-pointer ${location === '/' ? 'text-[#176752] font-black' : ''}`}>
               {t('Home', 'الرئيسية')}
             </Link>
@@ -106,28 +106,29 @@ export function PublicLayout({ children }: PublicLayoutProps) {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-3">
-            {/* Global Language Toggle Switcher Button */}
+          <div className="flex items-center gap-2.5">
+            {/* High-Visibility Header Language Toggle Switcher Button */}
             <button
               onClick={toggleLanguage}
-              className="flex items-center gap-1.5 rounded-xl border border-[#d6cfbe] bg-white/90 px-3.5 py-2 text-xs font-bold text-[#176752] hover:bg-[#ede7d8] transition cursor-pointer shadow-sm"
+              className="flex items-center gap-1.5 rounded-xl bg-[#071f19] text-[#fde68a] border border-[#d4af37]/60 px-3.5 py-2 text-xs font-black hover:bg-[#176752] hover:text-white transition cursor-pointer shadow-md hover:scale-105"
               title={isRtl ? 'Switch to English' : 'التحول إلى اللغة العربية'}
+              data-testid="btn-toggle-language-header"
             >
               <Globe2 size={15} className="text-[#d4af37]" />
-              <span>{isRtl ? 'English' : 'العربية'}</span>
+              <span>{isRtl ? 'English 🇺🇸' : 'العربية 🇸🇦'}</span>
             </button>
 
             {isSignedIn ? (
-              <Link href="/home" className="btn-primary flex items-center gap-2 text-xs font-bold uppercase tracking-wider px-5 py-2.5 cursor-pointer shadow-md shadow-[#176752]/20 hover:scale-[1.03] transition-all">
+              <Link href="/home" className="btn-primary flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-4 py-2 cursor-pointer shadow-md shadow-[#176752]/20 hover:scale-[1.03] transition-all">
                 <span>{t('Go to Dashboard', 'لوحة التحكم')}</span>
                 <ArrowRight size={14} />
               </Link>
             ) : (
               <>
-                <Link href="/sign-in" className="hidden rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#0a2620] hover:bg-[#eadecc]/50 sm:block transition cursor-pointer">
+                <Link href="/sign-in" className="hidden rounded-xl px-3 py-2 text-xs font-bold uppercase tracking-wider text-[#0a2620] hover:bg-[#eadecc]/50 sm:block transition cursor-pointer">
                   {t('Sign In', 'تسجيل الدخول')}
                 </Link>
-                <Link href="/sign-up" className="btn-primary flex items-center gap-2 text-xs font-bold uppercase tracking-wider px-4.5 py-2.5 cursor-pointer shadow-md shadow-[#176752]/20 hover:shadow-lg hover:shadow-[#176752]/30 hover:scale-[1.03] transition-all">
+                <Link href="/sign-up" className="btn-primary flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-4 py-2 cursor-pointer shadow-md shadow-[#176752]/20 hover:shadow-lg hover:shadow-[#176752]/30 hover:scale-[1.03] transition-all">
                   <span>{t('Start Free', 'ابدأ مجاناً')}</span>
                   <ArrowRight size={14} />
                 </Link>
@@ -218,6 +219,23 @@ export function PublicLayout({ children }: PublicLayoutProps) {
           </div>
         </div>
       </footer>
+
+      {/* Floating Sticky Quick Language Switcher (Always visible on all screens) */}
+      <div className={`fixed bottom-6 ${isRtl ? 'left-6' : 'right-6'} z-50`}>
+        <button
+          onClick={toggleLanguage}
+          className="flex items-center gap-2 rounded-full bg-[#071f19] text-[#fde68a] border-2 border-[#d4af37] px-4.5 py-3 text-xs font-black shadow-2xl hover:scale-110 hover:bg-[#176752] hover:text-white transition-all cursor-pointer ring-4 ring-black/20"
+          title={isRtl ? 'Switch Language to English' : 'تغيير اللغة إلى العربية'}
+          data-testid="btn-toggle-language-floating"
+        >
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#34d399]"></span>
+          </span>
+          <Globe2 size={16} className="text-[#d4af37]" />
+          <span>{isRtl ? 'English 🇺🇸' : 'العربية 🇸🇦'}</span>
+        </button>
+      </div>
 
     </div>
   );
