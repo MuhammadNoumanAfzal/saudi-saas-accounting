@@ -3,6 +3,7 @@
   "outputDirectory": "artifacts/saudi-accounting/dist/public",
   "installCommand": "pnpm install --no-frozen-lockfile",
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
