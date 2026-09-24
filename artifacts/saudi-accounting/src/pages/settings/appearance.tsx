@@ -13,7 +13,7 @@ export function AppearanceSettings() {
 
   const setAppearance = (appearance: 'light' | 'dark' | 'system') => {
     // Apply immediate class toggle for instant feedback
-    if (appearance === 'dark' || (appearance === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    if (appearance === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
@@ -62,7 +62,7 @@ export function AppearanceSettings() {
               <Paintbrush size={16} className="text-primary" />
               <span>{t('Theme Mode', 'وضع السمة')}</span>
             </h2>
-            <span className="text-xs text-muted-foreground">{t('Active:', 'النشط:')} <strong className="text-primary capitalize">{prefs?.appearance || 'System'}</strong></span>
+            <span className="text-xs text-muted-foreground">{t('Active:', 'النشط:')} <strong className="text-primary capitalize">{prefs?.appearance || 'light'}</strong></span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -95,7 +95,7 @@ export function AppearanceSettings() {
                 cardColor: 'bg-muted/40 border-border'
               }
             ].map(theme => {
-              const active = (prefs?.appearance || 'system') === theme.id;
+              const active = (prefs?.appearance || 'light') === theme.id;
               const Icon = theme.icon;
               return (
                 <button
