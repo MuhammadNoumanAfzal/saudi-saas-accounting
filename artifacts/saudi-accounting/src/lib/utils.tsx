@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { clsx, type ClassValue } from 'clsx';
-import { useGetCurrentSession } from '@workspace/api-client-react';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -17,7 +16,6 @@ export function setGlobalLanguage(lang: 'ar' | 'en') {
 }
 
 export function useTranslation() {
-  const { data: session } = useGetCurrentSession();
   const [localLang, setLocalLang] = useState<'ar' | 'en'>(() => {
     return (localStorage.getItem('nexus_lang') as 'ar' | 'en') || 'ar';
   });
@@ -31,9 +29,7 @@ export function useTranslation() {
     return () => { LISTENERS.delete(onChange); };
   }, []);
 
-  // Stored choice in localStorage is primary, fallback to session preferences if absent, default to 'ar'
-  const storedLang = localStorage.getItem('nexus_lang') as 'ar' | 'en' | null;
-  const lang = storedLang || (session?.preferences?.language as 'ar' | 'en' | undefined) || localLang || 'ar';
+  const lang = localLang;
   const isRtl = lang === 'ar';
 
   useEffect(() => {
