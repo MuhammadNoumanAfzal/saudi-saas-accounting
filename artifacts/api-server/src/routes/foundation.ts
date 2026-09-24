@@ -85,55 +85,61 @@ function toPreferences(value: typeof userPreferencesTable.$inferSelect) {
 }
 
 router.get("/me", async (req, res): Promise<void> => {
-  const user = await getOrCreateLocalUser(req);
-  if (!user) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
+  try {
+    const user = await getOrCreateLocalUser(req);
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const memberships = await db
+      .select({
+        organization: organizationsTable,
+        role: organizationMembershipsTable.role,
+      })
+      .from(organizationMembershipsTable)
+      .innerJoin(
+        organizationsTable,
+        eq(organizationsTable.id, organizationMembershipsTable.organizationId),
+      )
+      .where(eq(organizationMembershipsTable.userId, user.id))
+      .orderBy(desc(organizationsTable.createdAt));
+
+    const preferences = await getOrCreatePreferences(user.id);
+
+    if (
+      memberships.length > 0 &&
+      (!preferences.currentOrganizationId ||
+        !memberships.some((m) => m.organization.id === preferences.currentOrganizationId))
+    ) {
+      await db
+        .update(userPreferencesTable)
+        .set({ currentOrganizationId: memberships[0].organization.id })
+        .where(eq(userPreferencesTable.userId, user.id));
+      preferences.currentOrganizationId = memberships[0].organization.id;
+    }
+
+    res.json(
+      GetCurrentSessionResponse.parse({
+        user: {
+          id: user.id,
+          email: user.email,
+          displayName: user.displayName,
+        },
+        organizations: memberships.map((item) => ({
+          organization: toOrganization(item.organization),
+          role: item.role,
+        })),
+        preferences: toPreferences(preferences),
+      }),
+    );
+  } catch (error) {
+    console.error("Failed to build current session", error);
+    res.status(500).json({
+      error: "Failed to load current session",
+      message: error instanceof Error ? error.message : String(error),
+    });
   }
-
-  let memberships = await db
-    .select({
-      organization: organizationsTable,
-      role: organizationMembershipsTable.role,
-    })
-    .from(organizationMembershipsTable)
-    .innerJoin(
-      organizationsTable,
-      eq(organizationsTable.id, organizationMembershipsTable.organizationId),
-    )
-    .where(eq(organizationMembershipsTable.userId, user.id))
-    .orderBy(desc(organizationsTable.createdAt));
-
-  // If user has no memberships yet, memberships will remain empty [] so the frontend SessionGuard redirects to /onboarding
-
-  const preferences = await getOrCreatePreferences(user.id);
-
-  if (
-    memberships.length > 0 &&
-    (!preferences.currentOrganizationId ||
-      !memberships.some((m) => m.organization.id === preferences.currentOrganizationId))
-  ) {
-    await db
-      .update(userPreferencesTable)
-      .set({ currentOrganizationId: memberships[0].organization.id })
-      .where(eq(userPreferencesTable.userId, user.id));
-    preferences.currentOrganizationId = memberships[0].organization.id;
-  }
-
-  res.json(
-    GetCurrentSessionResponse.parse({
-      user: {
-        id: user.id,
-        email: user.email,
-        displayName: user.displayName,
-      },
-      organizations: memberships.map((item) => ({
-        organization: toOrganization(item.organization),
-        role: item.role,
-      })),
-      preferences: toPreferences(preferences),
-    }),
-  );
 });
 
 router.patch("/me/preferences", async (req, res): Promise<void> => {
