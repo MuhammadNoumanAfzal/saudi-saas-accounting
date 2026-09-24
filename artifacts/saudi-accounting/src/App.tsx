@@ -103,13 +103,9 @@ function SessionGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const currentOrg = (session?.organizations || []).find(
-    (item) => item?.organization?.id === session?.preferences?.currentOrganizationId
-  )?.organization ?? session?.organizations?.[0]?.organization;
-
   if (
     location !== '/onboarding' &&
-    (!session?.organizations?.length || !currentOrg?.onboardingCompleted)
+    (!session?.organizations || session.organizations.length === 0)
   ) {
     return <Redirect to="/onboarding" />;
   }
