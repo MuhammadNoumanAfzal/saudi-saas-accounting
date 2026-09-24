@@ -43,6 +43,7 @@ export function QuotationDetail({ id }: { id: string }) {
   const queryClient = useQueryClient();
 
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const { data: fetchedQuotation, isLoading, refetch } = useGetQuotation(orgId, id, {
     query: {
@@ -195,6 +196,15 @@ export function QuotationDetail({ id }: { id: string }) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <Button 
+            variant="secondary" 
+            onClick={() => setEditOpen(true)} 
+            className="gap-2 text-xs py-2 px-4 font-semibold hover:bg-primary/10 hover:text-primary transition-colors"
+          >
+            <Pencil size={16} />
+            {t('Edit', 'تعديل')}
+          </Button>
+
           <Button 
             variant="secondary" 
             onClick={handlePrint} 
@@ -493,6 +503,18 @@ export function QuotationDetail({ id }: { id: string }) {
         </div>
 
       </div>
+      <QuotationCreateSheet
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        quotationId={quotation.id}
+        initialData={quotation}
+        onSuccess={() => {
+          refetch();
+          queryClient.invalidateQueries({ queryKey: getGetQuotationQueryKey(orgId, id) });
+          queryClient.invalidateQueries({ queryKey: getListQuotationsQueryKey(orgId) });
+          setEditOpen(false);
+        }}
+      />
     </div>
   );
 }

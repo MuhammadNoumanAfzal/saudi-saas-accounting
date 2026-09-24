@@ -9,7 +9,7 @@ import {
 } from '@workspace/api-client-react';
 import type { Quotation } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
-import { Search, Plus, Filter, FileText, Eye, CheckCircle2, XCircle, Clock, ArrowRight, ArrowLeft, Trash2 } from 'lucide-react';
+import { Search, Plus, Filter, FileText, Eye, CheckCircle2, XCircle, Clock, ArrowRight, ArrowLeft, Trash2, Pencil } from 'lucide-react';
 import { QuotationCreateSheet } from './quotation-create-sheet';
 import { SkeletonTable } from '@/components/ui/platform-loader';
 import { queryClient } from '@/lib/queryClient';
@@ -29,6 +29,7 @@ export function QuotationsList({ onSelectQuotation }: QuotationsListProps) {
   const debouncedSearch = useDebounce(search, 400);
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [editQuotation, setEditQuotation] = useState<Quotation | null>(null);
   
   const [createOpen, setCreateOpen] = useState(() => {
     return new URLSearchParams(window.location.search).has('new');
@@ -321,6 +322,15 @@ export function QuotationsList({ onSelectQuotation }: QuotationsListProps) {
                         </Button>
                         <Button
                           variant="secondary"
+                          onClick={() => setEditQuotation(qt)}
+                          className="gap-1 text-xs py-1 px-2.5"
+                          title={t('Edit', 'تعديل')}
+                        >
+                          <Pencil size={14} />
+                          {t('Edit', 'تعديل')}
+                        </Button>
+                        <Button
+                          variant="secondary"
                           onClick={() => handleDeleteQuotation(qt.id, qt.quotationNumber)}
                           className="gap-1 text-xs py-1 px-2 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
                           title={t('Delete', 'حذف')}
@@ -373,6 +383,17 @@ export function QuotationsList({ onSelectQuotation }: QuotationsListProps) {
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: getListQuotationsQueryKey(orgId) });
           refetch();
+        }}
+      />
+      <QuotationCreateSheet
+        open={Boolean(editQuotation)}
+        onOpenChange={(nextOpen) => { if (!nextOpen) setEditQuotation(null); }}
+        quotationId={editQuotation?.id}
+        initialData={editQuotation}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: getListQuotationsQueryKey(orgId) });
+          refetch();
+          setEditQuotation(null);
         }}
       />
     </div>
