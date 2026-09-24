@@ -10,14 +10,24 @@ export function AppearanceSettings() {
   const update = useUpdateUserPreferences();
 
   const prefs = session?.preferences;
+  const currentTheme = localStorage.getItem('nexus_theme') || prefs?.appearance || 'light';
 
   const setAppearance = (appearance: 'light' | 'dark' | 'system') => {
+    localStorage.setItem('nexus_theme', appearance);
+
+    let isDark = false;
     if (appearance === 'dark') {
+      isDark = true;
+    } else if (appearance === 'system') {
+      isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } else {
+      isDark = false;
+    }
+
+    if (isDark) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('nexus_theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('nexus_theme', 'light');
     }
 
     queryClient.setQueryData(getGetCurrentSessionQueryKey(), (oldData: any) => {
@@ -37,7 +47,9 @@ export function AppearanceSettings() {
         showAlert.toast(
           appearance === 'dark' 
             ? t('Dark theme enabled.', 'تم تفعيل السمة الداكنة.') 
-            : t('Light theme enabled.', 'تم تفعيل السمة الفاتحة.')
+            : appearance === 'light'
+            ? t('Light theme enabled.', 'تم تفعيل السمة الفاتحة.')
+            : t('System theme enabled.', 'تم تفعيل سمة النظام.')
         );
       }
     });
@@ -72,7 +84,7 @@ export function AppearanceSettings() {
               <Paintbrush size={16} className="text-primary" />
               <span>{t('Theme Mode', 'وضع السمة')}</span>
             </h2>
-            <span className="text-xs text-muted-foreground">{t('Active:', 'النشط:')} <strong className="text-primary capitalize">{prefs?.appearance || 'light'}</strong></span>
+            <span className="text-xs text-muted-foreground">{t('Active:', 'النشط:')} <strong className="text-primary capitalize">{currentTheme}</strong></span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -105,7 +117,7 @@ export function AppearanceSettings() {
                 cardColor: 'bg-muted/40 border-border'
               }
             ].map(theme => {
-              const active = (prefs?.appearance || 'light') === theme.id;
+              const active = currentTheme === theme.id;
               const Icon = theme.icon;
               return (
                 <button

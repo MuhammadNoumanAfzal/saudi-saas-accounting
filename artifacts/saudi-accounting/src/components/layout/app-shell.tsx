@@ -42,15 +42,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [session?.preferences?.sidebarCollapsed]);
 
   useEffect(() => {
+    document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
     const localTheme = localStorage.getItem('nexus_theme');
     const appearance = localTheme || session?.preferences?.appearance || 'light';
+
+    let isDark = false;
     if (appearance === 'dark') {
+      isDark = true;
+    } else if (appearance === 'system') {
+      isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } else {
+      isDark = false;
+    }
+
+    if (isDark) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, [session?.preferences?.appearance]);
-  
+  }, [isRtl, session?.preferences?.appearance]);
+
   const toggleSidebar = () => {
     const next = !collapsed;
     setCollapsed(next);
@@ -74,16 +85,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
-
-  useEffect(() => {
-    document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
-    const appearance = session?.preferences?.appearance || 'system';
-    if (appearance === 'dark' || (appearance === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.documentElement.className = 'dark';
-    } else {
-      document.documentElement.className = '';
-    }
-  }, [isRtl, session?.preferences?.appearance]);
 
   const navPrimary = [
     { href: '/finance', label: t('Overview', 'نظرة عامة'), icon: Home },
