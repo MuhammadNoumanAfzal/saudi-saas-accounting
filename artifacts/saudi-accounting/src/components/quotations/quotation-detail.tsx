@@ -33,6 +33,7 @@ import {
   Hash,
   Pencil
 } from 'lucide-react';
+import { QuotationCreateSheet } from './quotation-create-sheet';
 
 export function QuotationDetail({ id }: { id: string }) {
   const { t, isRtl } = useTranslation();
