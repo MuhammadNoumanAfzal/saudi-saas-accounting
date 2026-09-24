@@ -155,48 +155,57 @@ export function PublicLayout({ children }: PublicLayoutProps) {
             <div className="lg:col-span-2 space-y-4">
               <Logo dark />
               <p className="text-xs leading-relaxed text-[#a3b8b0] max-w-[360px]">
-                The leading Saudi Enterprise SaaS Accounting platform. Purpose-built for Saudi Vision 2030, SOCPA double-entry accounting GAAP compliance, and ZATCA FATOORA Phase 1 & 2 e-invoicing.
+                {t(
+                  'The leading Saudi Enterprise SaaS Accounting platform. Purpose-built for Saudi Vision 2030, SOCPA double-entry accounting GAAP compliance, and ZATCA FATOORA Phase 1 & 2 e-invoicing.',
+                  'المنصة المحاسبية السحابية القيادية للمؤسسات والشركات في المملكة. مصممة وفق رؤية 2030 ومعايير الهيئة السعودية للمراجعين والمحاسبين SOCPA ومتطلبات الفوترة الإلكترونية ZATCA المرحلة 1 و 2.'
+                )}
               </p>
-              <div className="flex items-center gap-3 pt-2">
+              <div className="flex flex-wrap items-center gap-3 pt-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-[#176752]/40 border border-[#176752] px-3 py-1 text-[11px] font-bold text-[#6ee7b7]">
-                  <CheckCircle2 size={13} /> 🇸🇦 ZATCA Phase 1 & 2 Certified
+                  <CheckCircle2 size={13} /> {t('🇸🇦 ZATCA Phase 1 & 2 Certified', '🇸🇦 معتمد لدى هيئة الزكاة المرحلة 1 و 2')}
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-[#d4af37]/20 border border-[#d4af37]/50 px-3 py-1 text-[11px] font-bold text-[#fef08a]">
-                  <ShieldCheck size={13} /> SOCPA GAAP
+                  <ShieldCheck size={13} /> {t('SOCPA GAAP Compliant', 'معتمد وفق معايير SOCPA')}
                 </span>
               </div>
             </div>
 
             {/* Column 2: Navigation Links */}
             <div>
-              <h4 className="text-xs font-extrabold uppercase tracking-widest text-[#d4af37] mb-4">Platform</h4>
+              <h4 className="text-xs font-extrabold uppercase tracking-widest text-[#d4af37] mb-4">
+                {t('Platform', 'المنصة')}
+              </h4>
               <ul className="space-y-2.5 text-xs text-[#c3d4cd]">
-                <li><a href="/#features" onClick={(e) => handleSmoothScroll(e, 'features')} className="hover:text-white transition-colors cursor-pointer flex items-center gap-1"><ChevronRight size={12} className="text-[#176752]" /> Core Features</a></li>
-                <li><a href="/#zatca" onClick={(e) => handleSmoothScroll(e, 'zatca')} className="hover:text-white transition-colors cursor-pointer flex items-center gap-1"><ChevronRight size={12} className="text-[#176752]" /> ZATCA Phase 2 Sync</a></li>
-                <li><Link href="/pricing" className="hover:text-white transition-colors cursor-pointer flex items-center gap-1"><ChevronRight size={12} className="text-[#176752]" /> Subscription Plans</Link></li>
-                <li><Link href="/security" className="hover:text-white transition-colors cursor-pointer flex items-center gap-1"><ChevronRight size={12} className="text-[#176752]" /> Security & Encryption</Link></li>
-                <li><Link href="/zatca-guide" className="hover:text-white transition-colors cursor-pointer flex items-center gap-1"><ChevronRight size={12} className="text-[#176752]" /> ZATCA Phase 2 Guide</Link></li>
+                <li><a href="/#features" onClick={(e) => handleSmoothScroll(e, 'features')} className="hover:text-white transition-colors cursor-pointer flex items-center gap-1"><ChevronRight size={12} className="text-[#176752]" /> {t('Core Features', 'المميزات الرئيسية')}</a></li>
+                <li><a href="/#zatca" onClick={(e) => handleSmoothScroll(e, 'zatca')} className="hover:text-white transition-colors cursor-pointer flex items-center gap-1"><ChevronRight size={12} className="text-[#176752]" /> {t('ZATCA Phase 2 Sync', 'الربط المباشر مع هيئة الزكاة')}</a></li>
+                <li><Link href="/pricing" className="hover:text-white transition-colors cursor-pointer flex items-center gap-1"><ChevronRight size={12} className="text-[#176752]" /> {t('Subscription Plans', 'باقات الاشتراك')}</Link></li>
+                <li><Link href="/security" className="hover:text-white transition-colors cursor-pointer flex items-center gap-1"><ChevronRight size={12} className="text-[#176752]" /> {t('Security & Encryption', 'الأمان والتشفير')}</Link></li>
+                <li><Link href="/zatca-guide" className="hover:text-white transition-colors cursor-pointer flex items-center gap-1"><ChevronRight size={12} className="text-[#176752]" /> {t('ZATCA Phase 2 Guide', 'دليل الفوترة الإلكترونية')}</Link></li>
               </ul>
             </div>
 
             {/* Column 3: Company */}
             <div>
-              <h4 className="text-xs font-extrabold uppercase tracking-widest text-[#d4af37] mb-4">Company</h4>
+              <h4 className="text-xs font-extrabold uppercase tracking-widest text-[#d4af37] mb-4">
+                {t('Company', 'الشركة')}
+              </h4>
               <ul className="space-y-2.5 text-xs text-[#c3d4cd]">
-                <li><Link href="/about" className="hover:text-white transition-colors cursor-pointer flex items-center gap-1"><ChevronRight size={12} className="text-[#176752]" /> About Us</Link></li>
-                <li><Link href="/contact" className="hover:text-white transition-colors cursor-pointer flex items-center gap-1"><ChevronRight size={12} className="text-[#176752]" /> Contact & Support</Link></li>
-                <li><Link href="/security" className="hover:text-white transition-colors cursor-pointer flex items-center gap-1"><ChevronRight size={12} className="text-[#176752]" /> Privacy Policy</Link></li>
-                <li><Link href="/security" className="hover:text-white transition-colors cursor-pointer flex items-center gap-1"><ChevronRight size={12} className="text-[#176752]" /> Terms of Service</Link></li>
+                <li><Link href="/about" className="hover:text-white transition-colors cursor-pointer flex items-center gap-1"><ChevronRight size={12} className="text-[#176752]" /> {t('About Us', 'من نحن')}</Link></li>
+                <li><Link href="/contact" className="hover:text-white transition-colors cursor-pointer flex items-center gap-1"><ChevronRight size={12} className="text-[#176752]" /> {t('Contact & Support', 'الدعم والاتصال')}</Link></li>
+                <li><Link href="/security" className="hover:text-white transition-colors cursor-pointer flex items-center gap-1"><ChevronRight size={12} className="text-[#176752]" /> {t('Privacy Policy', 'سياسة الخصوصية')}</Link></li>
+                <li><Link href="/security" className="hover:text-white transition-colors cursor-pointer flex items-center gap-1"><ChevronRight size={12} className="text-[#176752]" /> {t('Terms of Service', 'شروط الخدمة')}</Link></li>
               </ul>
             </div>
 
             {/* Column 4: Contact Info */}
             <div>
-              <h4 className="text-xs font-extrabold uppercase tracking-widest text-[#d4af37] mb-4">Saudi HQ</h4>
+              <h4 className="text-xs font-extrabold uppercase tracking-widest text-[#d4af37] mb-4">
+                {t('Saudi HQ', 'المقر الرئيسي بالمملكة')}
+              </h4>
               <ul className="space-y-3 text-xs text-[#c3d4cd]">
                 <li className="flex items-start gap-2">
                   <MapPin size={14} className="text-[#176752] shrink-0 mt-0.5" />
-                  <span>King Fahd Road, Olaya District, Riyadh, Kingdom of Saudi Arabia</span>
+                  <span>{t('King Fahd Road, Olaya District, Riyadh, Kingdom of Saudi Arabia', 'طريق الملك فهد، حي العليا، الرياض، المملكة العربية السعودية')}</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Mail size={14} className="text-[#176752] shrink-0" />
@@ -204,7 +213,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
                 </li>
                 <li className="flex items-center gap-2">
                   <Phone size={14} className="text-[#176752] shrink-0" />
-                  <span>+966 11 482 9100</span>
+                  <span dir="ltr">+966 11 482 9100</span>
                 </li>
               </ul>
             </div>
@@ -213,11 +222,13 @@ export function PublicLayout({ children }: PublicLayoutProps) {
 
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-between text-[11px] text-[#78938a] gap-4">
             <div>
-              © {new Date().getFullYear()} KHANBAS NEXUS. All rights reserved. Saudi Arabia Commercial Registration #1010894231.
+              {t(
+                `© ${new Date().getFullYear()} KHANBAS NEXUS. All rights reserved. Saudi Arabia Commercial Registration #1010894231.`,
+                `© ${new Date().getFullYear()} خانباس نكسس. جميع الحقوق محفوظة. السجل التجاري رقم 1010894231.`
+              )}
             </div>
             <div className="flex items-center gap-4">
-              <span>English / العربية</span>
-              <span>15% Saudi VAT Compliant</span>
+              <span>{t('15% Saudi VAT Compliant', 'متوافق 100% مع ضريبة القيمة المضافة 15%')}</span>
             </div>
           </div>
         </div>

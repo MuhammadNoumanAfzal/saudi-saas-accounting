@@ -31,8 +31,9 @@ export function useTranslation() {
     return () => { LISTENERS.delete(onChange); };
   }, []);
 
-  const sessionLang = session?.preferences?.language as 'ar' | 'en' | undefined;
-  const lang = sessionLang || localLang;
+  // Stored choice in localStorage is primary, fallback to session preferences if absent, default to 'ar'
+  const storedLang = localStorage.getItem('nexus_lang') as 'ar' | 'en' | null;
+  const lang = storedLang || (session?.preferences?.language as 'ar' | 'en' | undefined) || localLang || 'ar';
   const isRtl = lang === 'ar';
 
   useEffect(() => {
