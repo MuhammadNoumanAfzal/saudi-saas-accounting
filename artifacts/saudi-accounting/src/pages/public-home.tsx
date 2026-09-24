@@ -50,8 +50,6 @@ export function PublicHome() {
     );
   }
 
-  if (isSignedIn) return <Redirect to="/home" />;
-
   const packages = [
     {
       id: "starter",
@@ -213,8 +211,8 @@ export function PublicHome() {
 
           {/* CTAs */}
           <div className="mt-8 flex flex-wrap items-center gap-4">
-            <Link href="/sign-up" className="btn-primary flex items-center gap-2 px-7 py-3.5 text-sm font-bold shadow-xl shadow-[#176752]/25 hover:scale-[1.03] transition-all cursor-pointer" data-testid="link-hero-start">
-              <span>Start Free Account / ابدأ مجاناً</span>
+            <Link href={isSignedIn ? "/home" : "/sign-up"} className="btn-primary flex items-center gap-2 px-7 py-3.5 text-sm font-bold shadow-xl shadow-[#176752]/25 hover:scale-[1.03] transition-all cursor-pointer" data-testid="link-hero-start">
+              <span>{isSignedIn ? "Go to Workspace / مساحة العمل" : "Start Free Account / ابدأ مجاناً"}</span>
               <ArrowRight size={16} />
             </Link>
             <a href="#packages" className="flex items-center gap-2 rounded-xl border border-[#d6cfbe] bg-white px-6 py-3.5 text-sm font-bold text-[#0a2620] hover:bg-[#ede7d8] transition-colors cursor-pointer">
@@ -614,14 +612,14 @@ export function PublicHome() {
 
                   <div className="mt-8">
                     <Link
-                      href="/sign-up"
+                      href={isSignedIn ? "/home" : "/sign-up"}
                       className={`w-full py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md ${
                         pkg.popular
                           ? 'btn-primary text-white shadow-[#176752]/40 hover:scale-[1.02]'
                           : 'bg-[#f0ece1] text-[#0a2620] hover:bg-[#176752] hover:text-white'
                       }`}
                     >
-                      <span>{pkg.ctaEn} / {pkg.ctaAr}</span>
+                      <span>{isSignedIn ? "Go to Workspace / مساحة العمل" : `${pkg.ctaEn} / ${pkg.ctaAr}`}</span>
                       <ArrowRight size={14} />
                     </Link>
                   </div>
@@ -645,8 +643,8 @@ export function PublicHome() {
                 <span className="text-[#176752] font-bold text-2xl">مصمم خصيصاً لتلبية متطلبات الأعمال في المملكة</span>
               </h2>
             </div>
-            <Link href="/sign-up" className="btn-primary inline-flex items-center gap-2 text-xs font-bold py-3 px-5 shadow-md cursor-pointer hover:scale-[1.03] transition-all">
-              <span>Explore Full Platform</span>
+            <Link href={isSignedIn ? "/home" : "/sign-up"} className="btn-primary inline-flex items-center gap-2 text-xs font-bold py-3 px-5 shadow-md cursor-pointer hover:scale-[1.03] transition-all">
+              <span>{isSignedIn ? "Go to Workspace / مساحة العمل" : "Explore Full Platform"}</span>
               <ArrowRight size={14} />
             </Link>
           </div>
@@ -839,8 +837,8 @@ export function PublicHome() {
           </p>
 
           <div className="mt-8 flex items-center gap-4">
-            <Link href="/sign-up" className="btn-primary inline-flex items-center gap-2 px-8 py-4 text-sm font-bold bg-[#d4af37] text-[#071f19] hover:bg-[#ebd074] transition-all shadow-xl hover:scale-[1.03] cursor-pointer">
-              <span>Start Free Trial / ابدأ التجربة المجانية</span>
+            <Link href={isSignedIn ? "/home" : "/sign-up"} className="btn-primary inline-flex items-center gap-2 px-8 py-4 text-sm font-bold bg-[#d4af37] text-[#071f19] hover:bg-[#ebd074] transition-all shadow-xl hover:scale-[1.03] cursor-pointer">
+              <span>{isSignedIn ? "Go to Workspace / مساحة العمل" : "Start Free Trial / ابدأ التجربة المجانية"}</span>
               <ArrowRight size={16} />
             </Link>
           </div>

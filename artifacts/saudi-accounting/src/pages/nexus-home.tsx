@@ -18,8 +18,8 @@ export function NexusHome() {
   const { data: session, isLoading: sessionLoading } = useGetCurrentSession();
   const { t, isRtl } = useTranslation();
   
-  const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization.id || '';
-  const organization = session?.organizations?.find(o => o.organization.id === orgId)?.organization;
+  const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization?.id || '';
+  const organization = session?.organizations?.find(o => o?.organization?.id === orgId)?.organization;
 
   const { data: orgModules, isLoading: modulesLoading } = useListOrganizationModules(orgId, {
     query: { enabled: !!orgId, queryKey: getListOrganizationModulesQueryKey(orgId) }
