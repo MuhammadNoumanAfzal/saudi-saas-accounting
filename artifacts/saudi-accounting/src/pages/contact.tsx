@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { PublicLayout } from '@/components/layout/public-layout';
+import { useTranslation } from '@/lib/utils';
 import { 
   Mail, 
   Phone, 
@@ -14,6 +15,7 @@ import {
 import { showAlert } from '@/lib/alerts';
 
 export function ContactPage() {
+  const { isRtl, t } = useTranslation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -24,7 +26,10 @@ export function ContactPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !message.trim()) {
-      showAlert.error('Validation Error', 'Please fill in all required contact fields.');
+      showAlert.error(
+        t('Validation Error', 'خطأ في المدخلات'),
+        t('Please fill in all required contact fields.', 'يرجى تعبئة جميع الحقول المطلوبة.')
+      );
       return;
     }
 
@@ -32,8 +37,11 @@ export function ContactPage() {
     setTimeout(() => {
       setSubmitting(false);
       showAlert.success(
-        'Message Sent Successfully!',
-        'Thank you for contacting KHANBAS NEXUS Saudi HQ. Our enterprise team will respond within 2 business hours.'
+        t('Message Sent Successfully!', 'تم إرسال رسالتك بنجاح!'),
+        t(
+          'Thank you for contacting KHANBAS NEXUS Saudi HQ. Our enterprise team will respond within 2 business hours.',
+          'شكراً لتواصلك مع المقر الرئيسي لنكسس بالرياض. سيرد فريقنا خلال ساعتي عمل.'
+        )
       );
       setName('');
       setEmail('');
@@ -51,13 +59,16 @@ export function ContactPage() {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 rounded-full border border-[#176752]/25 bg-white/80 backdrop-blur-md px-4 py-1.5 text-xs font-bold text-[#176752] shadow-sm mb-4">
             <MessageSquare size={14} className="text-[#d4af37]" />
-            <span>24/7 Saudi Technical Support</span>
+            <span>{t('24/7 Saudi Technical Support', 'دعم فني سعودي على مدار 24/7')}</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[#071f19]">
-            Get in Touch with Our <span className="bg-gradient-to-r from-[#176752] via-[#b8800b] to-[#d4af37] bg-clip-text text-transparent">Enterprise Team</span>
+            {t('Get in Touch with Our', 'تواصل مع فريق')} <span className="bg-gradient-to-r from-[#176752] via-[#b8800b] to-[#d4af37] bg-clip-text text-transparent">{t('Enterprise Team', 'المبيعات والدعم الفني')}</span>
           </h1>
           <p className="mt-4 text-base text-[#485d56]">
-            Have questions about ZATCA Phase 2 clearance, SOCPA accounting migration, or enterprise pricing? We are here to assist your company.
+            {t(
+              'Have questions about ZATCA Phase 2 clearance, SOCPA accounting migration, or enterprise pricing? We are here to assist your company.',
+              'هل لديك استفسارات حول ربط هيئة الزكاة المرحلة 2، أو نقل البيانات، أو باقات الأسعار؟ نحن هنا لمساعدتك.'
+            )}
           </p>
         </div>
 

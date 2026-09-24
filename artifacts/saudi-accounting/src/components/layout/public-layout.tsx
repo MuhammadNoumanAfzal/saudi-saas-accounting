@@ -1,6 +1,7 @@
 import { ReactNode, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@clerk/react';
+import { useTranslation } from '@/lib/utils';
 import { 
   ArrowRight, 
   Sparkles, 
@@ -41,6 +42,7 @@ interface PublicLayoutProps {
 
 export function PublicLayout({ children }: PublicLayoutProps) {
   const { isSignedIn } = useAuth();
+  const { lang, isRtl, toggleLanguage, t } = useTranslation();
   const [location, setLocation] = useLocation();
 
   // Automatic smooth scroll to top on page navigation
@@ -82,41 +84,51 @@ export function PublicLayout({ children }: PublicLayoutProps) {
           
           <nav className="hidden items-center gap-7 text-xs font-bold uppercase tracking-wider text-[#485b54] md:flex">
             <Link href="/" className={`hover:text-[#176752] transition-colors cursor-pointer ${location === '/' ? 'text-[#176752] font-black' : ''}`}>
-              Home
+              {t('Home', 'الرئيسية')}
             </Link>
             <a href="/#features" onClick={(e) => handleSmoothScroll(e, 'features')} className="hover:text-[#176752] transition-colors cursor-pointer">
-              Features
+              {t('Features', 'المميزات')}
             </a>
             <a href="/#zatca" onClick={(e) => handleSmoothScroll(e, 'zatca')} className="hover:text-[#176752] transition-colors cursor-pointer">
-              ZATCA Compliance
+              {t('ZATCA Compliance', 'الفوترة الإلكترونية')}
             </a>
             <Link href="/pricing" className={`hover:text-[#176752] transition-colors cursor-pointer ${location === '/pricing' ? 'text-[#176752] font-black' : ''}`}>
-              Pricing
+              {t('Pricing', 'باقات الأسعار')}
             </Link>
             <Link href="/about" className={`hover:text-[#176752] transition-colors cursor-pointer ${location === '/about' ? 'text-[#176752] font-black' : ''}`}>
-              About Us
+              {t('About Us', 'عن المنصة')}
             </Link>
             <Link href="/security" className={`hover:text-[#176752] transition-colors cursor-pointer ${location === '/security' ? 'text-[#176752] font-black' : ''}`}>
-              Security
+              {t('Security', 'الأمان')}
             </Link>
             <Link href="/contact" className={`hover:text-[#176752] transition-colors cursor-pointer ${location === '/contact' ? 'text-[#176752] font-black' : ''}`}>
-              Contact
+              {t('Contact', 'اتصل بنا')}
             </Link>
           </nav>
 
           <div className="flex items-center gap-3">
+            {/* Global Language Toggle Switcher Button */}
+            <button
+              onClick={toggleLanguage}
+              className="flex items-center gap-1.5 rounded-xl border border-[#d6cfbe] bg-white/90 px-3.5 py-2 text-xs font-bold text-[#176752] hover:bg-[#ede7d8] transition cursor-pointer shadow-sm"
+              title={isRtl ? 'Switch to English' : 'التحول إلى اللغة العربية'}
+            >
+              <Globe2 size={15} className="text-[#d4af37]" />
+              <span>{isRtl ? 'English' : 'العربية'}</span>
+            </button>
+
             {isSignedIn ? (
               <Link href="/home" className="btn-primary flex items-center gap-2 text-xs font-bold uppercase tracking-wider px-5 py-2.5 cursor-pointer shadow-md shadow-[#176752]/20 hover:scale-[1.03] transition-all">
-                <span>Go to Dashboard</span>
+                <span>{t('Go to Dashboard', 'لوحة التحكم')}</span>
                 <ArrowRight size={14} />
               </Link>
             ) : (
               <>
                 <Link href="/sign-in" className="hidden rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#0a2620] hover:bg-[#eadecc]/50 sm:block transition cursor-pointer">
-                  Sign In
+                  {t('Sign In', 'تسجيل الدخول')}
                 </Link>
                 <Link href="/sign-up" className="btn-primary flex items-center gap-2 text-xs font-bold uppercase tracking-wider px-4.5 py-2.5 cursor-pointer shadow-md shadow-[#176752]/20 hover:shadow-lg hover:shadow-[#176752]/30 hover:scale-[1.03] transition-all">
-                  <span>Start Free</span>
+                  <span>{t('Start Free', 'ابدأ مجاناً')}</span>
                   <ArrowRight size={14} />
                 </Link>
               </>

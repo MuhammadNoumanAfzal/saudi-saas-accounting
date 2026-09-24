@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { PublicLayout } from '@/components/layout/public-layout';
 import { Link } from 'wouter';
+import { useTranslation } from '@/lib/utils';
 import { 
   Check, 
   Sparkles, 
@@ -8,68 +9,67 @@ import {
   Zap, 
   HelpCircle, 
   ArrowRight,
+  ArrowLeft,
   ChevronDown
 } from 'lucide-react';
 
 export function PricingPage() {
   const [annual, setAnnual] = useState(true);
+  const { isRtl, t } = useTranslation();
 
   const plans = [
     {
-      name: "Starter",
-      nameAr: "الباقة الأساسية",
-      description: "Ideal for freelancers, small stores, and single-proprietorship businesses.",
+      name: t("Starter", "الباقة الأساسية"),
+      description: t("Ideal for freelancers, small stores, and single-proprietorship businesses.", "مثالية للمحلات الصغيرة والأنشطة التجارية الفردية والمؤسسات الناشئة."),
       monthlyPrice: 99,
       annualPrice: 79,
       features: [
-        "1 Organization User",
-        "Up to 100 Invoices / Month",
-        "ZATCA Phase 1 TLV QR Code",
-        "15% Saudi VAT Calculation",
-        "Customers & Suppliers Directory",
-        "Standard Double-Entry Ledger",
-        "Email Support"
+        t("1 Organization User", "مستخدم واحد للمنشأة"),
+        t("Up to 100 Invoices / Month", "حتى 100 فاتورة شهرياً"),
+        t("ZATCA Phase 1 TLV QR Code", "رمز QR المعتمد لـ ZATCA المرحلة 1"),
+        t("15% Saudi VAT Calculation", "احتساب ضريبة القيمة المضافة 15%"),
+        t("Customers & Suppliers Directory", "دليل العملاء والموردين الكامل"),
+        t("Standard Double-Entry Ledger", "دفتر الأستاذ المزدوج"),
+        t("Email & Chat Support", "دعم فني عبر البريد والدردشة")
       ],
       popular: false,
-      cta: "Start Free Trial"
+      cta: t("Start Free Trial", "ابدأ التجربة المجانية")
     },
     {
-      name: "Professional",
-      nameAr: "الباقة الاحترافية",
-      description: "Designed for growing Saudi SMEs, multi-staff businesses & VAT registrants.",
+      name: t("Professional", "الباقة الاحترافية"),
+      description: t("Designed for growing Saudi SMEs, multi-staff businesses & VAT registrants.", "مصممة للشركات المتوسطة والمنشآت المسجلة في الضريبة متعددة الموظفين."),
       monthlyPrice: 299,
       annualPrice: 239,
       features: [
-        "Up to 5 Team Members",
-        "Unlimited Invoices & Quotes",
-        "ZATCA Phase 2 Fatoora API Sync",
-        "Official Form 21 VAT Declaration",
-        "SOCPA Double-Entry Accounting",
-        "Profit & Loss + Balance Sheet",
-        "Audit Log & Activity History",
-        "24/7 Priority Support"
+        t("Up to 5 Team Members", "حتى 5 مستخدمين للمنشأة"),
+        t("Unlimited Invoices & Quotes", "فواتير وعروض أسعار غير محدودة"),
+        t("ZATCA Phase 2 Fatoora API Sync", "الربط المباشر مع هيئة الزكاة (ZATCA Phase 2)"),
+        t("Official Form 21 VAT Declaration", "الإقرار الضريبي المعتمد (نموذج 21)"),
+        t("SOCPA Double-Entry Accounting", "المحاسبة المزدوجة وفق معايير SOCPA"),
+        t("Profit & Loss + Balance Sheet", "تقارير الأرباح والخسائر والميزانية العمومية"),
+        t("Audit Log & Activity History", "سجل مراجعة كامل وتتبع العمليات"),
+        t("24/7 Priority Support", "دعم فني أولوية على مدار 24/7")
       ],
       popular: true,
-      cta: "Get Started Now"
+      cta: t("Get Started Now", "اشترك بالباقة الاحترافية")
     },
     {
-      name: "Enterprise",
-      nameAr: "باقة المؤسسات",
-      description: "Full multi-branch suite for corporate companies & high-volume trading.",
+      name: t("Enterprise", "باقة المؤسسات والفروع"),
+      description: t("Full multi-branch suite for corporate companies & high-volume trading.", "حلول شاملة للمؤسسات المتعددة الفروع والتجارة الكبيرة."),
       monthlyPrice: 599,
       annualPrice: 479,
       features: [
-        "Unlimited Staff Members",
-        "Multi-Branch & Location Support",
-        "Real-Time ZATCA Clearance API",
-        "Automated Nightly Backups",
-        "Custom Roles & Granular RBAC",
-        "Dedicated Account Manager",
-        "Custom API & Webhooks Access",
-        "SLA Guarantee (99.99%)"
+        t("Unlimited Staff Members", "عدد غير محدود من الموظفين"),
+        t("Multi-Branch & Location Support", "إدارة الفروع والسجلات التجارية المتعددة"),
+        t("Real-Time ZATCA Clearance API", "تطهير واعتماد الفواتير الفوري مع الزكاة"),
+        t("Automated Nightly Backups", "نسخ احتياطي آلي يومي وضمان 99.99%"),
+        t("Custom Roles & Granular RBAC", "صلاحيات مخصصة ومتقدمة لكل موظف"),
+        t("Dedicated Account Manager", "مدير حساب سعودي مخصص"),
+        t("Custom API & Webhooks Access", "ربط API مخصص مع الأنظمة الأخرى"),
+        t("SLA Guarantee (99.99%)", "تدريب كامل وضمان مستوى الخدمة SLA")
       ],
       popular: false,
-      cta: "Contact Enterprise Sales"
+      cta: t("Contact Enterprise Sales", "تواصل مع المبيعات")
     }
   ];
 
@@ -81,21 +81,26 @@ export function PricingPage() {
         <div className="text-center max-w-3xl mx-auto mb-12">
           <div className="inline-flex items-center gap-2 rounded-full border border-[#176752]/25 bg-white/80 backdrop-blur-md px-4 py-1.5 text-xs font-bold text-[#176752] shadow-sm mb-4">
             <Sparkles size={14} className="text-[#d4af37]" />
-            <span>Simple, Transparent Saudi Pricing</span>
+            <span>{t("Simple, Transparent Saudi Pricing", "أسعار واضحة ومناسبة للمنشآت السعودية")}</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[#071f19]">
-            Enterprise Accounting & ZATCA SaaS <br />
+            {t("Enterprise Accounting & ZATCA SaaS", "نظام المحاسبة والفوترة الإلكترونية")} <br />
             <span className="bg-gradient-to-r from-[#176752] via-[#b8800b] to-[#d4af37] bg-clip-text text-transparent">
-              Without Hidden Fees
+              {t("Without Hidden Fees", "بأفضل الباقات وبدون أي رسوم خفية")}
             </span>
           </h1>
           <p className="mt-4 text-base text-[#485d56]">
-            All plans include 15% Saudi VAT compliance, SOCPA double-entry accounting, and instant Base64 TLV QR code generation.
+            {t(
+              "All plans include 15% Saudi VAT compliance, SOCPA double-entry accounting, and instant Base64 TLV QR code generation.",
+              "جميع الباقات تشمل احتساب ضريبة القيمة المضافة 15%، المحاسبة المزدوجة بمعايير SOCPA، وإنشاء رموز QR المعتمدة فورياً."
+            )}
           </p>
 
           {/* Billing Cycle Toggle */}
           <div className="mt-8 flex items-center justify-center gap-4">
-            <span className={`text-xs font-bold uppercase tracking-wider ${!annual ? 'text-[#176752]' : 'text-[#78938a]'}`}>Monthly</span>
+            <span className={`text-xs font-bold uppercase tracking-wider ${!annual ? 'text-[#176752]' : 'text-[#78938a]'}`}>
+              {t("Monthly", "شهري")}
+            </span>
             <button
               onClick={() => setAnnual(!annual)}
               className="relative h-7 w-14 rounded-full bg-[#176752] p-1 transition-colors cursor-pointer"
@@ -103,8 +108,12 @@ export function PricingPage() {
               <div className={`h-5 w-5 rounded-full bg-white transition-transform ${annual ? 'translate-x-7' : 'translate-x-0'}`} />
             </button>
             <div className="flex items-center gap-1.5">
-              <span className={`text-xs font-bold uppercase tracking-wider ${annual ? 'text-[#176752]' : 'text-[#78938a]'}`}>Annual Billing</span>
-              <span className="rounded-full bg-[#d4af37]/20 border border-[#d4af37] px-2 py-0.5 text-[10px] font-extrabold text-[#b8800b]">Save 20%</span>
+              <span className={`text-xs font-bold uppercase tracking-wider ${annual ? 'text-[#176752]' : 'text-[#78938a]'}`}>
+                {t("Annual Billing", "سنوي")}
+              </span>
+              <span className="rounded-full bg-[#d4af37]/20 border border-[#d4af37] px-2 py-0.5 text-[10px] font-extrabold text-[#b8800b]">
+                {t("Save 20%", "خصم 20%")}
+              </span>
             </div>
           </div>
         </div>
@@ -124,7 +133,7 @@ export function PricingPage() {
               >
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-[#176752] to-[#d4af37] px-4 py-1 text-[11px] font-extrabold uppercase tracking-widest text-white shadow-md">
-                    Most Popular Choice
+                    {t("Most Popular Choice", "الأكثر طلباً للمنشآت")}
                   </div>
                 )}
 
@@ -134,10 +143,12 @@ export function PricingPage() {
 
                   <div className="mt-6 flex items-baseline gap-1">
                     <span className="text-4xl font-black font-mono">{price}</span>
-                    <span className={`text-xs font-bold ${plan.popular ? 'text-[#6ee7b7]' : 'text-[#176752]'}`}>SAR / month</span>
+                    <span className={`text-xs font-bold ${plan.popular ? 'text-[#6ee7b7]' : 'text-[#176752]'}`}>
+                      {t("SAR / month", "ر.س / شهرياً")}
+                    </span>
                   </div>
                   <div className={`text-[10px] font-semibold mt-1 ${plan.popular ? 'text-[#78938a]' : 'text-[#94a3b8]'}`}>
-                    {annual ? 'Billed annually (12 months)' : 'Billed monthly'}
+                    {annual ? t("Billed annually (12 months)", "مفوترة سنوياً (خصم 20%)") : t("Billed monthly", "مفوترة شهرياً")}
                   </div>
 
                   <hr className={`my-6 ${plan.popular ? 'border-white/10' : 'border-[#e2dcce]'}`} />
@@ -162,7 +173,7 @@ export function PricingPage() {
                     }`}
                   >
                     <span>{plan.cta}</span>
-                    <ArrowRight size={14} />
+                    {isRtl ? <ArrowLeft size={14} /> : <ArrowRight size={14} />}
                   </Link>
                 </div>
 

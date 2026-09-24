@@ -3,6 +3,7 @@ import { useAuth } from '@clerk/react';
 import { Redirect, Link } from 'wouter';
 import { PlatformLoader } from '@/components/ui/platform-loader';
 import { PublicLayout } from '@/components/layout/public-layout';
+import { useTranslation } from '@/lib/utils';
 import { 
   ArrowRight, 
   Sparkles, 
@@ -31,6 +32,7 @@ import {
 
 export function PublicHome() {
   const { isSignedIn, isLoaded } = useAuth();
+  const { lang, isRtl, t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'invoice' | 'ledger' | 'vat'>('invoice');
   const [annualBilling, setAnnualBilling] = useState(true);
   const [openFaq, setOpenFaq] = useState<number | null>(0);

@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { clsx, type ClassValue } from 'clsx';
 import { useGetCurrentSession } from '@workspace/api-client-react';
@@ -6,14 +7,51 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const LISTENERS = new Set<() => void>();
+
+export function setGlobalLanguage(lang: 'ar' | 'en') {
+  localStorage.setItem('nexus_lang', lang);
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.documentElement.lang = lang;
+  LISTENERS.forEach(fn => fn());
+}
+
 export function useTranslation() {
   const { data: session } = useGetCurrentSession();
-  const lang = session?.preferences?.language || 'en';
+  const [localLang, setLocalLang] = useState<'ar' | 'en'>(() => {
+    return (localStorage.getItem('nexus_lang') as 'ar' | 'en') || 'ar';
+  });
+
+  useEffect(() => {
+    const onChange = () => {
+      const stored = (localStorage.getItem('nexus_lang') as 'ar' | 'en') || 'ar';
+      setLocalLang(stored);
+    };
+    LISTENERS.add(onChange);
+    return () => { LISTENERS.delete(onChange); };
+  }, []);
+
+  const sessionLang = session?.preferences?.language as 'ar' | 'en' | undefined;
+  const lang = sessionLang || localLang;
   const isRtl = lang === 'ar';
+
+  useEffect(() => {
+    document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
+    document.documentElement.lang = lang;
+  }, [isRtl, lang]);
+
+  const toggleLanguage = () => {
+    const next = lang === 'ar' ? 'en' : 'ar';
+    setGlobalLanguage(next);
+  };
+
+  const setLanguage = (newLang: 'ar' | 'en') => {
+    setGlobalLanguage(newLang);
+  };
 
   const t = (en: string, ar: string) => (isRtl ? ar : en);
 
-  return { lang, isRtl, t };
+  return { lang, isRtl, toggleLanguage, setLanguage, t };
 }
 
 export function Button({ children, className = '', variant = 'primary', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger' }) {
