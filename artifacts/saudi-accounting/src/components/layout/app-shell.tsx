@@ -31,7 +31,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const updatePrefs = useUpdateUserPreferences();
   const [collapsed, setCollapsed] = useState(false);
 
-  const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization.id || '';
+  const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization?.id || '';
   const { data: orgModules } = useListOrganizationModules(orgId, {
     query: { enabled: !!orgId, queryKey: getListOrganizationModulesQueryKey(orgId) }
   });

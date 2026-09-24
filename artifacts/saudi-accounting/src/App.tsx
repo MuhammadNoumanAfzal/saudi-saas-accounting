@@ -103,13 +103,13 @@ function SessionGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const currentOrg = session?.organizations.find(
-    (item) => item.organization.id === session?.preferences?.currentOrganizationId
-  )?.organization ?? session?.organizations[0]?.organization;
+  const currentOrg = (session?.organizations || []).find(
+    (item) => item?.organization?.id === session?.preferences?.currentOrganizationId
+  )?.organization ?? session?.organizations?.[0]?.organization;
 
   if (
     location !== '/onboarding' &&
-    (!session?.organizations.length || !currentOrg?.onboardingCompleted)
+    (!session?.organizations?.length || !currentOrg?.onboardingCompleted)
   ) {
     return <Redirect to="/onboarding" />;
   }
@@ -132,8 +132,8 @@ function ModuleGuard({
     query: { staleTime: 10 * 60 * 1000 }
   });
   const organizationId =
-    session?.preferences.currentOrganizationId ??
-    session?.organizations[0]?.organization.id ??
+    session?.preferences?.currentOrganizationId ??
+    session?.organizations?.[0]?.organization?.id ??
     '';
   const { data: modules, isLoading: modulesLoading } =
     useListOrganizationModules(organizationId, {
