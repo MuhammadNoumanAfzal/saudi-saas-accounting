@@ -417,4 +417,60 @@ a { color: inherit; text-decoration: none; }
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* Clerk OTP Verification Code Individual Digit Input Boxes */
+.cl-otpCodeField,
+.cl-otpCodeFieldInputs,
+.cl-verificationCodeInputs {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 0.625rem !important;
+  margin-top: 1rem !important;
+  margin-bottom: 1.25rem !important;
+}
+
+.cl-otpCodeFieldInput,
+.cl-otpInputBox,
+.cl-formFieldInput__code,
+.cl-verificationCodeInput {
+  width: 2.85rem !important;
+  height: 3.5rem !important;
+  border: 2px solid rgba(16, 185, 129, 0.5) !important;
+  border-radius: 0.85rem !important;
+  text-align: center !important;
+  font-size: 1.35rem !important;
+  font-weight: 800 !important;
+  font-family: var(--app-font-mono), monospace !important;
+  background-color: var(--color-background) !important;
+  color: var(--color-foreground) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.cl-otpCodeFieldInput:focus,
+.cl-otpCodeFieldInput:focus-visible,
+.cl-otpInputBox:focus,
+.cl-formFieldInput__code:focus,
+.cl-verificationCodeInput:focus {
+  border-color: #047857 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 4px rgba(4, 120, 87, 0.25) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Fallback for standard single verification code field */
+.cl-formFieldInput[name="code"],
+.cl-formFieldInput[autocomplete="one-time-code"] {
+  letter-spacing: 0.6em !important;
+  text-align: center !important;
+  font-family: var(--app-font-mono), monospace !important;
+  font-size: 1.35rem !important;
+  font-weight: 800 !important;
+  padding: 0.75rem 1rem !important;
+  background-color: var(--color-background) !important;
+  border: 2px solid rgba(16, 185, 129, 0.5) !important;
+  border-radius: 0.85rem !important;
+}
+
+
 

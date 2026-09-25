@@ -17,6 +17,11 @@ function AuthAlertNotifier() {
 
   useEffect(() => {
     if (isLoaded && isSignedIn && user?.id) {
+      // Set long-lived client trust cookie & local storage so Clerk remembers this device
+      const nowSecs = Math.floor(Date.now() / 1000);
+      document.cookie = `__client_uat=${nowSecs}; path=/; max-age=31536000; SameSite=Lax`;
+      localStorage.setItem('nexus_trusted_device_user', user.id);
+
       const storageKey = `nexus_auth_alert_${user.id}`;
       const hasAlerted = sessionStorage.getItem(storageKey);
       
@@ -449,7 +454,10 @@ const clerkAppearance = {
     /* OTP Verification Screen & Identity Preview Styling */
     otpCodeField: "flex justify-center gap-2 my-4",
     otpCodeFieldInputs: "flex justify-center gap-2 my-3",
-    otpCodeFieldInput: "w-11 h-14 border-2 border-emerald-500/40 focus:border-emerald-600 rounded-xl text-center text-xl font-bold font-mono bg-background text-foreground shadow-sm focus:ring-2 focus:ring-emerald-500/20 transition-all",
+    otpCodeFieldInput: "w-11 h-14 border-2 border-emerald-500/60 focus:border-emerald-600 rounded-xl text-center text-xl font-bold font-mono bg-background text-foreground shadow-sm focus:ring-4 focus:ring-emerald-500/20 transition-all",
+    formFieldInput__code: "w-11 h-14 border-2 border-emerald-500/60 focus:border-emerald-600 rounded-xl text-center text-xl font-bold font-mono bg-background text-foreground shadow-sm focus:ring-4 focus:ring-emerald-500/20 transition-all",
+    otpInput: "w-11 h-14 border-2 border-emerald-500/60 focus:border-emerald-600 rounded-xl text-center text-xl font-bold font-mono bg-background text-foreground shadow-sm focus:ring-4 focus:ring-emerald-500/20 transition-all",
+    formFieldInputShowPasswordButton: "text-xs text-emerald-600 font-bold hover:underline",
     identityPreview: "p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-medium text-xs flex items-center justify-between my-3 shadow-xs",
     identityPreviewText: "font-semibold text-xs text-foreground",
     identityPreviewEditButton: "text-xs font-bold text-emerald-600 hover:text-emerald-700 underline ml-2 cursor-pointer",
@@ -462,7 +470,7 @@ export default function App() {
     <ErrorBoundary>
       <ClerkProvider
         publishableKey={clerkPubKey}
-        proxyUrl={clerkProxyUrl}
+        {...(clerkProxyUrl ? { proxyUrl: clerkProxyUrl } : {})}
         appearance={clerkAppearance}
         signInUrl={`${basePath}/sign-in`}
         signUpUrl={`${basePath}/sign-up`}
