@@ -121,6 +121,20 @@ if (!clerkPubKey) throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env fi
 
 import { PlatformLoader, SkeletonPage } from './components/ui/platform-loader';
 
+
+function PublicHomeRoute() {
+  const { isSignedIn, isLoaded } = useAuth();
+
+  if (!isLoaded) {
+    return <PublicHome />;
+  }
+
+  if (isSignedIn) {
+    return <Redirect to="/home" />;
+  }
+
+  return <PublicHome />;
+}
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useAuth();
   
@@ -456,7 +470,7 @@ export default function App() {
         <ClerkTokenInitializer>
           <QueryClientProvider client={queryClient}>
           <Switch>
-            <Route path="/" component={PublicHome} />
+            <Route path="/" component={PublicHomeRoute} />
             <Route path="/about" component={AboutPage} />
             <Route path="/contact" component={ContactPage} />
             <Route path="/pricing" component={PricingPage} />
