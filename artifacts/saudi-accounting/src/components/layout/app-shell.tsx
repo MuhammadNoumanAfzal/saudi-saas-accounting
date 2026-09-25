@@ -141,7 +141,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { href: '/settings/language', label: t('Language & region', 'اللغة والمنطقة'), icon: Languages },
     { href: '/settings/security', label: t('Security', 'الأمان'), icon: ShieldCheck },
     { href: '/settings/appearance', label: t('Appearance', 'المظهر'), icon: SlidersHorizontal },
-    { href: '/settings/audit-log', label: t('Audit log', 'سجل النشاط'), icon: FileClock },
+    /* audit log removed */
     { href: '/settings/zatca', label: t('ZATCA', 'هيئة الزكاة والضريبة'), icon: Zap },
   ];
 
@@ -178,7 +178,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     ['/settings/language', t('Language & region', 'اللغة والمنطقة')],
     ['/settings/security', t('Security', 'الأمان')],
     ['/settings/appearance', t('Appearance', 'المظهر')],
-    ['/settings/audit-log', t('Audit log', 'سجل النشاط')],
+    /* audit log removed */
     ['/settings/zatca', t('ZATCA integration', 'الربط مع هيئة الزكاة والضريبة')],
   ].filter(([, label]) => label.toLowerCase().includes(search.toLowerCase()));
 

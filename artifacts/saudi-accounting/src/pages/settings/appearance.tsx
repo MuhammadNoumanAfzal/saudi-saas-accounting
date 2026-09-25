@@ -1,11 +1,14 @@
 import { useGetCurrentSession, useUpdateUserPreferences, getGetCurrentSessionQueryKey } from '@workspace/api-client-react';
-import { useTranslation } from '@/lib/utils';
+import { useTranslation, Button } from '@/lib/utils';
 import { queryClient } from '@/lib/queryClient';
 import { showAlert } from '@/lib/alerts';
-import { Moon, Sun, Monitor, Type, LayoutGrid, CheckCircle2, Sparkles, Paintbrush, Palette } from 'lucide-react';
+import { Moon, Sun, Monitor, Type, LayoutGrid, CheckCircle2, Sparkles, Paintbrush, Palette, ShieldCheck, RefreshCw } from 'lucide-react';
+import { AppearanceKpiCards } from '@/components/settings/appearance-kpi-cards';
 
 export function AppearanceSettings() {
-  const { data: session } = useGetCurrentSession();
+  const { data: session, isLoading, refetch } = useGetCurrentSession({
+    query: { staleTime: 10 * 60 * 1000 }
+  });
   const { t, isRtl } = useTranslation();
   const update = useUpdateUserPreferences();
 
@@ -49,7 +52,8 @@ export function AppearanceSettings() {
             ? t('Dark theme enabled.', 'تم تفعيل السمة الداكنة.') 
             : appearance === 'light'
             ? t('Light theme enabled.', 'تم تفعيل السمة الفاتحة.')
-            : t('System theme enabled.', 'تم تفعيل سمة النظام.')
+            : t('System theme enabled.', 'تم تفعيل سمة النظام.'),
+          'success'
         );
       }
     });
@@ -59,32 +63,86 @@ export function AppearanceSettings() {
     update.mutate({ data: { density } }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetCurrentSessionQueryKey() });
-        showAlert.toast(t('Interface density updated.', 'تم تحديث كثافة الواجهة.'));
+        showAlert.toast(t('Interface density updated.', 'تم تحديث كثافة الواجهة.'), 'success');
       }
     });
   };
 
   return (
-    <div className="max-w-[1000px] space-y-8 fade-up pb-12">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-          <Palette className="w-6 h-6 text-primary" />
-          <span>{t('Appearance & Personalization', 'المظهر وتفضيلات السمة')}</span>
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {t('Customize workspace contrast, color palette, and interface density for optimal readability.', 'تخصيص تباين مساحة العمل، ألوان السمة، وكثافة الواجهة لرؤية ممتازة.')}
-        </p>
+    <div className="space-y-6 fade-up pb-16 print:p-0 print:m-0 print:space-y-0">
+      {/* Luxury Header & Action Toolbar Bar */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 print:hidden p-5 rounded-2xl bg-gradient-to-r from-card via-card to-primary/5 border border-border shadow-xs">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-extrabold uppercase tracking-wider border border-primary/20">
+              <Sparkles className="w-3 h-3 text-amber-500" />
+              <span>{t('UI Personalization', 'التصميم وتجربة المستخدم')}</span>
+            </span>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">
+              <ShieldCheck size={13} /> High Contrast AAA
+            </span>
+          </div>
+          <h1 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2.5">
+            <Palette className="w-6 h-6 text-primary" />
+            <span>{t('Appearance & Personalization', 'المظهر وتفضيلات السمة')}</span>
+          </h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {t('Customize workspace contrast, color palette, and interface density for optimal readability.', 'تخصيص تباين مساحة العمل، ألوان السمة، وكثافة الواجهة لرؤية ممتازة.')}
+          </p>
+        </div>
+
+        {/* Uniform Single-Line Action Toolbar */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 shrink-0">
+          <Button
+            type="button"
+            onClick={() => refetch()}
+            variant="outline"
+            size="sm"
+            className="h-9 px-3 rounded-xl border border-border bg-card hover:bg-primary/5 hover:border-primary/40 text-foreground hover:text-primary transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 shadow-xs flex items-center gap-1.5"
+            title={t('Refresh Settings', 'تحديث')}
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs">{t('Refresh', 'تحديث')}</span>
+          </Button>
+
+          <Button
+            type="button"
+            onClick={() => setAppearance('light')}
+            variant={currentTheme === 'light' ? 'default' : 'outline'}
+            size="sm"
+            className={`h-9 px-3.5 rounded-xl font-bold transition-all text-xs cursor-pointer shrink-0 ${currentTheme === 'light' ? 'btn-primary' : 'bg-card border-border'}`}
+          >
+            Light (فاتح)
+          </Button>
+
+          <Button
+            type="button"
+            onClick={() => setAppearance('dark')}
+            variant={currentTheme === 'dark' ? 'default' : 'outline'}
+            size="sm"
+            className={`h-9 px-3.5 rounded-xl font-bold transition-all text-xs cursor-pointer shrink-0 ${currentTheme === 'dark' ? 'btn-primary' : 'bg-card border-border'}`}
+          >
+            Dark (داكن)
+          </Button>
+        </div>
       </div>
 
-      <div className="space-y-8">
+      {/* KPI Overview Cards Component */}
+      <AppearanceKpiCards
+        activeTheme={currentTheme}
+        activeDensity={prefs?.density || 'comfortable'}
+        isLoading={isLoading}
+      />
+
+      <div className="space-y-6">
         {/* Theme Selection */}
-        <div className="soft-card p-6 space-y-5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xs p-6 space-y-5">
+          <div className="flex items-center justify-between border-b border-border pb-4">
+            <h2 className="text-sm font-extrabold text-foreground flex items-center gap-2">
               <Paintbrush size={16} className="text-primary" />
               <span>{t('Theme Mode', 'وضع السمة')}</span>
             </h2>
-            <span className="text-xs text-muted-foreground">{t('Active:', 'النشط:')} <strong className="text-primary capitalize">{currentTheme}</strong></span>
+            <span className="text-xs text-muted-foreground">{t('Active:', 'النشط:')} <strong className="text-primary capitalize font-mono">{currentTheme}</strong></span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -123,14 +181,14 @@ export function AppearanceSettings() {
                 <button
                   key={theme.id}
                   onClick={() => setAppearance(theme.id as any)}
-                  className={`group relative flex flex-col p-5 rounded-2xl border-2 text-start transition-all overflow-hidden ${
+                  className={`group relative flex flex-col p-5 rounded-2xl border-2 text-start transition-all overflow-hidden cursor-pointer ${
                     active 
-                      ? 'border-primary bg-primary/5 shadow-md ring-2 ring-primary/20' 
-                      : 'border-border/70 bg-card hover:border-primary/40 hover:bg-muted/30'
+                      ? 'border-primary bg-primary/5 shadow-xs ring-2 ring-primary/20' 
+                      : 'border-border bg-card hover:border-primary/40 hover:bg-muted/30'
                   }`}
                 >
                   {/* Miniature Visual App Preview Mockup */}
-                  <div className="w-full h-24 rounded-xl border border-border/60 overflow-hidden mb-4 shadow-sm flex flex-col pointer-events-none">
+                  <div className="w-full h-24 rounded-xl border border-border/60 overflow-hidden mb-4 shadow-xs flex flex-col pointer-events-none">
                     <div className={`h-6 w-full ${theme.headerColor} flex items-center px-2 justify-between`}>
                       <div className="h-2 w-12 rounded bg-primary/30" />
                       <div className="h-2 w-2 rounded-full bg-accent" />
@@ -151,10 +209,10 @@ export function AppearanceSettings() {
 
                   <div className="flex items-center gap-2 mb-1">
                     <Icon size={18} className={active ? 'text-primary' : 'text-muted-foreground'} />
-                    <span className="text-sm font-bold text-foreground">{theme.label}</span>
+                    <span className="text-sm font-black text-foreground">{theme.label}</span>
                   </div>
 
-                  <p className="text-xs text-muted-foreground leading-relaxed">
+                  <p className="text-xs text-muted-foreground leading-relaxed font-medium">
                     {theme.desc}
                   </p>
 
@@ -169,77 +227,9 @@ export function AppearanceSettings() {
           </div>
         </div>
 
-        {/* Layout Density */}
-        <div className="soft-card p-6 space-y-5">
-          <div>
-            <h2 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
-              <LayoutGrid size={16} className="text-primary" />
-              <span>{t('Interface Density', 'كثافة الواجهة')}</span>
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              {t('Choose spacing density for data tables, lists, and form elements.', 'اختر كثافة المسافات للجداول المادية، القوائم، وعناصر الإدخال.')}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[
-              { 
-                id: 'compact', 
-                label: t('Compact Mode', 'وضع مضغوط'), 
-                desc: t('Tighter padding optimized for financial statements and audit entry.', 'مسافات دقيقة ممتازة لتحليل القوائم المالية وإدخال القيود.'),
-                icon: LayoutGrid 
-              },
-              { 
-                id: 'comfortable', 
-                label: t('Comfortable Mode', 'وضع مريح'), 
-                desc: t('Spacious visual flow with generous element breathing room.', 'تصميم مريح مع مسافات واسعة بين العناصر للقراءة المريحة.'),
-                icon: Type 
-              }
-            ].map(density => {
-              const active = (prefs?.density || 'comfortable') === density.id;
-              const Icon = density.icon;
-              return (
-                <button
-                  key={density.id}
-                  onClick={() => setDensity(density.id as any)}
-                  className={`flex items-start gap-4 p-5 rounded-2xl border-2 transition-all ${
-                    active 
-                      ? 'border-primary bg-primary/5 shadow-md ring-2 ring-primary/20' 
-                      : 'border-border/70 bg-card hover:border-primary/40'
-                  } ${isRtl ? 'text-right' : 'text-left'}`}
-                >
-                  <div className={`p-3 rounded-xl shrink-0 ${active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                    <Icon size={20} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-sm font-bold ${active ? 'text-primary' : 'text-foreground'}`}>{density.label}</span>
-                      {active && <CheckCircle2 size={16} className="text-primary shrink-0" />}
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{density.desc}</p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Saudi Accounting Platform Theme Features Card */}
-        <div className="soft-card p-6 bg-gradient-to-br from-primary/10 via-card to-accent/10 border-primary/20 flex items-start gap-4">
-          <div className="p-3 rounded-2xl bg-primary/15 text-primary shrink-0 mt-0.5">
-            <Sparkles size={22} />
-          </div>
-          <div>
-            <h3 className="font-bold text-sm text-foreground mb-1">
-              {t('SOCPA & ZATCA High-Contrast Compliance', 'توافق التباين العالي مع المعايير السعودية')}
-            </h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              {t('Both Light and Dark themes maintain strict WCAG AAA contrast ratios for all financial tables, GL voucher numbers, and ZATCA QR code displays.', 'تلتزم كلتا السمتين الفاتحة والداكنة بمعايير التباين العالي المعتمَدة لعرض الجداول المالية، أرقام القيود، ورموز الاستجابة السريعة.')}
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );
 }
+
 

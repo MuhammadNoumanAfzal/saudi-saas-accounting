@@ -10,7 +10,7 @@ import {
 import type { Invoice } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
 import { 
-  Search, Plus, ShieldCheck, RefreshCw, Sparkles
+  Search, Plus, ShieldCheck, RefreshCw, Sparkles, Download, FileSpreadsheet
 } from 'lucide-react';
 import { InvoiceCreateSheet } from './invoice-create-sheet';
 import { InvoiceKpiCards } from './invoice-kpi-cards';
@@ -46,7 +46,7 @@ export function InvoicesList({ onSelectInvoice }: InvoicesListProps) {
     invoiceType: (typeFilter as any) || undefined,
   };
 
-  // Optimized React Query config (10 mins staleTime for 0ms navigation latency)
+  // Fast React Query caching config (10 mins staleTime for 0ms navigation latency)
   const { data, isLoading, refetch } = useListInvoices(orgId, queryParams as any, {
     query: { 
       enabled: Boolean(orgId),
@@ -78,6 +78,46 @@ export function InvoicesList({ onSelectInvoice }: InvoicesListProps) {
     issued: invoices.filter(q => q.status === 'ISSUED').length,
     paid: invoices.filter(q => q.status === 'PAID').length,
     totalValue: invoices.reduce((acc, q) => acc + (parseFloat(q.totalAmount) || 0), 0)
+  };
+
+  const handleExportCSV = () => {
+    if (!invoices.length) return;
+    const headers = ['Invoice #', 'Type', 'Customer', 'Issue Date', 'Due Date', 'Total (SAR)', 'Status'];
+    const rows = invoices.map(i => [
+      `"${i.invoiceNumber}"`,
+      `"${i.invoiceType}"`,
+      `"${i.customerName || ''}"`,
+      `"${new Date(i.issueDate).toLocaleDateString()}"`,
+      `"${i.dueDate ? new Date(i.dueDate).toLocaleDateString() : ''}"`,
+      `"${Number(i.totalAmount).toFixed(2)}"`,
+      `"${i.status}"`
+    ]);
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `sales_invoices_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showAlert.toast(t('Sales Invoices Exported to CSV!', 'تم تصدير فواتير المبيعات إلى CSV!'), 'success');
+  };
+
+  const handleExportExcel = () => {
+    if (!invoices.length) return;
+    const tableRows = invoices.map(i => 
+      `<tr><td>${i.invoiceNumber}</td><td>${i.invoiceType}</td><td>${i.customerName || ''}</td><td>${new Date(i.issueDate).toLocaleDateString()}</td><td>${i.dueDate ? new Date(i.dueDate).toLocaleDateString() : ''}</td><td>${i.totalAmount}</td><td>${i.status}</td></tr>`
+    ).join('');
+    const xlsContent = `<html><head><meta charset="utf-8"/></head><body><table><thead><tr><th>Invoice #</th><th>Type</th><th>Customer</th><th>Issue Date</th><th>Due Date</th><th>Total (SAR)</th><th>Status</th></tr></thead><tbody>${tableRows}</tbody></table></body></html>`;
+    const blob = new Blob([xlsContent], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sales_invoices_${new Date().toISOString().split('T')[0]}.xls`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showAlert.toast(t('Sales Invoices Exported to Excel!', 'تم تصدير فواتير المبيعات إلى الإكسل!'), 'success');
   };
 
   const handleDeleteInvoice = async (id: string, number: string) => {
@@ -128,7 +168,7 @@ export function InvoicesList({ onSelectInvoice }: InvoicesListProps) {
   return (
     <div className="space-y-6 fade-up pb-12">
       {/* Luxury Header & Action Toolbar Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-card via-card to-primary/5 border border-border shadow-sm">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-card via-card to-primary/5 border border-border shadow-xs">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-extrabold uppercase tracking-wider border border-primary/20">
@@ -161,8 +201,30 @@ export function InvoicesList({ onSelectInvoice }: InvoicesListProps) {
 
           <Button
             type="button"
+            onClick={handleExportCSV}
+            variant="outline"
+            size="sm"
+            className="h-9 px-3 rounded-xl border border-border bg-card hover:bg-primary/5 hover:border-primary/40 text-foreground hover:text-primary transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 shadow-xs flex items-center gap-1.5"
+          >
+            <Download className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs">CSV</span>
+          </Button>
+
+          <Button
+            type="button"
+            onClick={handleExportExcel}
+            variant="outline"
+            size="sm"
+            className="h-9 px-3 rounded-xl border border-border bg-card hover:bg-primary/5 hover:border-primary/40 text-foreground hover:text-primary transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 shadow-xs flex items-center gap-1.5"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-xs">Excel</span>
+          </Button>
+
+          <Button
+            type="button"
             onClick={() => setCreateOpen(true)}
-            className="h-9 px-3.5 rounded-xl btn-primary shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 flex items-center gap-1.5"
+            className="h-9 px-3.5 rounded-xl btn-primary shadow-xs hover:shadow-md hover:scale-[1.02] transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 flex items-center gap-1.5"
           >
             <Plus className="w-4 h-4" />
             <span>{t('New Tax Invoice', 'فاتورة جديدة')}</span>
@@ -176,10 +238,11 @@ export function InvoicesList({ onSelectInvoice }: InvoicesListProps) {
         issued={summary.issued}
         paid={summary.paid}
         totalValue={summary.totalValue}
+        isLoading={isLoading}
       />
 
       {/* Main Table Card with Search & Filters */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xs">
         <div className="p-4 border-b border-border bg-muted/20 flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground rtl:left-auto rtl:right-3 pointer-events-none z-10" />
@@ -236,3 +299,4 @@ export function InvoicesList({ onSelectInvoice }: InvoicesListProps) {
     </div>
   );
 }
+

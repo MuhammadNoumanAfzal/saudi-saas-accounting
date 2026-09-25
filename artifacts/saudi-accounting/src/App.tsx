@@ -73,8 +73,8 @@ import { OrganizationProfile } from './pages/settings/organization-profile';
 import { UsersSettings } from './pages/settings/users';
 import { AppearanceSettings } from './pages/settings/appearance';
 import { SecuritySettings } from './pages/settings/security';
-import { AuditLogSettings } from './pages/settings/audit-log';
-import { BranchesSettings, ZatcaSettings } from './pages/settings/placeholders';
+import { BranchesSettings } from './pages/settings/branches';
+import { ZatcaSettings } from './pages/settings/zatca';
 import { LanguageSettings } from './pages/settings/language';
 import { PublicHome } from './pages/public-home';
 import { AboutPage } from './pages/about';
@@ -518,9 +518,6 @@ export default function App() {
             </Route>
             <Route path="/settings/security">
               <AuthGuard><SecuritySettings /></AuthGuard>
-            </Route>
-            <Route path="/settings/audit-log">
-              <AuthGuard><AuditLogSettings /></AuthGuard>
             </Route>
             <Route path="/settings/branches">
               <AuthGuard><BranchesSettings /></AuthGuard>
