@@ -304,7 +304,13 @@ function SignInPage() {
   const { signOut } = useClerk();
   const [, setLocation] = useLocation();
 
-  if (isLoaded && isSignedIn) {
+  if (!isLoaded) {
+    return (
+      <PlatformLoader fullScreen message="Loading Authentication..." messageAr="جاري تحميل نظام الدخول..." />
+    );
+  }
+
+  if (isSignedIn) {
     return (
       <AuthLayout
         title={t('Empowering Saudi Enterprises with Smart Accounting', 'تمكين المنشآت السعودية بنظام إداري متكامل')}
@@ -350,6 +356,7 @@ function SignInPage() {
         routing="path"
         path={`${basePath}/sign-in`}
         signUpUrl={`${basePath}/sign-up`}
+        fallbackRedirectUrl={`${basePath}/dashboard`}
       />
     </AuthLayout>
   );
@@ -362,7 +369,13 @@ function SignUpPage() {
   const { signOut } = useClerk();
   const [, setLocation] = useLocation();
 
-  if (isLoaded && isSignedIn) {
+  if (!isLoaded) {
+    return (
+      <PlatformLoader fullScreen message="Loading Registration..." messageAr="جاري تحضير التسجيل..." />
+    );
+  }
+
+  if (isSignedIn) {
     return (
       <AuthLayout
         title={t('Start Your ZATCA Compliant Workspace Today', 'ابدأ مساحة عملك المتوافقة مع هيئة الزكاة والضريبة اليوم')}
@@ -409,7 +422,6 @@ function SignUpPage() {
         path={`${basePath}/sign-up`}
         signInUrl={`${basePath}/sign-in`}
         fallbackRedirectUrl={`${basePath}/onboarding`}
-        forceRedirectUrl={`${basePath}/onboarding`}
       />
     </AuthLayout>
   );
