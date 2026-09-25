@@ -48,6 +48,16 @@ export function PartyCreateSheet({
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
+  const [buildingNumber, setBuildingNumber] = useState('');
+  const [street, setStreet] = useState('');
+  const [district, setDistrict] = useState('');
+  const [province, setProvince] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [additionalNumber, setAdditionalNumber] = useState('');
+  const [country, setCountry] = useState('Saudi Arabia');
+  const [paymentTerms, setPaymentTerms] = useState('Net 30');
+  const [creditLimit, setCreditLimit] = useState('');
+  const [taxTreatment, setTaxTreatment] = useState('standard');
   
   const [showMore, setShowMore] = useState(false);
   const [legalEn, setLegalEn] = useState('');
@@ -108,6 +118,16 @@ export function PartyCreateSheet({
       setEmail('');
       setPhone('');
       setCity('');
+      setBuildingNumber('');
+      setStreet('');
+      setDistrict('');
+      setProvince('');
+      setPostalCode('');
+      setAdditionalNumber('');
+      setCountry('Saudi Arabia');
+      setPaymentTerms('Net 30');
+      setCreditLimit('');
+      setTaxTreatment('standard');
       setShowMore(false);
       setLegalEn('');
       setLegalAr('');
@@ -208,6 +228,16 @@ export function PartyCreateSheet({
       primaryEmail: email.trim() || null,
       primaryPhone: phone.trim() || null,
       city: city.trim() || null,
+      billingBuildingNumber: buildingNumber.trim() || null,
+      billingStreet: street.trim() || null,
+      billingDistrict: district.trim() || null,
+      billingProvince: province.trim() || null,
+      billingPostalCode: postalCode.trim() || null,
+      billingAdditionalNumber: additionalNumber.trim() || null,
+      billingCountry: country.trim() || 'Saudi Arabia',
+      paymentTerms: paymentTerms.trim() || null,
+      creditLimit: creditLimit.trim() || null,
+      taxTreatment: taxTreatment.trim() || null,
       legalNameEnglish: legalEn.trim() || finalNameEn || null,
       legalNameArabic: legalAr.trim() || finalNameAr || null,
       website: website.trim() || null,
