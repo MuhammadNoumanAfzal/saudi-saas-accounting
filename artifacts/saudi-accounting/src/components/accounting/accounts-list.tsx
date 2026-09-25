@@ -1,20 +1,31 @@
 import { useState } from 'react';
 import { useTranslation, Button } from '@/lib/utils';
+import { showAlert } from '@/lib/alerts';
 import { getErrorMessage } from '@/lib/form-errors';
 import { 
   useGetCurrentSession, 
   useListAccounts,
-  useCreateAccount,
-  getListAccountsQueryKey
+  getListAccountsQueryKey,
+  customFetch
 } from '@workspace/api-client-react';
 import type { Account } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useQueryClient } from '@tanstack/react-query';
-import { Landmark, Plus, Search, Filter, FolderTree } from 'lucide-react';
-import { SkeletonTable } from '@/components/ui/platform-loader';
+import { 
+  Landmark, Plus, Search, Filter, RefreshCw, Sparkles, ShieldCheck, DownloadCloud, Tag, Calendar, Pencil
+} from 'lucide-react';
+import { AccountKpiCards } from './account-kpi-cards';
+import { AccountTable } from './account-table';
+import { AccountCreateSheet } from './account-create-sheet';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export function AccountsList() {
-  const { t, isRtl } = useTranslation();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { data: session } = useGetCurrentSession();
   const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization.id || '';
@@ -23,287 +34,307 @@ export function AccountsList() {
   const debouncedSearch = useDebounce(search, 300);
   const [typeFilter, setTypeFilter] = useState<string>('');
   const [createOpen, setCreateOpen] = useState(false);
-
-  // Form state
-  const [code, setCode] = useState('');
-  const [nameEnglish, setNameEnglish] = useState('');
-  const [nameArabic, setNameArabic] = useState('');
-  const [type, setType] = useState('EXPENSE');
-  const [subtype, setSubtype] = useState('OPERATING_EXPENSE');
-  const [errorMsg, setErrorMsg] = useState('');
+  const [editAccount, setEditAccount] = useState<Account | null>(null);
+  const [viewAccount, setViewAccount] = useState<Account | null>(null);
 
   const queryParams = {
     search: debouncedSearch || undefined,
     type: (typeFilter as any) || undefined,
   };
 
-  const { data, isLoading } = useListAccounts(orgId, queryParams as any, {
+  // Fast React Query caching (10 mins staleTime for 0ms instant load latency)
+  const { data, isLoading, refetch } = useListAccounts(orgId, queryParams as any, {
     query: {
-      enabled: !!orgId,
+      enabled: Boolean(orgId),
+      staleTime: 10 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
       queryKey: getListAccountsQueryKey(orgId, queryParams as any),
     },
   });
 
-  const createMutation = useCreateAccount();
-
   const accounts: Account[] = data?.items || [];
 
-  const getTypeBadge = (accType: string) => {
-    switch (accType) {
-      case 'ASSET':
-        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">{isRtl ? 'أصول' : 'Asset'}</span>;
-      case 'LIABILITY':
-        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400">{isRtl ? 'الالتزامات' : 'Liability'}</span>;
-      case 'EQUITY':
-        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">{isRtl ? 'حقوق الملكية' : 'Equity'}</span>;
-      case 'REVENUE':
-        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">{isRtl ? 'إيرادات' : 'Revenue'}</span>;
-      default:
-        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">{isRtl ? 'مصروفات' : 'Expense'}</span>;
-    }
-  };
-
-  const handleCreateSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg('');
-
-    if (!code || !nameEnglish || !nameArabic) {
-      setErrorMsg(isRtl ? 'جميع الحقول مطلوبة' : 'All fields are required');
+  const handleDeleteAccount = async (account: Account) => {
+    if (account.isSystemAccount) {
+      showAlert.error(
+        t('System Account', 'حساب نظامي'),
+        t('System accounts cannot be deleted as they are bound to ZATCA & SOCPA standard ledgers.', 'لا يمكن حذف الحسابات النظامية المرتبطة بالسجلات المحاسبية والضريبية المعتمدة.')
+      );
       return;
     }
 
-    try {
-      await createMutation.mutateAsync({
-        organizationId: orgId,
-        data: {
-          code,
-          nameEnglish,
-          nameArabic,
-          type: type as any,
-          subtype,
-        }
-      });
+    const confirmed = await showAlert.confirm(
+      t(`Delete Account ${account.code}?`, `حذف الحساب ${account.code}؟`),
+      t(`Are you sure you want to delete ${account.nameArabic} (${account.nameEnglish})? This action cannot be undone.`, `هل أنت تأكد من رغبتك في حذف ${account.nameArabic}؟ لا يمكن التراجع عن هذا الإجراء.`),
+      t('Yes, Delete', 'نعم، حذف'),
+      t('Cancel', 'إلغاء')
+    );
 
+    if (!confirmed) return;
+
+    // Optimistically remove from React Query cache for 0ms instant UI response
+    const queryKey = getListAccountsQueryKey(orgId, queryParams as any);
+    queryClient.setQueryData(queryKey, (oldData: any) => {
+      if (!oldData || !oldData.items) return oldData;
+      return {
+        ...oldData,
+        items: oldData.items.filter((item: any) => item.id !== account.id),
+        total: Math.max(0, (oldData.total || 1) - 1),
+      };
+    });
+
+    showAlert.toast(
+      t('Account Deleted Successfully!', 'تم حذف الحساب بنجاح!'),
+      'success'
+    );
+
+    try {
+      await customFetch(`/api/organizations/${orgId}/accounting/accounts/${account.id}`, {
+        method: 'DELETE',
+      });
       queryClient.invalidateQueries({ queryKey: getListAccountsQueryKey(orgId) });
-      setCreateOpen(false);
-      setCode('');
-      setNameEnglish('');
-      setNameArabic('');
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(getErrorMessage(err, (isRtl ? 'فشل إنشاء الحساب' : 'Failed to create account')));
+      queryClient.invalidateQueries({ queryKey: getListAccountsQueryKey(orgId) });
+      showAlert.error(t('Delete Failed', 'فشل الحذف'), getErrorMessage(err, t('Failed to delete account.', 'تعذر حذف الحساب.')));
     }
   };
 
+  const handleExportCSV = () => {
+    if (accounts.length === 0) return;
+    const headers = ['Code', 'Arabic Name', 'English Name', 'Type', 'Subtype', 'System Account'];
+    const rows = accounts.map(a => [
+      `"${a.code}"`,
+      `"${a.nameArabic}"`,
+      `"${a.nameEnglish}"`,
+      `"${a.type}"`,
+      `"${a.subtype}"`,
+      a.isSystemAccount ? 'System' : 'Custom'
+    ]);
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `chart_of_accounts_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showAlert.toast(t('CSV Exported Successfully!', 'تم تصدير الدليل بنجاح!'), 'success');
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6 fade-up pb-12">
+      {/* Luxury Header & Action Toolbar Bar */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-card via-card to-primary/5 border border-border shadow-xs">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <Landmark className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
-            {isRtl ? 'شجرة الحسابات (Chart of Accounts)' : 'Chart of Accounts'}
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            {isRtl 
-              ? 'دليل الحسابات الموحد المعترف به حسب معايير الهيئة السعودية للمحاسبين القانونيين (SOCPA)' 
-              : 'Standardized Saudi SOCPA Chart of Accounts for Assets, Liabilities, Revenue & Expenses'}
+          <div className="flex items-center gap-2 mb-1">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-extrabold uppercase tracking-wider border border-primary/20">
+              <Sparkles className="w-3 h-3 text-amber-500" />
+              <span>{t('SOCPA General Ledger', 'دليل الحسابات الموحد SOCPA')}</span>
+            </span>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">
+              <ShieldCheck size={13} /> ZATCA Compliant Structure
+            </span>
+          </div>
+          <h1 className="text-2xl font-black tracking-tight text-foreground">{t('Chart of Accounts', 'شجرة الحسابات')}</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {t('Standardized Saudi SOCPA Chart of Accounts for Assets, Liabilities, Revenue & Expenses.', 'دليل الحسابات الموحد المعترف به حسب معايير الهيئة السعودية للمحاسبين القانونيين (SOCPA).')}
           </p>
         </div>
 
-        <Button 
-          onClick={() => setCreateOpen(true)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all"
-        >
-          <Plus className="w-5 h-5" />
-          {isRtl ? 'إضافة حساب جديد' : 'New Account'}
-        </Button>
+        {/* Uniform Single-Line Action Toolbar */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 shrink-0">
+          <Button
+            type="button"
+            onClick={() => refetch()}
+            variant="outline"
+            size="sm"
+            className="h-9 px-3 rounded-xl border border-border bg-card hover:bg-primary/5 hover:border-primary/40 text-foreground hover:text-primary transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 shadow-xs flex items-center gap-1.5"
+            title={t('Refresh Data', 'تحديث')}
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs">{t('Refresh', 'تحديث')}</span>
+          </Button>
+
+          <Button
+            type="button"
+            onClick={handleExportCSV}
+            variant="outline"
+            size="sm"
+            className="h-9 px-3 rounded-xl border border-border bg-card hover:bg-primary/5 hover:border-primary/40 text-foreground hover:text-primary transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 shadow-xs flex items-center gap-1.5"
+          >
+            <DownloadCloud className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs">{t('Export', 'تصدير')}</span>
+          </Button>
+
+          <Button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="h-9 px-3.5 rounded-xl btn-primary shadow-xs hover:shadow-md hover:scale-[1.02] transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 flex items-center gap-1.5"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{t('New Account', 'إضافة حساب جديد')}</span>
+          </Button>
+        </div>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full md:w-96">
-          <Search className="w-4 h-4 absolute left-3 rtl:right-3 rtl:left-auto top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={isRtl ? 'البحث بالرمز أو اسم الحساب...' : 'Search by account code or name...'}
-            className="w-full pl-9 rtl:pr-9 rtl:pl-3 pr-3 py-2 text-sm bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-900 dark:text-slate-100"
-          />
-        </div>
+      {/* Summary KPI Cards Component */}
+      <AccountKpiCards accounts={accounts} isLoading={isLoading} />
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-slate-400" />
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+      {/* Main Table Card with Search & Category Filter */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xs">
+        <div className="p-4 border-b border-border bg-muted/20 flex flex-col sm:flex-row gap-3 items-center justify-between">
+          <div className="relative flex-1 w-full">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground rtl:left-auto rtl:right-3 pointer-events-none z-10" />
+            <input 
+              value={search} 
+              onChange={e => setSearch(e.target.value)} 
+              placeholder={t('Search by account code or name...', 'البحث بالرمز أو اسم الحساب...')}
+              className="field !pl-10 rtl:!pl-3.5 rtl:!pr-10 bg-background h-10 rounded-xl w-full text-xs font-semibold" 
+            />
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+            <Filter size={15} className="text-muted-foreground shrink-0" />
+            <select 
+              className="field bg-background h-10 w-full sm:w-52 rounded-xl text-xs font-semibold cursor-pointer" 
+              value={typeFilter} 
+              onChange={e => setTypeFilter(e.target.value)}
             >
-              <option value="">{isRtl ? 'جميع أنواع الحسابات' : 'All Account Types'}</option>
-              <option value="ASSET">{isRtl ? 'أصول (Assets)' : 'Assets'}</option>
-              <option value="LIABILITY">{isRtl ? 'التزامات (Liabilities)' : 'Liabilities'}</option>
-              <option value="EQUITY">{isRtl ? 'حقوق ملكية (Equity)' : 'Equity'}</option>
-              <option value="REVENUE">{isRtl ? 'إيرادات (Revenue)' : 'Revenue'}</option>
-              <option value="EXPENSE">{isRtl ? 'مصروفات (Expenses)' : 'Expenses'}</option>
+              <option value="">{t('All Account Types', 'جميع أنواع الحسابات')}</option>
+              <option value="ASSET">{t('Assets (أصول)', 'Assets (أصول)')}</option>
+              <option value="LIABILITY">{t('Liabilities (التزامات)', 'Liabilities (التزامات)')}</option>
+              <option value="EQUITY">{t('Equity (حقوق ملكية)', 'Equity (حقوق ملكية)')}</option>
+              <option value="REVENUE">{t('Revenue (إيرادات)', 'Revenue (إيرادات)')}</option>
+              <option value="EXPENSE">{t('Expenses (مصروفات)', 'Expenses (مصروفات)')}</option>
             </select>
           </div>
         </div>
+
+        {/* Account Table Component */}
+        <AccountTable 
+          accounts={accounts}
+          isLoading={isLoading}
+          search={search}
+          typeFilter={typeFilter}
+          onViewAccount={setViewAccount}
+          onEditAccount={setEditAccount}
+          onDeleteAccount={handleDeleteAccount}
+          onCreateClick={() => setCreateOpen(true)}
+        />
       </div>
 
-      {/* Main Accounts Table */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
-        {isLoading ? (
-          <div className="p-4 space-y-4">
-            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 px-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-              <span>{isRtl ? 'جاري تحميل شجرة الحسابات السعودية المعتمدة (SOCPA)...' : 'Loading Saudi SOCPA Standardized Chart of Accounts...'}</span>
-            </div>
-            <SkeletonTable rows={6} />
-          </div>
-        ) : accounts.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 dark:text-slate-400">
-            <FolderTree className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-            <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 mb-1">
-              {isRtl ? 'لا توجد حسابات' : 'No accounts found'}
-            </h3>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left rtl:text-right text-slate-600 dark:text-slate-300">
-              <thead className="text-xs uppercase bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th scope="col" className="px-6 py-4">{isRtl ? 'رمز الحساب' : 'Code'}</th>
-                  <th scope="col" className="px-6 py-4">{isRtl ? 'اسم الحساب (عربي)' : 'Account Name (Arabic)'}</th>
-                  <th scope="col" className="px-6 py-4">{isRtl ? 'اسم الحساب (إنجليزي)' : 'Account Name (English)'}</th>
-                  <th scope="col" className="px-6 py-4">{isRtl ? 'النوع' : 'Type'}</th>
-                  <th scope="col" className="px-6 py-4">{isRtl ? 'التصنيف الفرعي' : 'Subtype'}</th>
-                  <th scope="col" className="px-6 py-4">{isRtl ? 'حساب نظامي' : 'System Account'}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                {accounts.map((acc) => (
-                  <tr key={acc.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                    <td className="px-6 py-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                      {acc.code}
-                    </td>
-                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">
-                      {acc.nameArabic}
-                    </td>
-                    <td className="px-6 py-4 text-slate-700 dark:text-slate-300">
-                      {acc.nameEnglish}
-                    </td>
-                    <td className="px-6 py-4">
-                      {getTypeBadge(acc.type)}
-                    </td>
-                    <td className="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                      {acc.subtype}
-                    </td>
-                    <td className="px-6 py-4 text-xs">
-                      {acc.isSystemAccount ? (
-                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">{isRtl ? 'نظامي' : 'System'}</span>
-                      ) : (
-                        <span className="text-slate-400">{isRtl ? 'مخصص' : 'Custom'}</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {/* Account Create Sheet */}
+      <AccountCreateSheet
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        orgId={orgId}
+        onSuccess={() => {
+          setCreateOpen(false);
+          refetch();
+        }}
+      />
 
-      {/* Account Creation Modal */}
-      {createOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100">
-                {isRtl ? 'إضافة حساب جديد إلى الدليل' : 'Create New Account'}
-              </h3>
-              <button onClick={() => setCreateOpen(false)} className="text-slate-400 hover:text-slate-600">×</button>
-            </div>
+      {/* Account Edit Sheet */}
+      <AccountCreateSheet
+        open={Boolean(editAccount)}
+        onOpenChange={(nextOpen) => { if (!nextOpen) setEditAccount(null); }}
+        orgId={orgId}
+        initialAccount={editAccount}
+        onSuccess={() => {
+          setEditAccount(null);
+          refetch();
+        }}
+      />
 
-            <form onSubmit={handleCreateSubmit} className="p-6 space-y-4">
-              {errorMsg && (
-                <div className="p-3 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-sm">
-                  {errorMsg}
-                </div>
+      {/* Account Details View Modal */}
+      <Dialog open={Boolean(viewAccount)} onOpenChange={(open) => { if (!open) setViewAccount(null); }}>
+        <DialogContent className="max-w-md rounded-2xl p-6 bg-card border border-border shadow-xl">
+          <DialogHeader className="pb-4 border-b border-border">
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex items-center px-3 py-1 rounded-lg bg-primary/10 text-primary font-mono font-extrabold text-xs border border-primary/20">
+                {viewAccount?.code}
+              </span>
+              {viewAccount?.isSystemAccount ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                  <ShieldCheck size={12} /> SOCPA System Account
+                </span>
+              ) : (
+                <span className="inline-flex items-center text-[11px] font-bold bg-muted text-muted-foreground px-2.5 py-0.5 rounded-full border border-border">
+                  Custom Account
+                </span>
               )}
+            </div>
+            <DialogTitle className="text-xl font-black tracking-tight text-foreground mt-3">
+              {viewAccount?.nameArabic}
+            </DialogTitle>
+            <div className="text-xs font-medium text-muted-foreground">
+              {viewAccount?.nameEnglish}
+            </div>
+          </DialogHeader>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  {isRtl ? 'رمز الحساب *' : 'Account Code *'}
-                </label>
-                <input
-                  type="text"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  placeholder="e.g. 50600"
-                  required
-                  className="w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg"
-                />
+          {viewAccount && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-xl bg-muted/30 border border-border/50">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground mb-1">
+                    <Tag size={12} className="text-primary" />
+                    <span>{t('Account Type', 'نوع الحساب')}</span>
+                  </div>
+                  <div className="text-xs font-extrabold text-foreground">
+                    {viewAccount.type}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-muted/30 border border-border/50">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground mb-1">
+                    <Calendar size={12} className="text-primary" />
+                    <span>{t('Subtype', 'التصنيف الفرعي')}</span>
+                  </div>
+                  <div className="text-xs font-mono font-bold text-foreground truncate">
+                    {viewAccount.subtype}
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  {isRtl ? 'اسم الحساب باللغة العربية *' : 'Arabic Name *'}
-                </label>
-                <input
-                  type="text"
-                  value={nameArabic}
-                  onChange={(e) => setNameArabic(e.target.value)}
-                  placeholder="مثال: مصروفات تسويق رقمية"
-                  required
-                  className="w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg"
-                />
+              <div className="p-4 rounded-xl bg-muted/20 border border-border space-y-2 text-xs text-muted-foreground">
+                <div className="flex justify-between items-center">
+                  <span>{t('System Account', 'حساب نظامي')}</span>
+                  <span className="font-bold text-foreground">{viewAccount.isSystemAccount ? t('Yes', 'نعم') : t('No', 'لا')}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>{t('Status', 'الحالة')}</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">{t('Active', 'نشط')}</span>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  {isRtl ? 'اسم الحساب باللغة الإنجليزية *' : 'English Name *'}
-                </label>
-                <input
-                  type="text"
-                  value={nameEnglish}
-                  onChange={(e) => setNameEnglish(e.target.value)}
-                  placeholder="e.g. Digital Marketing Expense"
-                  required
-                  className="w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  {isRtl ? 'نوع الحساب الرئيسي *' : 'Account Type *'}
-                </label>
-                <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value)}
-                  className="w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg"
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setViewAccount(null)}
+                  className="rounded-xl text-xs font-bold px-4 py-2 cursor-pointer"
                 >
-                  <option value="ASSET">ASSET (أصول)</option>
-                  <option value="LIABILITY">LIABILITY (التزامات)</option>
-                  <option value="EQUITY">EQUITY (حقوق ملكية)</option>
-                  <option value="REVENUE">REVENUE (إيرادات)</option>
-                  <option value="EXPENSE">EXPENSE (مصروفات)</option>
-                </select>
-              </div>
-
-              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
-                <Button type="button" variant="secondary" onClick={() => setCreateOpen(false)}>
-                  {isRtl ? 'إلغاء' : 'Cancel'}
+                  {t('Close', 'إغلاق')}
                 </Button>
-                <Button type="submit" disabled={createMutation.isPending} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                  {isRtl ? 'حفظ الحساب' : 'Save Account'}
+                <Button
+                  type="button"
+                  onClick={() => {
+                    const acc = viewAccount;
+                    setViewAccount(null);
+                    setEditAccount(acc);
+                  }}
+                  className="btn-primary rounded-xl text-xs font-bold px-4 py-2 gap-1.5 cursor-pointer"
+                >
+                  <Pencil size={14} />
+                  <span>{t('Edit Account', 'تعديل الحساب')}</span>
                 </Button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -240,8 +240,8 @@ export function CatalogList() {
 
       {/* Main Table Card with Search & Filters */}
       <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-        <div className="p-4 border-b border-border bg-muted/20 flex flex-col lg:flex-row gap-3 lg:items-center">
-          <div className="relative flex-1 min-w-[240px]">
+        <div className="p-4 border-b border-border bg-muted/20 flex flex-col md:flex-row gap-3 md:items-center justify-between">
+          <div className="relative flex-1 min-w-[200px]">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground rtl:left-auto rtl:right-3 pointer-events-none z-10" />
             <input 
               value={search} 
@@ -250,18 +250,32 @@ export function CatalogList() {
               className="field !pl-10 rtl:!pl-3.5 rtl:!pr-10 bg-background h-10 rounded-xl w-full text-xs font-semibold" 
             />
           </div>
-          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0">
-            <select className="field bg-background h-10 w-full sm:w-32 rounded-xl text-xs font-semibold cursor-pointer shrink-0" value={type} onChange={e => { setType(e.target.value as CatalogItemType | ''); setPage(1); }}>
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 shrink-0 max-w-full">
+            <select 
+              className="field bg-background h-10 min-w-[110px] rounded-xl text-xs font-semibold cursor-pointer shrink-0" 
+              value={type} 
+              onChange={e => { setType(e.target.value as CatalogItemType | ''); setPage(1); }}
+            >
               <option value="">{t('All Types', 'جميع الأنواع')}</option>
               <option value="PRODUCT">{t('Product', 'منتج')}</option>
               <option value="SERVICE">{t('Service', 'خدمة')}</option>
             </select>
-            <select className="field bg-background h-10 w-full sm:w-32 rounded-xl text-xs font-semibold cursor-pointer shrink-0" value={status} onChange={e => { setStatus(e.target.value as CatalogItemStatus | ''); setPage(1); }}>
+
+            <select 
+              className="field bg-background h-10 min-w-[115px] rounded-xl text-xs font-semibold cursor-pointer shrink-0" 
+              value={status} 
+              onChange={e => { setStatus(e.target.value as CatalogItemStatus | ''); setPage(1); }}
+            >
               <option value="">{t('All Statuses', 'جميع الحالات')}</option>
               <option value="ACTIVE">{t('Active', 'نشط')}</option>
               <option value="INACTIVE">{t('Inactive', 'غير نشط')}</option>
             </select>
-            <select className="field bg-background h-10 w-full sm:w-36 rounded-xl text-xs font-semibold cursor-pointer shrink-0" value={taxCategory} onChange={e => { setTaxCategory(e.target.value); setPage(1); }}>
+
+            <select 
+              className="field bg-background h-10 min-w-[115px] rounded-xl text-xs font-semibold cursor-pointer shrink-0" 
+              value={taxCategory} 
+              onChange={e => { setTaxCategory(e.target.value); setPage(1); }}
+            >
               <option value="">{t('All Taxes', 'جميع الضرائب')}</option>
               <option value="STANDARD">{t('Standard (15%)', 'الأساسية (15%)')}</option>
               <option value="ZERO_RATED">{t('Zero Rated', 'نسبة الصفر')}</option>

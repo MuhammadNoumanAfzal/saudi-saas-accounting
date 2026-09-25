@@ -193,6 +193,80 @@ router.post("/organizations/:organizationId/accounting/accounts", async (req, re
   }
 });
 
+// PATCH /organizations/:organizationId/accounting/accounts/:accountId
+router.patch("/organizations/:organizationId/accounting/accounts/:accountId", async (req, res) => {
+  try {
+    const orgId = getOrgId(req);
+    const accountId = String(req.params.accountId);
+    const body = req.body;
+
+    const existing = await db
+      .select()
+      .from(accountsTable)
+      .where(and(eq(accountsTable.id, accountId), eq(accountsTable.organizationId, orgId)))
+      .limit(1);
+
+    if (existing.length === 0) {
+      res.status(404).json({ error: "Account not found" });
+      return;
+    }
+
+    const updates: any = {};
+    if (body.nameEnglish) updates.nameEnglish = body.nameEnglish;
+    if (body.nameArabic) updates.nameArabic = body.nameArabic;
+    if (body.type) updates.type = body.type.toUpperCase();
+    if (body.subtype) updates.subtype = body.subtype;
+
+    const [updatedAccount] = await db
+      .update(accountsTable)
+      .set(updates)
+      .where(and(eq(accountsTable.id, accountId), eq(accountsTable.organizationId, orgId)))
+      .returning();
+
+    res.json(updatedAccount);
+    return;
+  } catch (error: any) {
+    console.error("Error updating account:", error);
+    res.status(500).json({ error: error.message || "Failed to update account" });
+    return;
+  }
+});
+
+// DELETE /organizations/:organizationId/accounting/accounts/:accountId
+router.delete("/organizations/:organizationId/accounting/accounts/:accountId", async (req, res) => {
+  try {
+    const orgId = getOrgId(req);
+    const accountId = String(req.params.accountId);
+
+    const existing = await db
+      .select()
+      .from(accountsTable)
+      .where(and(eq(accountsTable.id, accountId), eq(accountsTable.organizationId, orgId)))
+      .limit(1);
+
+    if (existing.length === 0) {
+      res.status(404).json({ error: "Account not found" });
+      return;
+    }
+
+    if (existing[0].isSystemAccount) {
+      res.status(400).json({ error: "System accounts cannot be deleted" });
+      return;
+    }
+
+    await db
+      .delete(accountsTable)
+      .where(and(eq(accountsTable.id, accountId), eq(accountsTable.organizationId, orgId)));
+
+    res.json({ success: true, message: "Account deleted successfully" });
+    return;
+  } catch (error: any) {
+    console.error("Error deleting account:", error);
+    res.status(500).json({ error: error.message || "Failed to delete account" });
+    return;
+  }
+});
+
 // ==========================================
 // JOURNAL ENTRIES ROUTES
 // ==========================================
