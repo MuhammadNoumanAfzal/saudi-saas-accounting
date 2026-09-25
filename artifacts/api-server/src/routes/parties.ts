@@ -30,6 +30,46 @@ function validVat(v: any) {
   return /^\d{15}$/.test(trimmed) && trimmed.startsWith("3") && trimmed.endsWith("3");
 }
 function safe(v: any) { const out = { ...v }; delete out.objectPath; delete out.bytes; delete out.size; return out; }
+const inlineAddressKeys = [
+  "billingBuildingNumber",
+  "billingStreet",
+  "billingDistrict",
+  "billingProvince",
+  "billingPostalCode",
+  "billingAdditionalNumber",
+  "billingCountry",
+] as const;
+function extractBillingAddress(body: any) {
+  const address = {
+    label: "Billing / Registered Address",
+    addressType: "billing",
+    buildingNumber: clean(body.billingBuildingNumber),
+    street: clean(body.billingStreet),
+    district: clean(body.billingDistrict),
+    city: clean(body.city),
+    province: clean(body.billingProvince),
+    postalCode: clean(body.billingPostalCode),
+    additionalNumber: clean(body.billingAdditionalNumber),
+    country: clean(body.billingCountry) || "Saudi Arabia",
+    isDefaultBilling: true,
+    isDefaultShipping: true,
+  };
+  return Object.values(address).some((value) => typeof value === "string" && value.trim().length > 0) ? address : null;
+}
+async function upsertBillingAddress(organizationId: string, partyId: string, address: any) {
+  if (!address) return null;
+  const [existing] = await db.select().from(partyAddressesTable).where(and(
+    eq(partyAddressesTable.organizationId, organizationId),
+    eq(partyAddressesTable.partyId, partyId),
+    eq(partyAddressesTable.isDefaultBilling, true),
+  )).limit(1);
+  if (existing) {
+    const [updated] = await db.update(partyAddressesTable).set({ ...address, updatedAt: now() }).where(eq(partyAddressesTable.id, existing.id)).returning();
+    return updated;
+  }
+  const [created] = await db.insert(partyAddressesTable).values({ ...address, organizationId, partyId, updatedAt: now() }).returning();
+  return created;
+}
 async function audit(req: any, action: string, entityType: string, entityId: string | undefined, previousValues?: any, newValues?: any) {
   await writeAuditLog({ organizationId: org(req), userId: req.res?.locals?.partyUser?.id, action, entityType, entityId, previousValues: safe(previousValues), newValues: safe(newValues), req });
 }
@@ -68,14 +108,16 @@ async function create(req: any, res: any, role: string) {
   if (!validVat(body)) return res.status(400).json({ error: "VAT number must contain 15 digits and start and end with 3" });
   const organizationId = org(req);
   const partyNumber = await nextNumber(organizationId, role);
+  const billingAddress = extractBillingAddress(body);
   const values: any = { ...body, organizationId, displayName: name(body), updatedAt: now() };
-  for (const k of ["paymentTerms", "creditLimit", "taxTreatment"]) delete values[k];
+  for (const k of ["paymentTerms", "creditLimit", "taxTreatment", ...inlineAddressKeys]) delete values[k];
   const [p] = await db.insert(businessPartiesTable).values(values).returning();
   const [r] = await db.insert(partyRolesTable).values({ organizationId, partyId: p.id, role, partyNumber, paymentTerms: body.paymentTerms, creditLimit: body.creditLimit, taxTreatment: body.taxTreatment }).returning();
-  const result = { p, r };
+  const address = await upsertBillingAddress(organizationId, p.id, billingAddress);
+  const result = { p, r, address };
   audit(req, "created", "business_party", result.p.id, null, result.p).catch(() => {});
   audit(req, "role_added", "party_role", result.r.id, null, result.r).catch(() => {});
-  res.status(201).json({ ...result.p, roles: [result.r], contacts: [], addresses: [], tags: [], documents: [] });
+  res.status(201).json({ ...result.p, roles: [result.r], contacts: [], addresses: result.address ? [result.address] : [], tags: [], documents: [] });
 }
 async function list(req: any, res: any, role: string) {
   const q = String(req.query.search || ""); const conditions: any[] = [eq(businessPartiesTable.organizationId, org(req)), eq(partyRolesTable.role, role)];
@@ -119,13 +161,14 @@ function partyRoutes(role: string) {
     const body = parse(role === "customer" ? UpdateCustomerBody : UpdateSupplierBody, req.body, res); if (!body) return;
     if (!validVat(body)) return res.status(400).json({ error: "VAT number must contain 15 digits and start and end with 3" });
     const old = await getParty(org(req), party(req)); if (!old) return res.status(404).json({ error: "Party not found" });
+    const billingAddress = extractBillingAddress(body);
     const values: any = Object.fromEntries(Object.entries(body).filter(([, v]) => v !== undefined));
     const roleSettings = Object.fromEntries(
       ["paymentTerms", "creditLimit", "taxTreatment"]
         .filter((key) => values[key] !== undefined)
         .map((key) => [key, values[key]]),
     );
-    for (const key of ["paymentTerms", "creditLimit", "taxTreatment"]) delete values[key];
+    for (const key of ["paymentTerms", "creditLimit", "taxTreatment", ...inlineAddressKeys]) delete values[key];
     if (Object.keys(values).some(k => k.includes("Name") || ["firstName", "lastName", "arabicName"].includes(k))) values.displayName = name({ ...old, ...values }); values.updatedAt = now();
     const [updated] = await db.update(businessPartiesTable).set(values).where(and(eq(businessPartiesTable.organizationId, org(req)), eq(businessPartiesTable.id, party(req)))).returning();
     if (Object.keys(roleSettings).length) await db.update(partyRolesTable).set({ ...roleSettings, updatedAt: now() }).where(and(
@@ -133,6 +176,7 @@ function partyRoutes(role: string) {
       eq(partyRolesTable.partyId, party(req)),
       eq(partyRolesTable.role, role),
     ));
+    await upsertBillingAddress(org(req), party(req), billingAddress);
     await audit(req, "updated", "business_party", updated.id, old, updated); return res.json(await getParty(org(req), party(req)));
   });
   router.delete(`/organizations/:organizationId/${role}s/:partyId`, requireFinancePartyPermission(permission(role, "delete")), async (req: any, res) => {

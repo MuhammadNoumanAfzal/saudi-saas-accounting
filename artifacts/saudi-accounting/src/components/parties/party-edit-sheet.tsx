@@ -45,6 +45,16 @@ export function PartyEditSheet({
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
+  const [buildingNumber, setBuildingNumber] = useState('');
+  const [street, setStreet] = useState('');
+  const [district, setDistrict] = useState('');
+  const [province, setProvince] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [additionalNumber, setAdditionalNumber] = useState('');
+  const [country, setCountry] = useState('Saudi Arabia');
+  const [paymentTerms, setPaymentTerms] = useState('Net 30');
+  const [creditLimit, setCreditLimit] = useState('');
+  const [taxTreatment, setTaxTreatment] = useState('standard');
   
   const [showMore, setShowMore] = useState(false);
   const [legalEn, setLegalEn] = useState('');
@@ -68,7 +78,19 @@ export function PartyEditSheet({
       setCrNumber(partyData.commercialRegistrationNumber || '');
       setEmail(partyData.primaryEmail || '');
       setPhone(partyData.primaryPhone || '');
-      setCity(partyData.city || '');
+      const billingAddress = partyData.addresses?.find((address: any) => address.isDefaultBilling) ?? partyData.addresses?.[0];
+      const roleSettings = partyData.roles?.find((item: any) => item.role === role) ?? partyData.roles?.[0];
+      setCity(partyData.city || billingAddress?.city || '');
+      setBuildingNumber(billingAddress?.buildingNumber || '');
+      setStreet(billingAddress?.street || '');
+      setDistrict(billingAddress?.district || '');
+      setProvince(billingAddress?.province || '');
+      setPostalCode(billingAddress?.postalCode || '');
+      setAdditionalNumber(billingAddress?.additionalNumber || '');
+      setCountry(billingAddress?.country || 'Saudi Arabia');
+      setPaymentTerms(roleSettings?.paymentTerms || 'Net 30');
+      setCreditLimit(roleSettings?.creditLimit || '');
+      setTaxTreatment(roleSettings?.taxTreatment || 'standard');
       setLegalEn(partyData.legalNameEnglish || partyData.displayName || '');
       setLegalAr(partyData.legalNameArabic || partyData.businessNameArabic || '');
       setWebsite(partyData.website || '');
@@ -157,6 +179,16 @@ export function PartyEditSheet({
       primaryEmail: email.trim() || null,
       primaryPhone: phone.trim() || null,
       city: city.trim() || null,
+      billingBuildingNumber: buildingNumber.trim() || null,
+      billingStreet: street.trim() || null,
+      billingDistrict: district.trim() || null,
+      billingProvince: province.trim() || null,
+      billingPostalCode: postalCode.trim() || null,
+      billingAdditionalNumber: additionalNumber.trim() || null,
+      billingCountry: country.trim() || 'Saudi Arabia',
+      paymentTerms: paymentTerms.trim() || null,
+      creditLimit: creditLimit.trim() || null,
+      taxTreatment: taxTreatment.trim() || null,
       legalNameEnglish: type === 'organization' ? (nextLegalEn || null) : null,
       legalNameArabic: type === 'organization' ? (nextLegalAr || null) : null,
       website: website.trim() || null,
@@ -288,8 +320,24 @@ export function PartyEditSheet({
                 <input type="tel" className="field" value={phone} onChange={e => setPhone(e.target.value)} />
               </div>
               <div className="col-span-2 space-y-1.5">
-                <label className="text-sm font-semibold">{t('City', 'المدينة')}</label>
+                <label className="text-sm font-semibold">{t('City', 'City')}</label>
                 <input className="field" value={city} onChange={e => setCity(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold">{t('Building Number', 'Building Number')}</label>
+                <input className="field" value={buildingNumber} onChange={e => setBuildingNumber(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold">{t('Street', 'Street')}</label>
+                <input className="field" value={street} onChange={e => setStreet(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold">{t('District', 'District')}</label>
+                <input className="field" value={district} onChange={e => setDistrict(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold">{t('Postal Code', 'Postal Code')}</label>
+                <input className="field" value={postalCode} onChange={e => setPostalCode(e.target.value)} />
               </div>
             </div>
 
@@ -315,8 +363,46 @@ export function PartyEditSheet({
                   </div>
                 )}
                 
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold">{t('Province / Region', 'Province / Region')}</label>
+                    <input className="field" value={province} onChange={e => setProvince(e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold">{t('Additional Number', 'Additional Number')}</label>
+                    <input className="field" value={additionalNumber} onChange={e => setAdditionalNumber(e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold">{t('Country', 'Country')}</label>
+                    <input className="field" value={country} onChange={e => setCountry(e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold">{t('Payment Terms', 'Payment Terms')}</label>
+                    <select className="field" value={paymentTerms} onChange={e => setPaymentTerms(e.target.value)}>
+                      <option value="Due on receipt">Due on receipt</option>
+                      <option value="Net 7">Net 7</option>
+                      <option value="Net 15">Net 15</option>
+                      <option value="Net 30">Net 30</option>
+                      <option value="Net 60">Net 60</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold">{t('Credit Limit', 'Credit Limit')}</label>
+                    <input type="number" min="0" step="0.01" className="field" value={creditLimit} onChange={e => setCreditLimit(e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold">{t('Tax Treatment', 'Tax Treatment')}</label>
+                    <select className="field" value={taxTreatment} onChange={e => setTaxTreatment(e.target.value)}>
+                      <option value="standard">Standard rated</option>
+                      <option value="zero_rated">Zero rated</option>
+                      <option value="exempt">Exempt</option>
+                      <option value="out_of_scope">Out of scope</option>
+                    </select>
+                  </div>
+                </div>
+
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold">{t('Website', 'الموقع الإلكتروني')}</label>
+                  <label className="text-sm font-semibold">{t('Website', 'Website')}</label>
                   <input className="field" value={website} onChange={e => setWebsite(e.target.value)} />
                 </div>
                 

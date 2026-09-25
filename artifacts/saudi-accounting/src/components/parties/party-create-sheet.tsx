@@ -418,8 +418,24 @@ export function PartyCreateSheet({
                 {errors.phone && <p className="text-xs font-medium text-red-500">{errors.phone}</p>}
               </div>
               <div className="col-span-2 space-y-1.5">
-                <label className="text-sm font-semibold">{t('City', 'المدينة')}</label>
-                <input className="field" value={city} onChange={e => setCity(e.target.value)} />
+                <label className="text-sm font-semibold">{t('City', 'City')}</label>
+                <input className="field" value={city} onChange={e => setCity(e.target.value)} placeholder="Riyadh" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold">{t('Building Number', 'Building Number')}</label>
+                <input className="field" value={buildingNumber} onChange={e => setBuildingNumber(e.target.value)} placeholder="1234" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold">{t('Street', 'Street')}</label>
+                <input className="field" value={street} onChange={e => setStreet(e.target.value)} placeholder="King Fahd Road" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold">{t('District', 'District')}</label>
+                <input className="field" value={district} onChange={e => setDistrict(e.target.value)} placeholder="Al Olaya" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold">{t('Postal Code', 'Postal Code')}</label>
+                <input className="field" value={postalCode} onChange={e => setPostalCode(e.target.value)} placeholder="12211" />
               </div>
             </div>
 
@@ -445,8 +461,46 @@ export function PartyCreateSheet({
                   </div>
                 )}
                 
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold">{t('Province / Region', 'Province / Region')}</label>
+                    <input className="field" value={province} onChange={e => setProvince(e.target.value)} placeholder="Riyadh" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold">{t('Additional Number', 'Additional Number')}</label>
+                    <input className="field" value={additionalNumber} onChange={e => setAdditionalNumber(e.target.value)} placeholder="5678" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold">{t('Country', 'Country')}</label>
+                    <input className="field" value={country} onChange={e => setCountry(e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold">{t('Payment Terms', 'Payment Terms')}</label>
+                    <select className="field" value={paymentTerms} onChange={e => setPaymentTerms(e.target.value)}>
+                      <option value="Due on receipt">Due on receipt</option>
+                      <option value="Net 7">Net 7</option>
+                      <option value="Net 15">Net 15</option>
+                      <option value="Net 30">Net 30</option>
+                      <option value="Net 60">Net 60</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold">{t('Credit Limit', 'Credit Limit')}</label>
+                    <input type="number" min="0" step="0.01" className="field" value={creditLimit} onChange={e => setCreditLimit(e.target.value)} placeholder="50000" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold">{t('Tax Treatment', 'Tax Treatment')}</label>
+                    <select className="field" value={taxTreatment} onChange={e => setTaxTreatment(e.target.value)}>
+                      <option value="standard">Standard rated</option>
+                      <option value="zero_rated">Zero rated</option>
+                      <option value="exempt">Exempt</option>
+                      <option value="out_of_scope">Out of scope</option>
+                    </select>
+                  </div>
+                </div>
+
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold">{t('Website', 'الموقع الإلكتروني')}</label>
+                  <label className="text-sm font-semibold">{t('Website', 'Website')}</label>
                   <input className="field" value={website} onChange={e => setWebsite(e.target.value)} />
                 </div>
                 

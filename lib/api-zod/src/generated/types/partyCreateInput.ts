@@ -34,6 +34,20 @@ export interface PartyCreateInput {
   /** @nullable */
   primaryPhone?: string | null;
   /** @nullable */
+  billingBuildingNumber?: string | null;
+  /** @nullable */
+  billingStreet?: string | null;
+  /** @nullable */
+  billingDistrict?: string | null;
+  /** @nullable */
+  billingProvince?: string | null;
+  /** @nullable */
+  billingPostalCode?: string | null;
+  /** @nullable */
+  billingAdditionalNumber?: string | null;
+  /** @nullable */
+  billingCountry?: string | null;
+  /** @nullable */
   website?: string | null;
   defaultCurrency?: string;
   defaultLanguage?: PartyCreateInputDefaultLanguage;
