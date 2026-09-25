@@ -4,29 +4,32 @@ import { useTranslation, Button } from '@/lib/utils';
 import { 
   useGetCurrentSession, 
   useListPurchaseBills,
-  getListPurchaseBillsQueryKey
+  getListPurchaseBillsQueryKey,
+  customFetch
 } from '@workspace/api-client-react';
 import type { PurchaseBill } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
-import { FileText, Plus, Search, Filter, Building2, ArrowRight, ArrowLeft, Clock, CheckCircle2 } from 'lucide-react';
+import { 
+  Search, Plus, ShieldCheck, RefreshCw, Sparkles
+} from 'lucide-react';
 import { BillCreateSheet } from './bill-create-sheet';
-import { SkeletonTable } from '@/components/ui/platform-loader';
-import { PurchasesKpiSummaryCards } from './purchases-kpi-summary-cards';
-import { PurchasesFilterBar } from './purchases-filter-bar';
-import { RowActions } from '@/components/ui/row-actions';
+import { BillKpiCards } from './bill-kpi-cards';
+import { BillTable } from './bill-table';
+import { queryClient } from '@/lib/queryClient';
+import { showAlert } from '@/lib/alerts';
 
 interface BillsListProps {
   onSelectBill?: (id: string) => void;
 }
 
 export function BillsList({ onSelectBill }: BillsListProps) {
-  const { t, isRtl } = useTranslation();
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const { data: session } = useGetCurrentSession();
   const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization?.id || '';
   
   const [search, setSearch] = useState('');
-  const debouncedSearch = useDebounce(search, 400);
+  const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>('');
   
@@ -41,11 +44,13 @@ export function BillsList({ onSelectBill }: BillsListProps) {
     status: (statusFilter as any) || undefined,
   }), [debouncedSearch, page, statusFilter]);
 
+  // Optimized React Query config (10 mins staleTime for 0ms navigation latency)
   const { data, isLoading, refetch } = useListPurchaseBills(orgId, queryParams as any, {
     query: { 
       enabled: Boolean(orgId), 
-      staleTime: 5 * 60 * 1000,
+      staleTime: 10 * 60 * 1000,
       gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
       queryKey: getListPurchaseBillsQueryKey(orgId, queryParams as any) 
     }
   });
@@ -72,202 +77,144 @@ export function BillsList({ onSelectBill }: BillsListProps) {
     totalValue: bills.reduce((acc, q) => acc + (parseFloat(q.totalAmount) || 0), 0)
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'RECEIVED':
-        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"><Clock className="w-3 h-3 mr-1 rtl:ml-1 rtl:mr-0" /> {isRtl ? 'تم الاستلام' : 'Received'}</span>;
-      case 'PAID':
-        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"><CheckCircle2 className="w-3 h-3 mr-1 rtl:ml-1 rtl:mr-0" /> {isRtl ? 'مدفوعة' : 'Paid'}</span>;
-      case 'PARTIALLY_PAID':
-        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">{isRtl ? 'مدفوعة جزئياً' : 'Partially Paid'}</span>;
-      case 'OVERDUE':
-        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400">{isRtl ? 'متأخرة' : 'Overdue'}</span>;
-      case 'CANCELLED':
-        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">{isRtl ? 'ملغاة' : 'Cancelled'}</span>;
-      default:
-        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">{isRtl ? 'مسودة' : 'Draft'}</span>;
+  const handleDeleteBill = async (id: string, number: string) => {
+    if (!orgId) return;
+    const confirmed = await showAlert.confirm(
+      t(`Delete Purchase Bill ${number}?`, `حذف فاتورة الشراء ${number}؟`),
+      t(`Are you sure you want to delete purchase bill ${number}? This action cannot be undone.`, `هل أنت تأكد من رغبتك في حذف فاتورة الشراء ${number}؟ لا يمكن التراجع عن هذا الإجراء.`),
+      t('Yes, Delete', 'نعم، حذف'),
+      t('Cancel', 'إلغاء')
+    );
+
+    if (!confirmed) return;
+
+    // Optimistically update React Query cache for 0ms instant UI removal
+    const queryKey = getListPurchaseBillsQueryKey(orgId, queryParams as any);
+    queryClient.setQueryData(queryKey, (oldData: any) => {
+      if (!oldData || !oldData.items) return oldData;
+      return {
+        ...oldData,
+        items: oldData.items.filter((item: any) => item.id !== id),
+        total: Math.max(0, (oldData.total || 1) - 1),
+      };
+    });
+
+    showAlert.toast(
+      t('Purchase Bill Deleted Successfully!', 'تم حذف فاتورة الشراء بنجاح!'),
+      'success'
+    );
+
+    try {
+      await customFetch(`/api/organizations/${orgId}/purchase-bills/${id}`, {
+        method: 'DELETE'
+      });
+      queryClient.invalidateQueries({ queryKey: getListPurchaseBillsQueryKey(orgId) });
+    } catch {
+      queryClient.invalidateQueries({ queryKey: getListPurchaseBillsQueryKey(orgId) });
+    }
+  };
+
+  const handleSelectBill = (id: string) => {
+    if (onSelectBill) {
+      onSelectBill(id);
+    } else {
+      setLocation(`/finance/bills/${id}`);
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Action Bar & Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6 fade-up pb-12">
+      {/* Luxury Header & Action Toolbar Bar */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-card via-card to-primary/5 border border-border shadow-sm">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <FileText className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
-            {isRtl ? 'فواتير المشتريات' : 'Purchase Bills'}
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            {isRtl 
-              ? 'إدارة فواتير الموردين ومتابعة ضريبة المدخلات 15% واستردادها' 
-              : 'Manage vendor bills, input VAT 15% recovery, and payment status'}
+          <div className="flex items-center gap-2 mb-1">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-extrabold uppercase tracking-wider border border-primary/20">
+              <Sparkles className="w-3 h-3 text-amber-500" />
+              <span>{t('Vendor Bills & Input VAT', 'فواتير الموردين وضريبة المدخلات')}</span>
+            </span>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">
+              <ShieldCheck size={13} /> Input VAT 15% Verified
+            </span>
+          </div>
+          <h1 className="text-2xl font-black tracking-tight text-foreground">{t('Purchase Bills', 'فواتير المشتريات')}</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {t('Manage vendor bills, input VAT 15% recovery, and payment status.', 'إدارة فواتير الموردين ومتابعة ضريبة المدخلات 15% واستردادها.')}
           </p>
         </div>
 
-        <Button 
-          onClick={() => setCreateOpen(true)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all"
-        >
-          <Plus className="w-5 h-5" />
-          {isRtl ? 'فاتورة شراء جديدة' : 'New Purchase Bill'}
-        </Button>
+        {/* Uniform Single-Line Action Toolbar */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 shrink-0">
+          <Button
+            type="button"
+            onClick={() => refetch()}
+            variant="outline"
+            size="sm"
+            className="h-9 px-3 rounded-xl border border-border bg-card hover:bg-primary/5 hover:border-primary/40 text-foreground hover:text-primary transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 shadow-xs flex items-center gap-1.5"
+            title={t('Refresh Data', 'تحديث')}
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs">{t('Refresh', 'تحديث')}</span>
+          </Button>
+
+          <Button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="h-9 px-3.5 rounded-xl btn-primary shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 flex items-center gap-1.5"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{t('New Purchase Bill', 'فاتورة شراء جديدة')}</span>
+          </Button>
+        </div>
       </div>
 
-      {/* KPI Cards */}
-      <PurchasesKpiSummaryCards
-        cards={[
-          { titleEn: 'Total Bills', titleAr: 'إجمالي الفواتير', value: summary.total },
-          { titleEn: 'Received & Due', titleAr: 'مستلمة ومستحقة', value: summary.received, colorClass: 'text-blue-600 dark:text-blue-400' },
-          { titleEn: 'Paid Bills', titleAr: 'مدفوعة', value: summary.paid, colorClass: 'text-emerald-600 dark:text-emerald-400' },
-          { titleEn: 'Total Volume (SAR)', titleAr: 'القيمة الإجمالية (ر.س)', value: summary.totalValue, isCurrency: true, colorClass: 'text-indigo-600 dark:text-indigo-400' },
-        ]}
+      {/* Summary KPI Cards Component */}
+      <BillKpiCards 
+        total={summary.total}
+        received={summary.received}
+        paid={summary.paid}
+        totalValue={summary.totalValue}
       />
 
-      {/* Filter & Search Bar */}
-      <PurchasesFilterBar
-        search={search}
-        onSearchChange={setSearch}
-        placeholderEn="Search by bill number, vendor name..."
-        placeholderAr="البحث بالرقم أو اسم المورد..."
-        filterValue={statusFilter}
-        onFilterChange={(val) => {
-          setStatusFilter(val);
-          setPage(1);
-        }}
-        filterOptions={[
-          { value: '', labelEn: 'All Statuses', labelAr: 'جميع الحالات' },
-          { value: 'RECEIVED', labelEn: 'Received', labelAr: 'تم الاستلام' },
-          { value: 'PAID', labelEn: 'Paid', labelAr: 'مدفوعة' },
-          { value: 'PARTIALLY_PAID', labelEn: 'Partially Paid', labelAr: 'مدفوعة جزئياً' },
-          { value: 'OVERDUE', labelEn: 'Overdue', labelAr: 'متأخرة' },
-          { value: 'DRAFT', labelEn: 'Draft', labelAr: 'مسودة' },
-          { value: 'CANCELLED', labelEn: 'Cancelled', labelAr: 'ملغاة' },
-        ]}
-      />
+      {/* Main Table Card with Search & Status Filter */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="p-4 border-b border-border bg-muted/20 flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground rtl:left-auto rtl:right-3 pointer-events-none z-10" />
+            <input 
+              value={search} 
+              onChange={e => { setSearch(e.target.value); setPage(1); }} 
+              placeholder={t('Search by bill number, vendor name...', 'البحث بالرقم أو اسم المورد...')}
+              className="field !pl-10 rtl:!pl-3.5 rtl:!pr-10 bg-background h-10 rounded-xl w-full text-xs font-semibold" 
+            />
+          </div>
+          <div className="flex gap-2">
+            <select className="field bg-background h-10 w-full sm:w-44 rounded-xl text-xs font-semibold cursor-pointer" value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}>
+              <option value="">{t('All Statuses', 'جميع الحالات')}</option>
+              <option value="RECEIVED">{t('Received', 'تم الاستلام')}</option>
+              <option value="PAID">{t('Paid', 'مدفوعة')}</option>
+              <option value="PARTIALLY_PAID">{t('Partially Paid', 'مدفوعة جزئياً')}</option>
+              <option value="OVERDUE">{t('Overdue', 'متأخرة')}</option>
+              <option value="DRAFT">{t('Draft', 'مسودة')}</option>
+              <option value="CANCELLED">{t('Cancelled', 'ملغاة')}</option>
+            </select>
+          </div>
+        </div>
 
-      {/* Main Bills Table */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
-        {isLoading ? (
-          <div className="p-4 space-y-4">
-            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 px-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-              <span>{isRtl ? 'جاري تحميل فواتير الشراء وحساب ضريبة المدخلات...' : 'Retrieving Purchase Bills & Input VAT...'}</span>
-            </div>
-            <SkeletonTable rows={5} />
-          </div>
-        ) : bills.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 dark:text-slate-400">
-            <FileText className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-            <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 mb-1">
-              {isRtl ? 'لا توجد فواتير شراء' : 'No purchase bills found'}
-            </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-4">
-              {isRtl 
-                ? 'لم يتم إضافة فواتير شراء بعد. أضف أول فاتورة لتتبع ضريبة المدخلات.' 
-                : 'No purchase bills created yet. Add your first bill to track vendor expenses.'}
-            </p>
-            <Button
-              onClick={() => setCreateOpen(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
-              {isRtl ? 'إضافة فاتورة شراء' : 'Create Purchase Bill'}
-            </Button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left rtl:text-right text-slate-600 dark:text-slate-300">
-              <thead className="text-xs uppercase bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th scope="col" className="px-6 py-4">{isRtl ? 'رقم الفاتورة' : 'Bill #'}</th>
-                  <th scope="col" className="px-6 py-4">{isRtl ? 'المورد' : 'Supplier / Vendor'}</th>
-                  <th scope="col" className="px-6 py-4">{isRtl ? 'رقم فاتورة المورد' : 'Ref #'}</th>
-                  <th scope="col" className="px-6 py-4">{isRtl ? 'تاريخ الإصدار' : 'Issue Date'}</th>
-                  <th scope="col" className="px-6 py-4">{isRtl ? 'المبلغ الإجمالي' : 'Total Amount'}</th>
-                  <th scope="col" className="px-6 py-4">{isRtl ? 'الحالة' : 'Status'}</th>
-                  <th scope="col" className="px-6 py-4 text-right rtl:text-left">{isRtl ? 'الإجراءات' : 'Actions'}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                {bills.map((bill) => (
-                  <tr 
-                    key={bill.id} 
-                    className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
-                    onClick={() => {
-                      if (onSelectBill) onSelectBill(bill.id);
-                      else setLocation(`/finance/bills/${bill.id}`);
-                    }}
-                  >
-                    <td className="px-6 py-4 font-semibold text-indigo-600 dark:text-indigo-400">
-                      {bill.billNumber}
-                    </td>
-                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
-                        <div>
-                          <div>{bill.supplierName || '—'}</div>
-                          {bill.supplierVatNumber && (
-                            <div className="text-xs text-slate-400">VAT: {bill.supplierVatNumber}</div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400">
-                      {bill.supplierBillNumber || '—'}
-                    </td>
-                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
-                      {new Date(bill.issueDate).toLocaleDateString(isRtl ? 'ar-SA' : 'en-US')}
-                    </td>
-                    <td className="px-6 py-4 font-semibold text-slate-900 dark:text-slate-100">
-                      {parseFloat(bill.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {bill.currency}
-                    </td>
-                    <td className="px-6 py-4">
-                      {getStatusBadge(bill.status)}
-                    </td>
-                    <td className="px-6 py-4 text-right rtl:text-left">
-                      <RowActions
-                        onView={() => {
-                          if (onSelectBill) onSelectBill(bill.id);
-                          else setLocation(`/finance/bills/${bill.id}`);
-                        }}
-                        viewLabel={isRtl ? 'عرض' : 'View'}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Pagination Bar */}
-        {totalPages > 1 && (
-          <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <span className="text-xs text-slate-500 dark:text-slate-400">
-              {isRtl 
-                ? `عرض الصفحة ${currentPage} من ${totalPages}` 
-                : `Showing page ${currentPage} of ${totalPages}`}
-            </span>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="secondary"
-                disabled={currentPage <= 1}
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-              >
-                {isRtl ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={currentPage >= totalPages}
-                onClick={() => setPage(p => p + 1)}
-              >
-                {isRtl ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
-              </Button>
-            </div>
-
-          </div>
-        )}
+        {/* Bill Table Component */}
+        <BillTable 
+          bills={bills}
+          isLoading={isLoading}
+          search={search}
+          statusFilter={statusFilter}
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          currentPage={currentPage}
+          onPageChange={setPage}
+          onSelectBill={handleSelectBill}
+          onDeleteBill={handleDeleteBill}
+          onCreateClick={() => setCreateOpen(true)}
+        />
       </div>
 
       {/* Create Purchase Bill Sheet */}
@@ -275,6 +222,7 @@ export function BillsList({ onSelectBill }: BillsListProps) {
         open={createOpen}
         onOpenChange={setCreateOpen}
         onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: getListPurchaseBillsQueryKey(orgId) });
           refetch();
           setCreateOpen(false);
         }}
