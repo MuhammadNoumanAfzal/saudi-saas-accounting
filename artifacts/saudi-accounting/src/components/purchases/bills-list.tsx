@@ -32,6 +32,7 @@ export function BillsList({ onSelectBill }: BillsListProps) {
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [editBill, setEditBill] = useState<PurchaseBill | null>(null);
   
   const [createOpen, setCreateOpen] = useState(() => {
     return new URLSearchParams(window.location.search).has('new');
@@ -212,6 +213,7 @@ export function BillsList({ onSelectBill }: BillsListProps) {
           currentPage={currentPage}
           onPageChange={setPage}
           onSelectBill={handleSelectBill}
+          onEditBill={setEditBill}
           onDeleteBill={handleDeleteBill}
           onCreateClick={() => setCreateOpen(true)}
         />
@@ -225,6 +227,19 @@ export function BillsList({ onSelectBill }: BillsListProps) {
           queryClient.invalidateQueries({ queryKey: getListPurchaseBillsQueryKey(orgId) });
           refetch();
           setCreateOpen(false);
+        }}
+      />
+
+      {/* Edit Purchase Bill Sheet */}
+      <BillCreateSheet
+        open={Boolean(editBill)}
+        onOpenChange={(nextOpen) => { if (!nextOpen) setEditBill(null); }}
+        billId={editBill?.id}
+        initialBill={editBill}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: getListPurchaseBillsQueryKey(orgId) });
+          refetch();
+          setEditBill(null);
         }}
       />
     </div>

@@ -6,17 +6,20 @@ import {
   useGetCurrentSession, 
   useGetSuppliers,
   getGetSuppliersQueryKey,
-  useCreateExpense
+  useCreateExpense,
+  customFetch
 } from '@workspace/api-client-react';
-import { X, CreditCard, Calendar, FileText, Building2, Tag, DollarSign } from 'lucide-react';
+import { X, CreditCard } from 'lucide-react';
 
 interface ExpenseCreateSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  expenseId?: string;
+  initialExpense?: any;
 }
 
-export function ExpenseCreateSheet({ open, onOpenChange, onSuccess }: ExpenseCreateSheetProps) {
+export function ExpenseCreateSheet({ open, onOpenChange, onSuccess, expenseId, initialExpense }: ExpenseCreateSheetProps) {
   const { t, isRtl } = useTranslation();
   const { data: session } = useGetCurrentSession();
   const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization.id || '';
@@ -26,7 +29,6 @@ export function ExpenseCreateSheet({ open, onOpenChange, onSuccess }: ExpenseCre
     query: { enabled: !!orgId && open, queryKey: getGetSuppliersQueryKey(orgId, supplierParams as any) } 
   });
   const suppliers = suppliersData?.items || [];
-
 
   const createMutation = useCreateExpense();
 
@@ -42,17 +44,42 @@ export function ExpenseCreateSheet({ open, onOpenChange, onSuccess }: ExpenseCre
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  useEffect(() => {
+    if (initialExpense) {
+      setCategory(initialExpense.category || 'OFFICE_SUPPLIES');
+      setDescription(initialExpense.description || initialExpense.payeeName || '');
+      setSupplierId(initialExpense.supplierId || '');
+      setAmount(initialExpense.amount ? String(initialExpense.amount) : '');
+      setTaxAmount(initialExpense.taxAmount ? String(initialExpense.taxAmount) : '0.00');
+      setHasVat(Boolean(initialExpense.taxAmount && Number(initialExpense.taxAmount) > 0));
+      setPaymentMethod(initialExpense.paymentMethod || 'BANK_TRANSFER');
+      setExpenseDate(initialExpense.expenseDate ? new Date(initialExpense.expenseDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+      setReferenceNumber(initialExpense.referenceNumber || '');
+      setNotes(initialExpense.notes || '');
+    } else {
+      setCategory('OFFICE_SUPPLIES');
+      setDescription('');
+      setSupplierId('');
+      setAmount('');
+      setTaxAmount('');
+      setHasVat(true);
+      setPaymentMethod('BANK_TRANSFER');
+      setExpenseDate(new Date().toISOString().split('T')[0]);
+      setReferenceNumber('');
+      setNotes('');
+    }
+  }, [initialExpense, open]);
+
   // Auto-calculate 15% VAT when amount changes if hasVat is checked
   useEffect(() => {
-    if (hasVat && amount) {
+    if (!initialExpense && hasVat && amount) {
       const total = parseFloat(amount) || 0;
-      // Tax included inside total: tax = total * 15 / 115
       const calculatedVat = (total * 15) / 115;
       setTaxAmount(calculatedVat.toFixed(2));
     } else if (!hasVat) {
       setTaxAmount('0.00');
     }
-  }, [amount, hasVat]);
+  }, [amount, hasVat, initialExpense]);
 
   if (!open) return null;
 
@@ -87,49 +114,65 @@ export function ExpenseCreateSheet({ open, onOpenChange, onSuccess }: ExpenseCre
     }
 
     try {
-      await createMutation.mutateAsync({
-        organizationId: orgId,
-        data: {
-          category,
-          description: description.trim(),
-          supplierId: supplierId || undefined,
-          amount,
-          taxAmount: taxAmount || '0.00',
-          paymentMethod,
-          expenseDate: expenseDate ? new Date(expenseDate).toISOString() : undefined,
-          referenceNumber: referenceNumber.trim() || undefined,
-          notes: notes.trim() || undefined,
-        }
-      });
+      const payload = {
+        category,
+        description: description.trim(),
+        supplierId: supplierId || undefined,
+        amount,
+        taxAmount: taxAmount || '0.00',
+        paymentMethod,
+        expenseDate: expenseDate ? new Date(expenseDate).toISOString() : undefined,
+        referenceNumber: referenceNumber.trim() || undefined,
+        notes: notes.trim() || undefined,
+      };
 
-      showAlert.toast(
-        isRtl ? 'تم تسجيل المصروف بنجاح!' : 'Expense Recorded Successfully!',
-        'success'
-      );
+      if (expenseId || initialExpense?.id) {
+        const idToUpdate = expenseId || initialExpense.id;
+        await customFetch(`/api/organizations/${orgId}/expenses/${idToUpdate}`, {
+          method: 'PATCH',
+          body: JSON.stringify(payload)
+        });
+        showAlert.toast(
+          isRtl ? 'تم تحديث المصروف بنجاح!' : 'Expense Updated Successfully!',
+          'success'
+        );
+      } else {
+        await createMutation.mutateAsync({
+          organizationId: orgId,
+          data: payload
+        });
+        showAlert.toast(
+          isRtl ? 'تم تسجيل المصروف بنجاح!' : 'Expense Recorded Successfully!',
+          'success'
+        );
+      }
+
       onSuccess();
     } catch (err: any) {
       console.error(err);
-      setErrors({ submit: getErrorMessage(err, (isRtl ? 'فشل تسجيل المصروف' : 'Failed to record expense')) });
+      setErrors({ submit: getErrorMessage(err, (isRtl ? 'فشل حفظ المصروف' : 'Failed to save expense')) });
     }
   };
 
+  const isEdit = Boolean(expenseId || initialExpense?.id);
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex justify-end">
-      <div className="w-full max-w-lg bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col border-l border-slate-200 dark:border-slate-800 animate-in slide-in-from-right duration-200">
+      <div className="w-full max-w-lg bg-card text-card-foreground h-full shadow-2xl flex flex-col border-l border-border animate-in slide-in-from-right duration-200">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+        <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-muted/30">
           <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-indigo-600" />
-              {isRtl ? 'تسجيل مصروف جديد' : 'Record Operational Expense'}
+            <h2 className="text-lg font-extrabold text-foreground flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-primary" />
+              {isEdit ? (isRtl ? 'تعديل المصروف التشغيلي' : 'Edit Operational Expense') : (isRtl ? 'تسجيل مصروف جديد' : 'Record Operational Expense')}
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {isRtl ? 'أدخل تفاصيل النفقة ومبلغ ضريبة القيمة المضافة' : 'Enter expense details and input VAT'}
             </p>
           </div>
           <button 
             onClick={() => onOpenChange(false)}
-            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="p-2 text-muted-foreground hover:text-foreground rounded-xl hover:bg-muted transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -138,191 +181,195 @@ export function ExpenseCreateSheet({ open, onOpenChange, onSuccess }: ExpenseCre
         {/* Content Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
           {Object.keys(errors).length > 0 && (
-            <div className="p-3 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded-lg text-xs font-semibold space-y-1">
-              <div className="font-bold">⚠️ {isRtl ? 'يرجى تصحيح الأخطاء التالية:' : 'Please fix highlighted errors:'}</div>
-              <ul className="list-disc list-inside font-normal">
-                {Object.values(errors).map((err, i) => (
-                  <li key={i}>{err}</li>
-                ))}
-              </ul>
+            <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-600 dark:text-rose-400 space-y-1">
+              <div className="font-bold flex items-center gap-1.5">
+                <span>⚠️</span>
+                <span>{isRtl ? 'الرجاء تصحيح الأخطاء المحددة:' : 'Please fix highlighted errors:'}</span>
+              </div>
+              {Object.entries(errors).map(([key, msg]) => (
+                <div key={key} className="pl-4 rtl:pr-4">
+                  • {msg}
+                </div>
+              ))}
             </div>
           )}
 
+          {/* Category */}
           <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-              {isRtl ? 'التصنيف' : 'Category'} <span className="text-red-500">*</span>
+            <label className="block text-xs font-bold text-foreground mb-1">
+              {isRtl ? 'التصنيف *' : 'Category *'}
             </label>
             <select
               value={category}
-              onChange={(e) => { setCategory(e.target.value); if (errors.category) setErrors(prev => ({ ...prev, category: '' })); }}
-              className={`w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border ${errors.category ? 'border-red-500 bg-red-500/5' : 'border-slate-200 dark:border-slate-700'} rounded-lg text-slate-900 dark:text-slate-100`}
+              onChange={(e) => setCategory(e.target.value)}
+              className="field h-10 text-xs font-semibold cursor-pointer"
             >
-              <option value="RENT">{isRtl ? 'إيجار المكاتب / العقارات' : 'Office Rent'}</option>
-              <option value="UTILITIES">{isRtl ? 'مرافق (كهرباء، ماء، إنترنت)' : 'Utilities (Electricity, Internet)'}</option>
-              <option value="SALARIES">{isRtl ? 'رواتب وأجور ومستحقات' : 'Salaries & Wages'}</option>
-              <option value="OFFICE_SUPPLIES">{isRtl ? 'مستلزمات وأدوات مكتبية' : 'Office Supplies'}</option>
-              <option value="TRAVEL">{isRtl ? 'سفر وانتقالات وضيافة' : 'Travel & Lodging'}</option>
-              <option value="MARKETING">{isRtl ? 'تسويق وإعلان وشبكات' : 'Marketing & Ads'}</option>
-              <option value="OTHER">{isRtl ? 'مصروفات متنوعة أخرى' : 'Other General Expense'}</option>
+              <option value="OFFICE_SUPPLIES">{isRtl ? 'مستلزمات مكتبية' : 'Office Supplies'}</option>
+              <option value="RENT">{isRtl ? 'إيجار' : 'Rent'}</option>
+              <option value="UTILITIES">{isRtl ? 'مرافق ومنافع (كهرباء، مياه، إنترنت)' : 'Utilities (Electricity, Water, Net)'}</option>
+              <option value="SALARIES">{isRtl ? 'رواتب وأجور' : 'Salaries & Wages'}</option>
+              <option value="TRAVEL">{isRtl ? 'سفر وانتقالات' : 'Travel & Lodging'}</option>
+              <option value="MARKETING">{isRtl ? 'تسويق وإعلان' : 'Marketing & Ads'}</option>
+              <option value="OTHER">{isRtl ? 'مصروفات تشغيلية أخرى' : 'Other Operational Expense'}</option>
             </select>
-            {errors.category && <p className="text-[11px] font-medium text-red-500 mt-1">{errors.category}</p>}
           </div>
 
+          {/* Payee / Description */}
           <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-              {isRtl ? 'البيان / المستفيد' : 'Payee / Description'} <span className="text-red-500">*</span>
+            <label className="block text-xs font-bold text-foreground mb-1">
+              {isRtl ? 'الجهة / اسم المستفيد / البيان *' : 'Payee / Description *'}
             </label>
             <input
               type="text"
               value={description}
-              onChange={(e) => { setDescription(e.target.value); if (errors.description) setErrors(prev => ({ ...prev, description: '' })); }}
-              placeholder={isRtl ? 'مثال: سداد فاتورة كهرباء الفرع' : 'e.g. Electricity Bill Payment'}
-              className={`w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border ${errors.description ? 'border-red-500 bg-red-500/5' : 'border-slate-200 dark:border-slate-700'} rounded-lg text-slate-900 dark:text-slate-100`}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={isRtl ? 'مثال: إيجار المكتب الرئيسي / فاتورة الكهرباء' : 'e.g., Main Office Rent / Electricity Bill'}
+              className="field h-10 text-xs font-semibold"
             />
-            {errors.description && <p className="text-[11px] font-medium text-red-500 mt-1">{errors.description}</p>}
           </div>
 
-          {suppliers.length > 0 && (
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {isRtl ? 'ربط بمورد (اختياري)' : 'Link to Supplier (Optional)'}
-              </label>
-              <select
-                value={supplierId}
-                onChange={(e) => setSupplierId(e.target.value)}
-                className="w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
-              >
-                <option value="">{isRtl ? '-- بدون ربط بالمورد --' : '-- No supplier link --'}</option>
-                {suppliers.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.displayName}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          {/* Link to Supplier (Optional) */}
+          <div>
+            <label className="block text-xs font-bold text-foreground mb-1">
+              {isRtl ? 'ربط بالمورد (اختياري)' : 'Link to Supplier (Optional)'}
+            </label>
+            <select
+              value={supplierId}
+              onChange={(e) => setSupplierId(e.target.value)}
+              className="field h-10 text-xs font-semibold cursor-pointer"
+            >
+              <option value="">{isRtl ? '-- غير مربوط بمورد --' : '-- No Supplier Link --'}</option>
+              {suppliers.map((s: any) => (
+                <option key={s.id} value={s.id}>
+                  {s.displayName} {s.vatNumber ? `(VAT: ${s.vatNumber})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
 
+          {/* Amounts Grid */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {isRtl ? 'المبلغ الإجمالي (ر.س)' : 'Total Amount (SAR)'} <span className="text-red-500">*</span>
+              <label className="block text-xs font-bold text-foreground mb-1">
+                {isRtl ? 'المبلغ الإجمالي (ر.س) *' : 'Total Amount (SAR) *'}
               </label>
               <input
                 type="number"
                 step="0.01"
-                min="0.01"
+                min="0"
                 value={amount}
-                onChange={(e) => { setAmount(e.target.value); if (errors.amount) setErrors(prev => ({ ...prev, amount: '' })); }}
+                onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
-                className={`w-full py-2 px-3 text-sm font-semibold bg-slate-50 dark:bg-slate-800 border ${errors.amount ? 'border-red-500 bg-red-500/5' : 'border-slate-200 dark:border-slate-700'} rounded-lg text-slate-900 dark:text-slate-100`}
+                className="field h-10 text-xs font-mono font-bold"
               />
-              {errors.amount && <p className="text-[11px] font-medium text-red-500 mt-1">{errors.amount}</p>}
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {isRtl ? 'مبلغ الضريبة 15%' : 'Tax Amount (VAT)'}
+              <label className="block text-xs font-bold text-foreground mb-1">
+                {isRtl ? 'مبلغ الضريبة (15%)' : 'Tax Amount (VAT)'}
               </label>
               <input
                 type="number"
                 step="0.01"
                 min="0"
                 value={taxAmount}
-                onChange={(e) => setTaxAmount(e.target.value)}
+                onChange={(e) => {
+                  setTaxAmount(e.target.value);
+                  setHasVat(true);
+                }}
                 placeholder="0.00"
-                className="w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-indigo-600 dark:text-indigo-400 font-mono"
+                className="field h-10 text-xs font-mono font-bold"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pt-1">
             <input
               type="checkbox"
-              id="vatIncludedCheck"
+              id="hasVatCheck"
               checked={hasVat}
               onChange={(e) => setHasVat(e.target.checked)}
-              className="rounded text-indigo-600 focus:ring-indigo-500"
+              className="rounded text-primary focus:ring-primary h-4 w-4 cursor-pointer"
             />
-            <label htmlFor="vatIncludedCheck" className="text-xs text-slate-600 dark:text-slate-400">
-              {isRtl ? 'يشمل ضريبة القيمة المضافة (15% مدخلات)' : 'Includes 15% Input VAT recovery'}
+            <label htmlFor="hasVatCheck" className="text-xs font-bold text-foreground cursor-pointer">
+              {isRtl ? 'يتضمن استرداد ضريبة القيمة المضافة 15%' : 'Includes 15% Input VAT recovery'}
             </label>
           </div>
 
+          {/* Payment Method & Expense Date */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {isRtl ? 'طريقة السداد' : 'Payment Method'}
+              <label className="block text-xs font-bold text-foreground mb-1">
+                {isRtl ? 'طريقة الدفع *' : 'Payment Method *'}
               </label>
               <select
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
-                className="w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
+                className="field h-10 text-xs font-semibold cursor-pointer"
               >
                 <option value="BANK_TRANSFER">{isRtl ? 'تحويل بنكي' : 'Bank Transfer'}</option>
-                <option value="CASH">{isRtl ? 'نقداً (كاش)' : 'Cash'}</option>
+                <option value="CASH">{isRtl ? 'نقداً' : 'Cash'}</option>
                 <option value="CREDIT_CARD">{isRtl ? 'بطاقة ائتمان' : 'Credit Card'}</option>
-                <option value="CHECK">{isRtl ? 'شيك' : 'Check'}</option>
+                <option value="CHEQUE">{isRtl ? 'شيك' : 'Cheque'}</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {isRtl ? 'تاريخ المصروف' : 'Expense Date'} <span className="text-red-500">*</span>
+              <label className="block text-xs font-bold text-foreground mb-1">
+                {isRtl ? 'تاريخ المصروف *' : 'Expense Date *'}
               </label>
               <input
                 type="date"
                 value={expenseDate}
-                onChange={(e) => { setExpenseDate(e.target.value); if (errors.expenseDate) setErrors(prev => ({ ...prev, expenseDate: '' })); }}
-                className={`w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border ${errors.expenseDate ? 'border-red-500 bg-red-500/5' : 'border-slate-200 dark:border-slate-700'} rounded-lg text-slate-900 dark:text-slate-100`}
+                onChange={(e) => setExpenseDate(e.target.value)}
+                className="field h-10 text-xs font-semibold cursor-pointer"
               />
-              {errors.expenseDate && <p className="text-[11px] font-medium text-red-500 mt-1">{errors.expenseDate}</p>}
             </div>
           </div>
 
+          {/* Reference Number */}
           <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-              {isRtl ? 'الرقم المرجعي (السند / الشيك)' : 'Reference / Receipt #'}
+            <label className="block text-xs font-bold text-foreground mb-1">
+              {isRtl ? 'رقم الإيصال / السند المرجعي' : 'Reference / Receipt #'}
             </label>
             <input
               type="text"
               value={referenceNumber}
               onChange={(e) => setReferenceNumber(e.target.value)}
-              placeholder={isRtl ? 'مثال: TRF-887192' : 'e.g. TRF-887192'}
-              className="w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
+              placeholder={isRtl ? 'رقم سند القبض أو الفاتورة الخارجية' : 'e.g., REC-88912'}
+              className="field h-10 text-xs font-semibold font-mono"
             />
           </div>
 
+          {/* Notes */}
           <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-              {isRtl ? 'ملاحظات' : 'Notes'}
+            <label className="block text-xs font-bold text-foreground mb-1">
+              {isRtl ? 'ملاحظات إضافية' : 'Notes / Remarks'}
             </label>
             <textarea
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
+              placeholder={isRtl ? 'أي تفاصيل إضافية...' : 'Any additional comments...'}
+              className="field text-xs font-medium p-3"
             />
           </div>
 
-          {/* Footer Submit Actions */}
-          <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-3">
+          {/* Footer Buttons */}
+          <div className="pt-4 flex gap-3 border-t border-border">
             <Button
               type="button"
               variant="secondary"
               onClick={() => onOpenChange(false)}
+              className="flex-1 rounded-xl text-xs font-bold cursor-pointer"
             >
               {isRtl ? 'إلغاء' : 'Cancel'}
             </Button>
             <Button
               type="submit"
-              disabled={createMutation.isPending}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-32"
+              className="flex-1 btn-primary rounded-xl text-xs font-bold cursor-pointer"
             >
-              {createMutation.isPending ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                isRtl ? 'تسجيل المصروف' : 'Record Expense'
-              )}
+              {isEdit ? (isRtl ? 'حفظ التعديلات' : 'Save Changes') : (isRtl ? 'تسجيل المصروف' : 'Record Expense')}
             </Button>
           </div>
         </form>

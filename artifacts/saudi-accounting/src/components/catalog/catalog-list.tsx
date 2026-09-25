@@ -8,30 +8,34 @@ import {
   useListCatalogUnits,
   exportCatalogItems,
   getListCatalogItemsQueryKey,
-  getListCatalogUnitsQueryKey
+  getListCatalogUnitsQueryKey,
+  customFetch
 } from '@workspace/api-client-react';
+import type { CatalogItem, CatalogItemType, CatalogItemStatus } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
-import { Search, Plus, Filter, MoreHorizontal, Package, FileCode2, UploadCloud, DownloadCloud } from 'lucide-react';
+import { 
+  Search, Plus, UploadCloud, DownloadCloud, RefreshCw, Sparkles, ShieldCheck 
+} from 'lucide-react';
 import { CatalogCreateSheet } from './catalog-create-sheet';
 import { CatalogImportSheet } from './catalog-import-sheet';
-import { SkeletonTable } from '@/components/ui/platform-loader';
-import type { CatalogItemType, CatalogItemStatus } from '@workspace/api-client-react';
-import { getErrorMessage } from '@/lib/form-errors';
-import { RowActions } from '@/components/ui/row-actions';
+import { CatalogKpiCards } from './catalog-kpi-cards';
+import { CatalogTable } from './catalog-table';
+import { queryClient } from '@/lib/queryClient';
 
 export function CatalogList() {
-  const { t, isRtl } = useTranslation();
-  const [location, setLocation] = useLocation();
+  const { t } = useTranslation();
+  const [, setLocation] = useLocation();
   const { data: session } = useGetCurrentSession();
   const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization.id || '';
   
   const [search, setSearch] = useState('');
-  const debouncedSearch = useDebounce(search, 400);
+  const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<CatalogItemStatus | ''>('');
   const [type, setType] = useState<CatalogItemType | ''>('');
   const [taxCategory, setTaxCategory] = useState<string>('');
   const [exporting, setExporting] = useState(false);
+  const [editItem, setEditItem] = useState<CatalogItem | null>(null);
   
   const [createOpen, setCreateOpen] = useState(() => {
     return new URLSearchParams(window.location.search).has('new');
@@ -48,18 +52,82 @@ export function CatalogList() {
     taxCategory: taxCategory || undefined,
   };
 
-  const { data, isLoading } = useListCatalogItems(orgId, queryParams as any, {
-    query: { enabled: !!orgId, queryKey: getListCatalogItemsQueryKey(orgId, queryParams as any) }
+  // Optimized React Query config (10 mins staleTime for 0ms navigation latency)
+  const { data, isLoading, refetch } = useListCatalogItems(orgId, queryParams as any, {
+    query: { 
+      enabled: Boolean(orgId),
+      staleTime: 10 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      queryKey: getListCatalogItemsQueryKey(orgId, queryParams as any) 
+    }
   });
 
   const { data: units } = useListCatalogUnits(orgId, {
-    query: { enabled: !!orgId, queryKey: getListCatalogUnitsQueryKey(orgId) }
+    query: { 
+      enabled: Boolean(orgId), 
+      staleTime: 10 * 60 * 1000,
+      queryKey: getListCatalogUnitsQueryKey(orgId) 
+    }
   });
 
-  const totalCount = data?.summary.total || 0;
-  const productsCount = data?.summary.products || 0;
-  const servicesCount = data?.summary.services || 0;
-  const activeCount = data?.summary.active || 0;
+  const totalCount = data?.summary?.total || 0;
+  const productsCount = data?.summary?.products || 0;
+  const servicesCount = data?.summary?.services || 0;
+  const activeCount = data?.summary?.active || 0;
+
+  const rawItems: CatalogItem[] = data?.items ?? [];
+  const items: CatalogItem[] = rawItems.filter((i: any) => {
+    if (search) {
+      const q = search.toLowerCase();
+      if (!i.name?.toLowerCase().includes(q) && !i.code?.toLowerCase().includes(q)) return false;
+    }
+    if (status && i.status !== status) return false;
+    if (type && i.type !== type) return false;
+    return true;
+  });
+
+  const totalItems = data?.total || rawItems.length;
+  const currentPage = data?.page || 1;
+  const pageSize = data?.pageSize || 20;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+  const handleDeleteItem = async (itemId: string, itemName: string) => {
+    if (!orgId) return;
+    const confirmed = await showAlert.confirm(
+      t(`Delete Catalog Item ${itemName}?`, `حذف الصنف ${itemName}؟`),
+      t(`Are you sure you want to delete ${itemName}? This action cannot be undone.`, `هل أنت تأكد من رغبتك في حذف ${itemName}؟ لا يمكن التراجع عن هذا الإجراء.`),
+      t('Yes, Delete', 'نعم، حذف'),
+      t('Cancel', 'إلغاء')
+    );
+
+    if (!confirmed) return;
+
+    // Optimistically update React Query cache for 0ms instant UI removal
+    const queryKey = getListCatalogItemsQueryKey(orgId, queryParams as any);
+    queryClient.setQueryData(queryKey, (oldData: any) => {
+      if (!oldData || !oldData.items) return oldData;
+      return {
+        ...oldData,
+        items: oldData.items.filter((item: any) => item.id !== itemId),
+        total: Math.max(0, (oldData.total || 1) - 1),
+      };
+    });
+
+    showAlert.toast(
+      t('Catalog Item Deleted Successfully!', 'تم حذف الصنف بنجاح!'),
+      'success'
+    );
+
+    try {
+      await customFetch(`/api/organizations/${orgId}/catalog-items/${itemId}`, {
+        method: 'DELETE'
+      });
+      queryClient.invalidateQueries({ queryKey: getListCatalogItemsQueryKey(orgId) });
+    } catch {
+      queryClient.invalidateQueries({ queryKey: getListCatalogItemsQueryKey(orgId) });
+    }
+  };
 
   const handleExport = async () => {
     try {
@@ -90,71 +158,110 @@ export function CatalogList() {
     }
   };
 
+  const handleSelectItem = (id: string) => {
+    setLocation(`/finance/items/${id}`);
+  };
+
   return (
     <div className="space-y-6 fade-up pb-12">
-      <header className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+      {/* Luxury Header & Action Toolbar Bar */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-card via-card to-primary/5 border border-border shadow-sm">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('Products & Services', 'المنتجات والخدمات')}</h1>
-          <p className="mt-1 text-muted-foreground text-sm">{t('Manage what your business sells and purchases.', 'أدر ما تبيعه وتشتريه منشأتك.')}</p>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-extrabold uppercase tracking-wider border border-primary/20">
+              <Sparkles className="w-3 h-3 text-amber-500" />
+              <span>{t('Master Catalog & Pricing', 'الكتالوج الرئيسي والأسعار')}</span>
+            </span>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">
+              <ShieldCheck size={13} /> ZATCA E-Invoice Ready
+            </span>
+          </div>
+          <h1 className="text-2xl font-black tracking-tight text-foreground">{t('Products & Services', 'المنتجات والخدمات')}</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {t('Manage what your business sells and purchases across products & services.', 'أدر ما تبيعه وتشتريه منشأتك من المنتجات والخدمات.')}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" onClick={() => setImportOpen(true)} title={t('Import', 'استيراد')} className="gap-2">
-            <UploadCloud size={16} />
-            <span className="hidden sm:inline">{t('Import', 'استيراد')}</span>
-          </Button>
-          <Button variant="secondary" onClick={handleExport} disabled={exporting} title={t('Export', 'تصدير')} className="gap-2">
-            <DownloadCloud size={16} />
-            <span className="hidden sm:inline">{exporting ? t('Exporting...', 'جاري التصدير...') : t('Export', 'تصدير')}</span>
-          </Button>
-          <Button variant="primary" onClick={() => setCreateOpen(true)} className="gap-2">
-            <Plus size={16} />
-            {t('New Item', 'صنف جديد')}
-          </Button>
-        </div>
-      </header>
 
-      <div className="grid gap-4 md:grid-cols-4 grid-cols-2">
-        <div className="soft-card p-4">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t('Total Items', 'إجمالي الأصناف')}</div>
-          <div className="text-3xl font-bold text-foreground">{totalCount}</div>
-        </div>
-        <div className="soft-card p-4">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t('Products', 'المنتجات')}</div>
-          <div className="text-3xl font-bold text-foreground">{productsCount}</div>
-        </div>
-        <div className="soft-card p-4">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t('Services', 'الخدمات')}</div>
-          <div className="text-3xl font-bold text-foreground">{servicesCount}</div>
-        </div>
-        <div className="soft-card p-4">
-          <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1">{t('Active', 'النشطة')}</div>
-          <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{activeCount}</div>
+        {/* Uniform Single-Line Action Toolbar */}
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1 shrink-0 max-w-full">
+          <Button
+            type="button"
+            onClick={() => refetch()}
+            variant="outline"
+            size="sm"
+            className="h-9 px-3 rounded-xl border border-border bg-card hover:bg-primary/5 hover:border-primary/40 text-foreground hover:text-primary transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 shadow-xs flex items-center gap-1.5"
+            title={t('Refresh Data', 'تحديث')}
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs">{t('Refresh', 'تحديث')}</span>
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setImportOpen(true)}
+            className="h-9 px-3 rounded-xl border border-border bg-card hover:bg-primary/5 hover:border-primary/40 text-foreground hover:text-primary transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 shadow-xs flex items-center gap-1.5"
+          >
+            <UploadCloud className="w-3.5 h-3.5 text-primary" />
+            <span>{t('Import', 'استيراد')}</span>
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleExport}
+            disabled={exporting}
+            className="h-9 px-3 rounded-xl border border-border bg-card hover:bg-primary/5 hover:border-primary/40 text-foreground hover:text-primary transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 shadow-xs flex items-center gap-1.5"
+          >
+            <DownloadCloud className="w-3.5 h-3.5 text-primary" />
+            <span>{exporting ? t('Exporting...', 'جاري التصدير...') : t('Export', 'تصدير')}</span>
+          </Button>
+
+          <Button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="h-9 px-3.5 rounded-xl btn-primary shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 flex items-center gap-1.5"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{t('New Item', 'صنف جديد')}</span>
+          </Button>
         </div>
       </div>
 
-      <div className="soft-card overflow-hidden">
-        <div className="p-4 border-b border-border bg-card/50 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <div className="relative flex-1 min-w-[220px]">
-            <Search size={16} className="absolute left-3 top-3 text-muted-foreground rtl:left-auto rtl:right-3 pointer-events-none" />
+      {/* Summary KPI Cards Component */}
+      <CatalogKpiCards 
+        totalCount={totalCount}
+        productsCount={productsCount}
+        servicesCount={servicesCount}
+        activeCount={activeCount}
+      />
+
+      {/* Main Table Card with Search & Filters */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="p-4 border-b border-border bg-muted/20 flex flex-col lg:flex-row gap-3 lg:items-center">
+          <div className="relative flex-1 min-w-[240px]">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground rtl:left-auto rtl:right-3 pointer-events-none z-10" />
             <input 
               value={search} 
               onChange={e => { setSearch(e.target.value); setPage(1); }} 
-              placeholder={t('Search products and services by name, SKU or code...', 'البحث في المنتجات والخدمات...')} 
-              className="field pl-9 rtl:pl-3 rtl:pr-9 bg-background h-10 w-full" 
+              placeholder={t('Search by name, SKU or code...', 'البحث في الكتالوج...')}
+              className="field !pl-10 rtl:!pl-3.5 rtl:!pr-10 bg-background h-10 rounded-xl w-full text-xs font-semibold" 
             />
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <select className="field bg-background h-10 w-auto text-xs font-semibold" value={type} onChange={e => { setType(e.target.value as CatalogItemType | ''); setPage(1); }}>
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0">
+            <select className="field bg-background h-10 w-full sm:w-32 rounded-xl text-xs font-semibold cursor-pointer shrink-0" value={type} onChange={e => { setType(e.target.value as CatalogItemType | ''); setPage(1); }}>
               <option value="">{t('All Types', 'جميع الأنواع')}</option>
               <option value="PRODUCT">{t('Product', 'منتج')}</option>
               <option value="SERVICE">{t('Service', 'خدمة')}</option>
             </select>
-            <select className="field bg-background h-10 w-auto text-xs font-semibold" value={status} onChange={e => { setStatus(e.target.value as CatalogItemStatus | ''); setPage(1); }}>
+            <select className="field bg-background h-10 w-full sm:w-32 rounded-xl text-xs font-semibold cursor-pointer shrink-0" value={status} onChange={e => { setStatus(e.target.value as CatalogItemStatus | ''); setPage(1); }}>
               <option value="">{t('All Statuses', 'جميع الحالات')}</option>
               <option value="ACTIVE">{t('Active', 'نشط')}</option>
               <option value="INACTIVE">{t('Inactive', 'غير نشط')}</option>
             </select>
-            <select className="field bg-background h-10 w-auto text-xs font-semibold" value={taxCategory} onChange={e => { setTaxCategory(e.target.value); setPage(1); }}>
+            <select className="field bg-background h-10 w-full sm:w-36 rounded-xl text-xs font-semibold cursor-pointer shrink-0" value={taxCategory} onChange={e => { setTaxCategory(e.target.value); setPage(1); }}>
               <option value="">{t('All Taxes', 'جميع الضرائب')}</option>
               <option value="STANDARD">{t('Standard (15%)', 'الأساسية (15%)')}</option>
               <option value="ZERO_RATED">{t('Zero Rated', 'نسبة الصفر')}</option>
@@ -164,165 +271,54 @@ export function CatalogList() {
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="p-4 space-y-4">
-            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 px-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-              <span>{t('Fetching Master Catalog, Products & Services Pricing...', 'جاري تحميل الكتالوج الرئيسي والأسعار...')}</span>
-            </div>
-            <SkeletonTable rows={5} />
-          </div>
-        ) : !data?.items.length ? (
-          <div className="p-12 text-center flex flex-col items-center justify-center border-dashed">
-            <div className="h-14 w-14 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
-              <Package size={28} />
-            </div>
-            <h3 className="text-lg font-bold mb-2">
-              {t('No products or services found.', 'لم يتم العثور على منتجات أو خدمات.')}
-            </h3>
-            <p className="text-sm text-muted-foreground max-w-sm mb-6">
-              {t('Add items to your master catalog to issue ZATCA e-invoices and track purchase bills.', 'أضف أصنافا إلى الكتالوج الرئيسي لإصدار فواتير إلكترونية ومتابعة فواتير الشراء.')}
-            </p>
-            <Button variant="primary" onClick={() => setCreateOpen(true)} className="gap-2">
-              <Plus size={16} />
-              {t('Add Item', 'إضافة صنف')}
-            </Button>
-          </div>
-        ) : (
-          <div>
-            {/* Desktop Table */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-sm text-left rtl:text-right">
-                <thead className="bg-muted/40 text-xs uppercase text-muted-foreground border-b border-border font-semibold">
-                  <tr>
-                    <th className="px-5 py-3.5 font-bold">{t('Item', 'الصنف')}</th>
-                    <th className="px-5 py-3.5 font-bold">{t('Code', 'الرمز')}</th>
-                    <th className="px-5 py-3.5 font-bold">{t('Type', 'النوع')}</th>
-                    <th className="px-5 py-3.5 font-bold">{t('Unit', 'الوحدة')}</th>
-                    <th className="px-5 py-3.5 font-bold text-right rtl:text-left">{t('Sales Price', 'سعر البيع')}</th>
-                    <th className="px-5 py-3.5 font-bold text-right rtl:text-left">{t('Purchase Price', 'سعر الشراء')}</th>
-                    <th className="px-5 py-3.5 font-bold">{t('VAT', 'الضريبة')}</th>
-                    <th className="px-5 py-3.5 font-bold">{t('Status', 'الحالة')}</th>
-                    <th className="px-5 py-3.5 font-bold w-12 text-center">{t('Action', 'إجراء')}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {data.items.map(item => {
-                    const unit = units?.find(u => u.id === item.unitId);
-                    const isAct = item.status === 'ACTIVE';
-                    return (
-                      <tr 
-                        key={item.id} 
-                        className="hover:bg-muted/20 transition-colors group cursor-pointer" 
-                        onClick={() => setLocation(`/finance/items/${item.id}`)}
-                      >
-                        <td className="px-5 py-4">
-                          <div className="font-bold text-foreground text-sm group-hover:text-primary transition-colors">
-                            {item.name}
-                          </div>
-                          {item.nameAr && (
-                            <div className="text-xs text-muted-foreground arabic font-medium mt-0.5" dir="rtl">{item.nameAr}</div>
-                          )}
-                        </td>
-                        <td className="px-5 py-4">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-foreground text-xs font-mono font-semibold border border-border">
-                            {item.code}
-                          </span>
-                        </td>
-                        <td className="px-5 py-4">
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded bg-muted/60 text-muted-foreground">
-                            {item.type === 'PRODUCT' ? <Package size={12} /> : <FileCode2 size={12} />}
-                            {item.type === 'PRODUCT' ? t('Product', 'منتج') : t('Service', 'خدمة')}
-                          </span>
-                        </td>
-                        <td className="px-5 py-4 font-medium text-xs text-muted-foreground">
-                          {unit ? (isRtl ? unit.nameAr : unit.name) : '-'}
-                        </td>
-                        <td className="px-5 py-4 text-right rtl:text-left font-bold text-foreground">
-                          SAR {Number(item.salesPrice).toFixed(2)}
-                        </td>
-                        <td className="px-5 py-4 text-right rtl:text-left font-bold text-foreground">
-                          SAR {Number(item.purchasePrice).toFixed(2)}
-                        </td>
-                        <td className="px-5 py-4 font-semibold text-xs text-muted-foreground">
-                          {item.taxRate}%
-                        </td>
-                        <td className="px-5 py-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
-                            isAct 
-                              ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30' 
-                              : 'bg-muted text-muted-foreground border border-border'
-                          }`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${isAct ? 'bg-emerald-500' : 'bg-muted-foreground'}`} />
-                            {isAct ? t('Active', 'نشط') : t('Inactive', 'غير نشط')}
-                          </span>
-                        </td>
-                        <td className="px-5 py-4 text-center" onClick={e => e.stopPropagation()}>
-                          <RowActions
-                            onView={() => setLocation(`/finance/items/${item.id}`)}
-                            viewLabel={t('View', 'عرض')}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Cards */}
-            <div className="md:hidden divide-y divide-border">
-              {data.items.map(item => {
-                const unit = units?.find(u => u.id === item.unitId);
-                const isAct = item.status === 'ACTIVE';
-                return (
-                  <div 
-                    key={item.id} 
-                    className="p-4 active:bg-muted/20 transition-colors cursor-pointer" 
-                    onClick={() => setLocation(`/finance/items/${item.id}`)}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <div className="font-bold text-foreground text-sm">{isRtl && item.nameAr ? item.nameAr : item.name}</div>
-                        <div className="text-xs text-muted-foreground mt-1 flex gap-2 items-center">
-                          <span className="font-mono bg-muted px-1.5 py-0.5 rounded font-bold">{item.code}</span>
-                          <span>{item.type === 'PRODUCT' ? t('Product', 'منتج') : t('Service', 'خدمة')}</span>
-                          {unit && <span>· {isRtl ? unit.nameAr : unit.name}</span>}
-                        </div>
-                      </div>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                        isAct ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' : 'bg-muted text-muted-foreground'
-                      }`}>
-                        {isAct ? t('Active', 'نشط') : t('Inactive', 'غير نشط')}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-end mt-3 text-xs text-muted-foreground">
-                      <div className="space-y-1">
-                        <div><span className="opacity-70">{t('Sales', 'البيع')}:</span> <span className="font-bold text-foreground">SAR {item.salesPrice}</span></div>
-                        <div><span className="opacity-70">{t('Purchases', 'الشراء')}:</span> <span className="font-bold text-foreground">SAR {item.purchasePrice}</span></div>
-                      </div>
-                      <RowActions
-                        onView={() => setLocation(`/finance/items/${item.id}`)}
-                        viewLabel={t('View', 'عرض')}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* Catalog Table Component */}
+        <CatalogTable 
+          items={items}
+          units={units || []}
+          isLoading={isLoading}
+          search={search}
+          status={status}
+          type={type}
+          taxCategory={taxCategory}
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          currentPage={currentPage}
+          onPageChange={setPage}
+          onSelectItem={handleSelectItem}
+          onEditItem={setEditItem}
+          onDeleteItem={handleDeleteItem}
+          onCreateClick={() => setCreateOpen(true)}
+        />
       </div>
 
+      {/* Create Item Sheet */}
       <CatalogCreateSheet 
         open={createOpen} 
         onOpenChange={setCreateOpen} 
         orgId={orgId}
         onSuccess={(itemId) => {
           setCreateOpen(false);
+          queryClient.invalidateQueries({ queryKey: getListCatalogItemsQueryKey(orgId) });
           setLocation(`/finance/items/${itemId}`);
         }}
       />
+
+      {/* Edit Item Sheet */}
+      <CatalogCreateSheet 
+        open={Boolean(editItem)} 
+        onOpenChange={(nextOpen) => { if (!nextOpen) setEditItem(null); }} 
+        orgId={orgId}
+        itemId={editItem?.id}
+        initialData={editItem}
+        onSuccess={(itemId) => {
+          setEditItem(null);
+          queryClient.invalidateQueries({ queryKey: getListCatalogItemsQueryKey(orgId) });
+          setLocation(`/finance/items/${itemId}`);
+        }}
+      />
+
+      {/* Import Sheet */}
       <CatalogImportSheet
         open={importOpen}
         onOpenChange={setImportOpen}

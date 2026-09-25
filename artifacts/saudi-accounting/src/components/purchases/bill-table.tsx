@@ -18,6 +18,7 @@ interface BillTableProps {
   currentPage: number;
   onPageChange: (newPage: number) => void;
   onSelectBill: (id: string) => void;
+  onEditBill?: (bill: PurchaseBill) => void;
   onDeleteBill?: (id: string, number: string) => void;
   onCreateClick: () => void;
 }
@@ -33,6 +34,7 @@ export function BillTable({
   currentPage,
   onPageChange,
   onSelectBill,
+  onEditBill,
   onDeleteBill,
   onCreateClick,
 }: BillTableProps) {
@@ -172,8 +174,10 @@ export function BillTable({
                 <td className="px-5 py-4 text-center" onClick={e => e.stopPropagation()}>
                   <RowActions
                     onView={() => onSelectBill(bill.id)}
+                    onEdit={onEditBill ? () => onEditBill(bill) : undefined}
                     onDelete={onDeleteBill ? () => onDeleteBill(bill.id, bill.billNumber) : undefined}
                     viewLabel={t('View Bill', 'عرض الفاتورة')}
+                    editLabel={t('Edit Bill', 'تعديل الفاتورة')}
                     deleteLabel={t('Delete Bill', 'حذف الفاتورة')}
                   />
                 </td>
@@ -205,8 +209,10 @@ export function BillTable({
               <div onClick={e => e.stopPropagation()} className="shrink-0">
                 <RowActions
                   onView={() => onSelectBill(bill.id)}
+                  onEdit={onEditBill ? () => onEditBill(bill) : undefined}
                   onDelete={onDeleteBill ? () => onDeleteBill(bill.id, bill.billNumber) : undefined}
                   viewLabel={t('View', 'عرض')}
+                  editLabel={t('Edit', 'تعديل')}
                   deleteLabel={t('Delete', 'حذف')}
                 />
               </div>

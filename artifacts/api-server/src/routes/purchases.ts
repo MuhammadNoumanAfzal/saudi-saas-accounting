@@ -686,16 +686,16 @@ router.post("/organizations/:organizationId/expenses", async (req, res) => {
 
     await postJournalEntry({
       organizationId: orgId,
-      sourceDocumentType: "PURCHASE_BILL",
-      sourceDocumentId: newBill.id,
-      referenceNumber: newBill.billNumber,
-      description: `Purchase bill ${newBill.billNumber}`,
-      entryDate: newBill.billDate,
+      sourceDocumentType: "EXPENSE",
+      sourceDocumentId: newExpense.id,
+      referenceNumber: newExpense.expenseNumber,
+      description: `Expense ${newExpense.expenseNumber} - ${newExpense.category}`,
+      entryDate: newExpense.expenseDate,
       replaceExisting: true,
       lines: [
-        { accountCode: "50500", debit: newBill.subtotal, description: "Purchases / expense" },
-        { accountCode: "10400", debit: newBill.taxAmount, description: "Input VAT" },
-        { accountCode: "20100", credit: newBill.totalAmount, description: "Accounts payable" },
+        { accountCode: "50500", debit: newExpense.subtotal, description: "Operating Expense" },
+        { accountCode: "10400", debit: newExpense.taxAmount, description: "Input VAT" },
+        { accountCode: "10100", credit: newExpense.totalAmount, description: "Cash / Bank" },
       ],
     });
     const responseObj = {
@@ -745,20 +745,6 @@ router.get("/organizations/:organizationId/expenses/:expenseId", async (req, res
     }
 
     const e = expenses[0];
-    await postJournalEntry({
-      organizationId: orgId,
-      sourceDocumentType: "PURCHASE_BILL",
-      sourceDocumentId: newBill.id,
-      referenceNumber: newBill.billNumber,
-      description: `Purchase bill ${newBill.billNumber}`,
-      entryDate: newBill.billDate,
-      replaceExisting: true,
-      lines: [
-        { accountCode: "50500", debit: newBill.subtotal, description: "Purchases / expense" },
-        { accountCode: "10400", debit: newBill.taxAmount, description: "Input VAT" },
-        { accountCode: "20100", credit: newBill.totalAmount, description: "Accounts payable" },
-      ],
-    });
     const responseObj = {
       id: e.id,
       organizationId: e.organizationId,
@@ -784,6 +770,110 @@ router.get("/organizations/:organizationId/expenses/:expenseId", async (req, res
   } catch (error: any) {
     console.error("Error getting expense:", error);
     res.status(500).json({ error: error.message || "Failed to get expense" });
+    return;
+  }
+});
+
+// PATCH /organizations/:organizationId/expenses/:expenseId
+router.patch("/organizations/:organizationId/expenses/:expenseId", async (req, res) => {
+  try {
+    const orgId = getOrgId(req);
+    const expenseId = getExpenseId(req);
+    const body = req.body;
+
+    const existingList = await db
+      .select()
+      .from(expensesTable)
+      .where(and(eq(expensesTable.id, expenseId), eq(expensesTable.organizationId, orgId)))
+      .limit(1);
+
+    if (existingList.length === 0) {
+      res.status(404).json({ error: "Expense not found" });
+      return;
+    }
+
+    const existing = existingList[0];
+    const amount = body.amount !== undefined ? Number(body.amount) : Number(existing.totalAmount);
+    const taxAmount = body.taxAmount !== undefined ? Number(body.taxAmount) : Number(existing.taxAmount);
+    const subtotal = Math.max(0, amount - taxAmount);
+    const expenseDate = body.expenseDate ? new Date(body.expenseDate) : existing.expenseDate;
+
+    let supplierName = body.description || existing.payeeName;
+    if (body.supplierId) {
+      const sup = await db
+        .select()
+        .from(businessPartiesTable)
+        .where(
+          and(
+            eq(businessPartiesTable.id, body.supplierId),
+            eq(businessPartiesTable.organizationId, orgId)
+          )
+        )
+        .limit(1);
+      if (sup.length > 0) {
+        supplierName = sup[0].legalNameEnglish || sup[0].legalNameArabic || supplierName;
+      }
+    }
+
+    const [updated] = await db
+      .update(expensesTable)
+      .set({
+        category: body.category ? body.category.toUpperCase() : existing.category,
+        supplierId: body.supplierId !== undefined ? body.supplierId : existing.supplierId,
+        payeeName: supplierName,
+        expenseDate,
+        paymentMethod: body.paymentMethod ? body.paymentMethod.toUpperCase() : existing.paymentMethod,
+        subtotal: subtotal.toFixed(2),
+        taxAmount: taxAmount.toFixed(2),
+        totalAmount: amount.toFixed(2),
+        taxCategory: taxAmount > 0 ? "STANDARD" : "EXEMPT",
+        referenceNumber: body.referenceNumber !== undefined ? body.referenceNumber : existing.referenceNumber,
+        notes: body.notes !== undefined ? body.notes : existing.notes,
+        updatedAt: new Date(),
+      })
+      .where(eq(expensesTable.id, expenseId))
+      .returning();
+
+    await postJournalEntry({
+      organizationId: orgId,
+      sourceDocumentType: "EXPENSE",
+      sourceDocumentId: updated.id,
+      referenceNumber: updated.expenseNumber,
+      description: `Expense ${updated.expenseNumber} - ${updated.category}`,
+      entryDate: updated.expenseDate,
+      replaceExisting: true,
+      lines: [
+        { accountCode: "50500", debit: updated.subtotal, description: "Operating Expense" },
+        { accountCode: "10400", debit: updated.taxAmount, description: "Input VAT" },
+        { accountCode: "10100", credit: updated.totalAmount, description: "Cash / Bank" },
+      ],
+    });
+
+    const responseObj = {
+      id: updated.id,
+      organizationId: updated.organizationId,
+      expenseNumber: updated.expenseNumber,
+      category: updated.category,
+      description: updated.payeeName,
+      amount: updated.totalAmount,
+      taxAmount: updated.taxAmount,
+      paymentMethod: updated.paymentMethod,
+      expenseDate: updated.expenseDate.toISOString(),
+      supplierId: updated.supplierId,
+      supplierName: updated.payeeName,
+      referenceNumber: updated.referenceNumber,
+      receiptUrl: null,
+      notes: updated.notes,
+      status: "PAID",
+      createdAt: updated.createdAt.toISOString(),
+      updatedAt: updated.updatedAt.toISOString(),
+    };
+
+    res.json(responseObj);
+    return;
+  } catch (error: any) {
+    console.error("Error updating expense:", error);
+    res.status(500).json({ error: error.message || "Failed to update expense" });
     return;
   }
 });

@@ -9,24 +9,34 @@ import {
 import type { Expense } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useDebounce } from '@/hooks/use-debounce';
-import { CreditCard, Plus, Search, Filter, Tag } from 'lucide-react';
+import { 
+  Search, Plus, ShieldCheck, RefreshCw, Sparkles, Tag, Calendar, DollarSign, FileText, Pencil
+} from 'lucide-react';
 import { ExpenseCreateSheet } from './expense-create-sheet';
-import { SkeletonTable } from '@/components/ui/platform-loader';
+import { ExpenseKpiCards } from './expense-kpi-cards';
+import { ExpenseTable } from './expense-table';
 import { showAlert } from '@/lib/alerts';
 import { getErrorMessage } from '@/lib/form-errors';
-import { RowActions } from '@/components/ui/row-actions';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export function ExpensesList() {
-  const { t, isRtl } = useTranslation();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { data: session } = useGetCurrentSession();
   const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization.id || '';
   
   const [search, setSearch] = useState('');
-  const debouncedSearch = useDebounce(search, 400);
+  const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [createOpen, setCreateOpen] = useState(false);
+  const [editExpense, setEditExpense] = useState<Expense | null>(null);
+  const [viewExpense, setViewExpense] = useState<Expense | null>(null);
 
   const queryParams = {
     search: debouncedSearch || undefined,
@@ -35,11 +45,13 @@ export function ExpensesList() {
     category: categoryFilter || undefined,
   };
 
+  // Optimized React Query config (10 mins staleTime for 0ms navigation latency)
   const { data, isLoading, refetch } = useListExpenses(orgId, queryParams as any, {
     query: { 
-      enabled: !!orgId, 
-      staleTime: 5 * 60 * 1000,
+      enabled: Boolean(orgId), 
+      staleTime: 10 * 60 * 1000,
       gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
       queryKey: getListExpensesQueryKey(orgId, queryParams as any) 
     }
   });
@@ -56,222 +68,261 @@ export function ExpensesList() {
   const totalSpent = expenses.reduce((acc, e) => acc + (parseFloat(e.amount) || 0), 0);
   const totalVat = expenses.reduce((acc, e) => acc + (parseFloat(e.taxAmount) || 0), 0);
 
-  const getCategoryLabel = (cat: string) => {
-    switch (cat.toUpperCase()) {
-      case 'RENT': return isRtl ? 'إيجار' : 'Rent';
-      case 'UTILITIES': return isRtl ? 'مرافق ومنافع' : 'Utilities';
-      case 'SALARIES': return isRtl ? 'رواتب وأجور' : 'Salaries & Wages';
-      case 'OFFICE_SUPPLIES': return isRtl ? 'مستلزمات مكتبية' : 'Office Supplies';
-      case 'TRAVEL': return isRtl ? 'سفر وانتقالات' : 'Travel & Lodging';
-      case 'MARKETING': return isRtl ? 'تسويق وإعلان' : 'Marketing';
-      default: return isRtl ? 'مصروفات أخرى' : 'Other Expenses';
-    }
-  };
-
   const handleDelete = async (id: string) => {
     const confirmed = await showAlert.confirm(
-      isRtl ? 'Delete Expense?' : 'Delete Expense?',
-      isRtl ? 'Are you sure you want to delete this expense? This action cannot be undone.' : 'Are you sure you want to delete this expense? This action cannot be undone.',
-      isRtl ? 'Yes, Delete' : 'Yes, Delete',
-      isRtl ? 'Cancel' : 'Cancel'
+      t('Delete Expense?', 'حذف المصروف؟'),
+      t('Are you sure you want to delete this expense? This action cannot be undone.', 'هل أنت تأكد من رغبتك في حذف هذا المصروف؟ لا يمكن التراجع عن هذا الإجراء.'),
+      t('Yes, Delete', 'نعم، حذف'),
+      t('Cancel', 'إلغاء')
     );
     if (!confirmed) return;
+
+    // Optimistically update React Query cache for 0ms instant UI removal
+    const queryKey = getListExpensesQueryKey(orgId, queryParams as any);
+    queryClient.setQueryData(queryKey, (oldData: any) => {
+      if (!oldData || !oldData.items) return oldData;
+      return {
+        ...oldData,
+        items: oldData.items.filter((item: any) => item.id !== id),
+        total: Math.max(0, (oldData.total || 1) - 1),
+      };
+    });
+
+    showAlert.toast(
+      t('Expense Deleted Successfully!', 'تم حذف المصروف بنجاح!'),
+      'success'
+    );
+
     try {
       await deleteMutation.mutateAsync({
         organizationId: orgId,
         expenseId: id
       });
-      refetch();
+      queryClient.invalidateQueries({ queryKey: getListExpensesQueryKey(orgId) });
     } catch (err: any) {
       console.error(err);
-      showAlert.error(isRtl ? 'فشل الحذف' : 'Delete Failed', getErrorMessage(err, isRtl ? 'تعذر حذف المصروف.' : 'Failed to delete expense.'));
+      queryClient.invalidateQueries({ queryKey: getListExpensesQueryKey(orgId) });
+      showAlert.error(t('Delete Failed', 'فشل الحذف'), getErrorMessage(err, t('Failed to delete expense.', 'تعذر حذف المصروف.')));
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6 fade-up pb-12">
+      {/* Luxury Header & Action Toolbar Bar */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-card via-card to-primary/5 border border-border shadow-sm">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <CreditCard className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
-            {isRtl ? 'المصروفات التشغيلية' : 'Operational Expenses'}
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            {isRtl 
-              ? 'تتبع المصروفات اليومية (إيجارات، رواتب، مستلزمات) مع استرداد الضريبة' 
-              : 'Track daily operating costs (rent, utilities, supplies) and Input VAT'}
+          <div className="flex items-center gap-2 mb-1">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-extrabold uppercase tracking-wider border border-primary/20">
+              <Sparkles className="w-3 h-3 text-amber-500" />
+              <span>{t('Operational Expenditure', 'المصروفات التشغيلية')}</span>
+            </span>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">
+              <ShieldCheck size={13} /> Input VAT 15% Eligible
+            </span>
+          </div>
+          <h1 className="text-2xl font-black tracking-tight text-foreground">{t('Operational Expenses', 'المصروفات التشغيلية')}</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {t('Track daily operating costs (rent, utilities, supplies) and Input VAT recovery.', 'تتبع المصروفات اليومية (إيجارات، رواتب، مستلزمات) مع استرداد الضريبة.')}
           </p>
         </div>
 
-        <Button 
-          onClick={() => setCreateOpen(true)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all"
-        >
-          <Plus className="w-5 h-5" />
-          {isRtl ? 'تسجيل مصروف جديد' : 'Record Expense'}
-        </Button>
-      </div>
+        {/* Uniform Single-Line Action Toolbar */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 shrink-0">
+          <Button
+            type="button"
+            onClick={() => refetch()}
+            variant="outline"
+            size="sm"
+            className="h-9 px-3 rounded-xl border border-border bg-card hover:bg-primary/5 hover:border-primary/40 text-foreground hover:text-primary transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 shadow-xs flex items-center gap-1.5"
+            title={t('Refresh Data', 'تحديث')}
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs">{t('Refresh', 'تحديث')}</span>
+          </Button>
 
-      {/* KPI Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400 block mb-1">
-            {isRtl ? 'عدد المصروفات المسجلة' : 'Total Expense Records'}
-          </span>
-          <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{totalItems}</div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-          <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 block mb-1">
-            {isRtl ? 'إجمالي الإنفاق (ر.س)' : 'Total Spent (SAR)'}
-          </span>
-          <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-            {totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal">SAR</span>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-          <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 block mb-1">
-            {isRtl ? 'ضريبة القيمة المضافة المستردة' : 'Input VAT Recoverable'}
-          </span>
-          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-            {totalVat.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal">SAR</span>
-          </div>
+          <Button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="h-9 px-3.5 rounded-xl btn-primary shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 flex items-center gap-1.5"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{t('Record Expense', 'تسجيل مصروف جديد')}</span>
+          </Button>
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full md:w-96">
-          <Search className="w-4 h-4 absolute left-3 rtl:right-3 rtl:left-auto top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={isRtl ? 'البحث بالمستفيد أو المرجع...' : 'Search by payee or reference...'}
-            className="w-full pl-9 rtl:pr-9 rtl:pl-3 pr-3 py-2 text-sm bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-900 dark:text-slate-100"
-          />
-        </div>
+      {/* Summary KPI Cards Component */}
+      <ExpenseKpiCards 
+        totalCount={totalItems}
+        totalSpent={totalSpent}
+        totalVat={totalVat}
+      />
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-slate-400" />
-            <select
-              value={categoryFilter}
-              onChange={(e) => {
-                setCategoryFilter(e.target.value);
-                setPage(1);
-              }}
-              className="py-2 px-3 text-sm bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-            >
-              <option value="">{isRtl ? 'جميع التصنيفات' : 'All Categories'}</option>
-              <option value="RENT">{isRtl ? 'إيجار' : 'Rent'}</option>
-              <option value="UTILITIES">{isRtl ? 'مرافق' : 'Utilities'}</option>
-              <option value="SALARIES">{isRtl ? 'رواتب' : 'Salaries'}</option>
-              <option value="OFFICE_SUPPLIES">{isRtl ? 'مستلزمات مكتبية' : 'Office Supplies'}</option>
-              <option value="TRAVEL">{isRtl ? 'سفر وانتقالات' : 'Travel'}</option>
-              <option value="MARKETING">{isRtl ? 'تسويق' : 'Marketing'}</option>
-              <option value="OTHER">{isRtl ? 'أخرى' : 'Other'}</option>
+      {/* Main Table Card with Search & Category Filter */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="p-4 border-b border-border bg-muted/20 flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground rtl:left-auto rtl:right-3 pointer-events-none z-10" />
+            <input 
+              value={search} 
+              onChange={e => { setSearch(e.target.value); setPage(1); }} 
+              placeholder={t('Search by payee or reference...', 'البحث بالمستفيد أو المرجع...')}
+              className="field !pl-10 rtl:!pl-3.5 rtl:!pr-10 bg-background h-10 rounded-xl w-full text-xs font-semibold" 
+            />
+          </div>
+          <div className="flex gap-2">
+            <select className="field bg-background h-10 w-full sm:w-48 rounded-xl text-xs font-semibold cursor-pointer" value={categoryFilter} onChange={e => { setCategoryFilter(e.target.value); setPage(1); }}>
+              <option value="">{t('All Categories', 'جميع التصنيفات')}</option>
+              <option value="RENT">{t('Rent', 'إيجار')}</option>
+              <option value="UTILITIES">{t('Utilities', 'مرافق')}</option>
+              <option value="SALARIES">{t('Salaries & Wages', 'رواتب وأجور')}</option>
+              <option value="OFFICE_SUPPLIES">{t('Office Supplies', 'مستلزمات مكتبية')}</option>
+              <option value="TRAVEL">{t('Travel & Lodging', 'سفر وانتقالات')}</option>
+              <option value="MARKETING">{t('Marketing', 'تسويق وإعلان')}</option>
+              <option value="OTHER">{t('Other Expenses', 'مصروفات أخرى')}</option>
             </select>
           </div>
         </div>
+
+        {/* Expense Table Component */}
+        <ExpenseTable 
+          expenses={expenses}
+          isLoading={isLoading}
+          search={search}
+          categoryFilter={categoryFilter}
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          currentPage={currentPage}
+          onPageChange={setPage}
+          onViewExpense={setViewExpense}
+          onEditExpense={setEditExpense}
+          onDeleteExpense={handleDelete}
+          onCreateClick={() => setCreateOpen(true)}
+        />
       </div>
 
-      {/* Main Expenses Table */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
-        {isLoading ? (
-          <div className="p-4 space-y-4">
-            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 px-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-              <span>{isRtl ? 'جاري تحميل سجل المصروفات التشغيلية والخصم الضريبي...' : 'Loading Operational Expenses & Input Tax Deduction...'}</span>
-            </div>
-            <SkeletonTable rows={5} />
-          </div>
-        ) : expenses.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 dark:text-slate-400">
-            <CreditCard className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-            <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 mb-1">
-              {isRtl ? 'لا توجد مصروفات مسجلة' : 'No expense records found'}
-            </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-4">
-              {isRtl 
-                ? 'سجل مصروفات مؤسستك اليومية لتتبع الأرباح ومطالبة الزكاة والدخل بالضريبة.' 
-                : 'Record daily operational costs to track profit & loss and tax deductions.'}
-            </p>
-            <Button
-              onClick={() => setCreateOpen(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
-              {isRtl ? 'إضافة مصروف' : 'Record Expense'}
-            </Button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left rtl:text-right text-slate-600 dark:text-slate-300">
-              <thead className="text-xs uppercase bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th scope="col" className="px-6 py-4">{isRtl ? 'رقم السند' : 'Ref #'}</th>
-                  <th scope="col" className="px-6 py-4">{isRtl ? 'التصنيف' : 'Category'}</th>
-                  <th scope="col" className="px-6 py-4">{isRtl ? 'الجهة / البيان' : 'Payee / Description'}</th>
-                  <th scope="col" className="px-6 py-4">{isRtl ? 'التاريخ' : 'Date'}</th>
-                  <th scope="col" className="px-6 py-4">{isRtl ? 'طريقة الدفع' : 'Payment'}</th>
-                  <th scope="col" className="px-6 py-4">{isRtl ? 'الضريبة (15%)' : 'VAT (15%)'}</th>
-                  <th scope="col" className="px-6 py-4">{isRtl ? 'المبلغ الإجمالي' : 'Total Amount'}</th>
-                  <th scope="col" className="px-6 py-4 text-right rtl:text-left">{isRtl ? 'حذف' : 'Action'}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                {expenses.map((expense) => (
-                  <tr key={expense.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                    <td className="px-6 py-4 font-semibold text-indigo-600 dark:text-indigo-400">
-                      {expense.expenseNumber}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                        <Tag className="w-3 h-3 mr-1 rtl:ml-1 rtl:mr-0 text-slate-400" />
-                        {getCategoryLabel(expense.category)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">
-                      {expense.description}
-                    </td>
-                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400">
-                      {new Date(expense.expenseDate).toLocaleDateString(isRtl ? 'ar-SA' : 'en-US')}
-                    </td>
-                    <td className="px-6 py-4 text-xs font-semibold text-slate-600 dark:text-slate-400">
-                      {expense.paymentMethod}
-                    </td>
-                    <td className="px-6 py-4 font-mono text-indigo-600 dark:text-indigo-400">
-                      {parseFloat(expense.taxAmount).toFixed(2)} SAR
-                    </td>
-                    <td className="px-6 py-4 font-semibold text-slate-900 dark:text-slate-100 font-mono">
-                      {parseFloat(expense.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR
-                    </td>
-                    <td className="px-6 py-4 text-right rtl:text-left">
-                      <RowActions
-                        onDelete={() => handleDelete(expense.id)}
-                        deleteLabel={isRtl ? 'حذف' : 'Delete'}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Expense Create Modal */}
+      {/* Expense Create Sheet */}
       <ExpenseCreateSheet
         open={createOpen}
         onOpenChange={setCreateOpen}
         onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: getListExpensesQueryKey(orgId) });
           refetch();
           setCreateOpen(false);
         }}
       />
+
+      {/* Expense Edit Sheet */}
+      <ExpenseCreateSheet
+        open={Boolean(editExpense)}
+        onOpenChange={(nextOpen) => { if (!nextOpen) setEditExpense(null); }}
+        expenseId={editExpense?.id}
+        initialExpense={editExpense}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: getListExpensesQueryKey(orgId) });
+          refetch();
+          setEditExpense(null);
+        }}
+      />
+
+      {/* Expense Details View Modal */}
+      <Dialog open={Boolean(viewExpense)} onOpenChange={(open) => { if (!open) setViewExpense(null); }}>
+        <DialogContent className="max-w-md rounded-2xl p-6 bg-card border border-border shadow-xl">
+          <DialogHeader className="pb-4 border-b border-border">
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex items-center px-3 py-1 rounded-lg bg-primary/10 text-primary font-mono font-extrabold text-xs border border-primary/20">
+                {viewExpense?.expenseNumber}
+              </span>
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                <ShieldCheck size={12} /> ZATCA 15% Eligible
+              </span>
+            </div>
+            <DialogTitle className="text-xl font-black tracking-tight text-foreground mt-3">
+              {t('Expense Details', 'تفاصيل المصروف')}
+            </DialogTitle>
+          </DialogHeader>
+
+          {viewExpense && (
+            <div className="space-y-4 py-2">
+              <div className="p-3.5 rounded-xl bg-muted/40 border border-border/60 space-y-1">
+                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  {t('Payee / Description', 'الجهة / البيان')}
+                </div>
+                <div className="text-base font-extrabold text-foreground leading-snug">
+                  {viewExpense.description}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-xl bg-muted/30 border border-border/50">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground mb-1">
+                    <Tag size={12} className="text-primary" />
+                    <span>{t('Category', 'التصنيف')}</span>
+                  </div>
+                  <div className="text-xs font-extrabold text-foreground">
+                    {viewExpense.category}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-muted/30 border border-border/50">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground mb-1">
+                    <Calendar size={12} className="text-primary" />
+                    <span>{t('Date', 'التاريخ')}</span>
+                  </div>
+                  <div className="text-xs font-bold text-foreground">
+                    {new Date(viewExpense.expenseDate).toLocaleDateString()}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-gradient-to-br from-primary/5 via-card to-emerald-500/5 border border-primary/20 space-y-2">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-muted-foreground font-semibold">{t('Subtotal (excl. VAT)', 'المبلغ قبل الضريبة')}</span>
+                  <span className="font-mono font-bold text-foreground">
+                    SAR {(Number(viewExpense.amount) - Number(viewExpense.taxAmount)).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">{t('VAT (15%)', 'ضريبة القيمة المضافة (15%)')}</span>
+                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    SAR {Number(viewExpense.taxAmount).toFixed(2)}
+                  </span>
+                </div>
+                <div className="pt-2 border-t border-border flex justify-between items-center text-sm">
+                  <span className="font-black text-foreground">{t('Total Amount', 'المبلغ الإجمالي')}</span>
+                  <span className="font-mono font-black text-primary text-base">
+                    SAR {Number(viewExpense.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setViewExpense(null)}
+                  className="rounded-xl text-xs font-bold px-4 py-2 cursor-pointer"
+                >
+                  {t('Close', 'إغلاق')}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    const exp = viewExpense;
+                    setViewExpense(null);
+                    setEditExpense(exp);
+                  }}
+                  className="btn-primary rounded-xl text-xs font-bold px-4 py-2 gap-1.5 cursor-pointer"
+                >
+                  <Pencil size={14} />
+                  <span>{t('Edit Expense', 'تعديل المصروف')}</span>
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
