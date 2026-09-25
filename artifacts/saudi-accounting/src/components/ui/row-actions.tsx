@@ -1,5 +1,4 @@
 import { Eye, Pencil, Trash2 } from 'lucide-react';
-import { Button } from '@/lib/utils';
 
 type RowActionsProps = {
   onView?: () => void;
@@ -23,38 +22,38 @@ export function RowActions({
   return (
     <div className="flex items-center justify-end gap-1.5 shrink-0">
       {onView && (
-        <Button
+        <button
           type="button"
-          variant="secondary"
           onClick={onView}
           title={viewLabel}
-          className="h-8 w-8 p-0 flex items-center justify-center rounded-xl border border-border/80 bg-background hover:bg-primary/10 hover:border-primary/40 text-muted-foreground hover:text-primary transition-all duration-200 cursor-pointer shadow-xs"
+          aria-label={viewLabel}
+          className="h-8 w-8 rounded-xl border border-border bg-card hover:bg-primary/10 hover:border-primary/40 text-foreground hover:text-primary transition-all duration-200 cursor-pointer shadow-xs flex items-center justify-center p-0 shrink-0"
         >
-          <Eye size={15} />
-        </Button>
+          <Eye size={15} className="shrink-0 stroke-[2] text-foreground hover:text-primary" />
+        </button>
       )}
       {onEdit && (
-        <Button
+        <button
           type="button"
-          variant="secondary"
           onClick={onEdit}
           title={editLabel}
-          className="h-8 w-8 p-0 flex items-center justify-center rounded-xl border border-border/80 bg-background hover:bg-amber-500/10 hover:border-amber-500/40 text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400 transition-all duration-200 cursor-pointer shadow-xs"
+          aria-label={editLabel}
+          className="h-8 w-8 rounded-xl border border-border bg-card hover:bg-amber-500/10 hover:border-amber-500/40 text-foreground hover:text-amber-600 dark:hover:text-amber-400 transition-all duration-200 cursor-pointer shadow-xs flex items-center justify-center p-0 shrink-0"
         >
-          <Pencil size={15} />
-        </Button>
+          <Pencil size={15} className="shrink-0 stroke-[2] text-foreground hover:text-amber-600" />
+        </button>
       )}
       {onDelete && (
-        <Button
+        <button
           type="button"
-          variant="secondary"
           onClick={onDelete}
           disabled={deleteDisabled}
           title={deleteLabel}
-          className="h-8 w-8 p-0 flex items-center justify-center rounded-xl border border-border/80 bg-background hover:bg-red-500/10 hover:border-red-500/40 text-muted-foreground hover:text-red-500 transition-all duration-200 cursor-pointer shadow-xs disabled:opacity-40"
+          aria-label={deleteLabel}
+          className="h-8 w-8 rounded-xl border border-border bg-card hover:bg-red-500/10 hover:border-red-500/40 text-muted-foreground hover:text-red-600 transition-all duration-200 cursor-pointer shadow-xs flex items-center justify-center p-0 shrink-0 disabled:opacity-40"
         >
-          <Trash2 size={15} />
-        </Button>
+          <Trash2 size={15} className="shrink-0 stroke-[2] text-red-500" />
+        </button>
       )}
     </div>
   );
