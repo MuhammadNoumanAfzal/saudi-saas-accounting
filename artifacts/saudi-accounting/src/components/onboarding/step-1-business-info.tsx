@@ -1,4 +1,4 @@
-import { Building2, Store, Briefcase } from 'lucide-react';
+import { Building2, Store, Briefcase, Mail, Phone, Globe2, Image } from 'lucide-react';
 import type { OrganizationInput } from '@workspace/api-client-react';
 
 interface Step1Props {
@@ -81,6 +81,91 @@ export function Step1BusinessInfo({ form, updateField, errors, setErrors, t }: S
         </div>
       </div>
 
+      <div className="grid gap-5 md:grid-cols-2">
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <Mail size={14} className="text-primary" />
+            {t('Business Email', 'البريد الإلكتروني للمنشأة')}
+            <span className="text-destructive">*</span>
+          </label>
+          <input
+            type="email"
+            className={`field focus:ring-2 focus:ring-primary/20 transition-all ${
+              errors.email ? 'border-destructive ring-2 ring-destructive/30 bg-destructive/5' : ''
+            }`}
+            value={form.email || ''}
+            onChange={e => {
+              updateField('email', e.target.value);
+              if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
+            }}
+            placeholder="finance@company.sa"
+          />
+          {errors.email && <p className="text-[11px] text-destructive font-bold">{errors.email}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <Phone size={14} className="text-primary" />
+            {t('Business Phone', 'هاتف المنشأة')}
+            <span className="text-destructive">*</span>
+          </label>
+          <input
+            type="tel"
+            className={`field focus:ring-2 focus:ring-primary/20 transition-all ${
+              errors.phone ? 'border-destructive ring-2 ring-destructive/30 bg-destructive/5' : ''
+            }`}
+            value={form.phone || ''}
+            onChange={e => {
+              updateField('phone', e.target.value);
+              if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
+            }}
+            placeholder="+966 50 000 0000"
+          />
+          {errors.phone && <p className="text-[11px] text-destructive font-bold">{errors.phone}</p>}
+        </div>
+      </div>
+
+      <div className="grid gap-5 md:grid-cols-2">
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <Globe2 size={14} className="text-primary" />
+            {t('Website', 'الموقع الإلكتروني')}
+          </label>
+          <input
+            type="url"
+            className={`field focus:ring-2 focus:ring-primary/20 transition-all ${
+              errors.website ? 'border-destructive ring-2 ring-destructive/30 bg-destructive/5' : ''
+            }`}
+            value={form.website || ''}
+            onChange={e => {
+              updateField('website', e.target.value);
+              if (errors.website) setErrors(prev => ({ ...prev, website: '' }));
+            }}
+            placeholder="https://company.sa"
+          />
+          {errors.website && <p className="text-[11px] text-destructive font-bold">{errors.website}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <Image size={14} className="text-primary" />
+            {t('Company Logo URL', 'رابط شعار المنشأة')}
+          </label>
+          <input
+            type="url"
+            className={`field focus:ring-2 focus:ring-primary/20 transition-all ${
+              errors.logoUrl ? 'border-destructive ring-2 ring-destructive/30 bg-destructive/5' : ''
+            }`}
+            value={form.logoUrl || ''}
+            onChange={e => {
+              updateField('logoUrl', e.target.value);
+              if (errors.logoUrl) setErrors(prev => ({ ...prev, logoUrl: '' }));
+            }}
+            placeholder="https://company.sa/logo.png"
+          />
+          {errors.logoUrl && <p className="text-[11px] text-destructive font-bold">{errors.logoUrl}</p>}
+        </div>
+      </div>
       <div className="space-y-2">
         <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
           <Briefcase size={14} className="text-primary" />

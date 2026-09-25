@@ -31,30 +31,7 @@ export function CatalogProfile({ id }: { id: string }) {
     query: { enabled: Boolean(orgId) && !!id, queryKey: getGetCatalogItemQueryKey(orgId, id) }
   });
 
-  const data = (fetchedData && (fetchedData as any).id) ? fetchedData : (() => {
-    try {
-      const stored = localStorage.getItem(`nexus_catalog_${orgId}`);
-      if (stored) {
-        const list = JSON.parse(stored);
-        const match = list.find((x: any) => String(x.id) === String(id) || String(x.sku) === String(id) || String(x.name) === String(id));
-        if (match) return match;
-      }
-    } catch (e) {}
-    return {
-      id: id || 'item_101',
-      sku: id && id.length > 2 ? id : 'SKU-1001',
-      name: 'Standard Laptop Dell XPS 15',
-      nameArabic: 'كمبيوتر محمول ديل XPS 15',
-      type: 'PRODUCT',
-      status: 'ACTIVE',
-      unitPrice: '1500.00',
-      costPrice: '1200.00',
-      taxRate: '15.00',
-      description: 'High performance laptop suitable for enterprise accounting and management.',
-      inventoryTracked: true,
-      currentStock: 45
-    };
-  })();
+  const data = (fetchedData && (fetchedData as any).id) ? fetchedData : null;
 
   const { data: units } = useListCatalogUnits(orgId, {
     query: { enabled: !!orgId, queryKey: getListCatalogUnitsQueryKey(orgId) }

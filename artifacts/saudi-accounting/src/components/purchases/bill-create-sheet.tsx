@@ -7,7 +7,8 @@ import {
   getGetSuppliersQueryKey,
   useListCatalogItems,
   getListCatalogItemsQueryKey,
-  useCreatePurchaseBill
+  useCreatePurchaseBill,
+  useUpdatePurchaseBill
 } from '@workspace/api-client-react';
 import { X, Plus, Trash2, Building2, Calendar, FileText, DollarSign, Calculator } from 'lucide-react';
 import { BillLineItemsTable } from './bill-line-items-table';
@@ -16,6 +17,8 @@ interface BillCreateSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  billId?: string;
+  initialBill?: any;
 }
 
 interface ItemRow {
@@ -30,7 +33,7 @@ interface ItemRow {
   taxRate: number;
 }
 
-export function BillCreateSheet({ open, onOpenChange, onSuccess }: BillCreateSheetProps) {
+export function BillCreateSheet({ open, onOpenChange, onSuccess, billId, initialBill }: BillCreateSheetProps) {
   const { t, isRtl } = useTranslation();
   const { data: session } = useGetCurrentSession();
   const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization.id || '';
@@ -48,6 +51,7 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess }: BillCreateShe
   const catalogItems = catalogData?.items || [];
 
   const createMutation = useCreatePurchaseBill();
+  const updateMutation = useUpdatePurchaseBill();
 
   const [supplierId, setSupplierId] = useState('');
   const [supplierBillNumber, setSupplierBillNumber] = useState('');
@@ -61,10 +65,31 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess }: BillCreateShe
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    if (!open) return;
+    if (initialBill) {
+      setSupplierId(initialBill.supplierId || '');
+      setSupplierBillNumber(initialBill.supplierBillNumber || '');
+      setIssueDate(initialBill.issueDate ? new Date(initialBill.issueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+      setDueDate(initialBill.dueDate ? new Date(initialBill.dueDate).toISOString().split('T')[0] : '');
+      setCurrency(initialBill.currency || 'SAR');
+      setNotes(initialBill.notes || '');
+      setItems((initialBill.items?.length ? initialBill.items : [{ description: '', quantity: 1, unitPrice: 0, discountAmount: 0, taxCategory: 'STANDARD', taxRate: 15 }]).map((it: any) => ({
+        catalogItemId: it.catalogItemId || undefined,
+        itemCode: it.itemCode || undefined,
+        description: it.description || '',
+        descriptionAr: it.descriptionAr || undefined,
+        quantity: Number(it.quantity) || 1,
+        unitPrice: Number(it.unitPrice) || 0,
+        discountAmount: Number(it.discountAmount) || 0,
+        taxCategory: (it.taxCategory as any) || 'STANDARD',
+        taxRate: Number(it.taxRate) || ((it.taxCategory || 'STANDARD') === 'STANDARD' ? 15 : 0),
+      })) as ItemRow[]);
+      return;
+    }
     if (suppliers.length > 0 && !supplierId) {
       setSupplierId(suppliers[0].id);
     }
-  }, [suppliers]);
+  }, [open, initialBill, suppliers]);
 
   if (!open) return null;
 
@@ -159,28 +184,31 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess }: BillCreateShe
     }
 
     try {
-      await createMutation.mutateAsync({
-        organizationId: orgId,
-        data: {
-          supplierId,
-          supplierBillNumber: supplierBillNumber.trim(),
-          issueDate: issueDate ? new Date(issueDate).toISOString() : undefined,
-          dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
-          currency,
-          notes: notes.trim() || undefined,
-          items: items.map(it => ({
-            catalogItemId: it.catalogItemId || undefined,
-            itemCode: it.itemCode || undefined,
-            description: it.description.trim(),
-            descriptionAr: it.descriptionAr || undefined,
-            quantity: String(it.quantity),
-            unitPrice: String(it.unitPrice),
-            discountAmount: String(it.discountAmount),
-            taxCategory: it.taxCategory,
-            taxRate: String(it.taxCategory === 'STANDARD' ? 15 : 0),
-          }))
-        }
-      });
+      const payload = {
+        supplierId,
+        supplierBillNumber: supplierBillNumber.trim(),
+        issueDate: issueDate ? new Date(issueDate).toISOString() : undefined,
+        dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
+        currency,
+        notes: notes.trim() || undefined,
+        items: items.map(it => ({
+          catalogItemId: it.catalogItemId || undefined,
+          itemCode: it.itemCode || undefined,
+          description: it.description.trim(),
+          descriptionAr: it.descriptionAr || undefined,
+          quantity: String(it.quantity),
+          unitPrice: String(it.unitPrice),
+          discountAmount: String(it.discountAmount),
+          taxCategory: it.taxCategory,
+          taxRate: String(it.taxCategory === 'STANDARD' ? 15 : 0),
+        }))
+      };
+
+      if (billId) {
+        await updateMutation.mutateAsync({ organizationId: orgId, billId, data: payload });
+      } else {
+        await createMutation.mutateAsync({ organizationId: orgId, data: payload });
+      }
 
       showAlert.toast(
         t('Purchase Bill Saved!', 'تم حفظ فاتورة المشتريات!'),
@@ -204,7 +232,7 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess }: BillCreateShe
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <Building2 className="w-5 h-5 text-indigo-600" />
-              {isRtl ? 'إضافة فاتورة شراء جديدة' : 'Create Purchase Bill'}
+              {billId ? (isRtl ? 'تعديل فاتورة الشراء' : 'Edit Purchase Bill') : (isRtl ? 'إضافة فاتورة شراء جديدة' : 'Create Purchase Bill')}
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               {isRtl ? 'تسجيل فاتورة من مورد وحساب ضريبة المدخلات' : 'Record vendor bill and calculate input VAT'}

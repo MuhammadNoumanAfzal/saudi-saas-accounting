@@ -85,17 +85,36 @@ export function Onboarding() {
 
   const handleNext = () => {
     if (step === 1) {
+      const step1Errors: Record<string, string> = {};
       if (!form.legalNameEnglish?.trim()) {
-        const errMsg = t('Company Legal Name (English) is required.', 'الاسم القانوني للمنشأة (إنجليزي) مطلوب.');
-        setErrors({ legalNameEnglish: errMsg });
+        step1Errors.legalNameEnglish = t('Company Legal Name (English) is required.', 'الاسم القانوني للمنشأة (إنجليزي) مطلوب.');
+      }
+      if (!form.email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email || '')) {
+        step1Errors.email = t('Valid business email is required.', 'البريد الإلكتروني الصحيح للمنشأة مطلوب.');
+      }
+      if (!form.phone?.trim() || form.phone.trim().length < 7) {
+        step1Errors.phone = t('Valid business phone is required.', 'رقم هاتف المنشأة الصحيح مطلوب.');
+      }
+      const optionalUrlFields: Array<keyof OrganizationInput> = ['website', 'logoUrl'];
+      optionalUrlFields.forEach(key => {
+        const value = String(form[key] || '').trim();
+        if (!value) return;
+        try {
+          const parsed = new URL(value);
+          if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('invalid protocol');
+        } catch {
+          step1Errors[key] = t('Enter a valid https:// URL.', 'أدخل رابطاً صحيحاً يبدأ بـ https://');
+        }
+      });
+      if (Object.keys(step1Errors).length > 0) {
+        setErrors(step1Errors);
         showAlert.error(
-          t('Required Field Missing', 'حقل مطلوب ناقص'),
-          t('Please enter your Company Legal Name (English) before continuing.', 'يرجى إدخال الاسم القانوني للمنشأة باللغة الإنجليزية للمتابعة.')
+          t('Required Organization Details Missing', 'بيانات المنشأة المطلوبة ناقصة'),
+          t('Please complete company name, email, phone, and valid URLs before continuing.', 'يرجى إكمال اسم المنشأة والبريد والهاتف والروابط الصحيحة قبل المتابعة.')
         );
         return;
       }
-      setErrors({});
-    } else if (step === 2) {
+      setErrors({});    } else if (step === 2) {
       if (!form.commercialRegistrationNumber?.trim() || !/^\d{10}$/.test(form.commercialRegistrationNumber || '')) {
         const errMsg = t('Commercial Registration (CR) must be 10 digits.', 'رقم السجل التجاري يجب أن يكون 10 أرقام.');
         setErrors({ commercialRegistrationNumber: errMsg });

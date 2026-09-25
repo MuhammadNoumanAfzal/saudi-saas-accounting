@@ -8,6 +8,7 @@ import {
   invoicesTable,
   purchaseBillsTable,
   expensesTable,
+  businessPartiesTable,
 } from "@workspace/db";
 import { requireAuthentication } from "../middlewares/auth";
 import { requireModule } from "../middlewares/moduleEntitlement";
@@ -18,6 +19,31 @@ router.use(requireAuthentication);
 router.use("/organizations/:organizationId", requireModule("finance"));
 
 const getOrgId = (req: any) => String(req.params.organizationId);
+
+function sendHtmlReport(res: any, title: string, rows: Array<Record<string, any>>) {
+  const columns = rows.length ? Object.keys(rows[0]) : ["message"];
+  const body = rows.length ? rows.map((row) => `<tr>${columns.map((col) => `<td>${String(row[col] ?? "")}</td>`).join("")}</tr>`).join("") : `<tr><td>No data</td></tr>`;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Arial,sans-serif;padding:24px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f3f4f6}@media print{button{display:none}}</style></head><body><button onclick="window.print()">Print / Save PDF</button><h1>${title}</h1><table><thead><tr>${columns.map((c)=>`<th>${c}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table></body></html>`;
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  return res.send(html);
+}
+
+function sendXlsReport(res: any, filename: string, rows: Array<Record<string, any>>) {
+  const columns = rows.length ? Object.keys(rows[0]) : ["message"];
+  const body = rows.length ? rows.map((row) => `<tr>${columns.map((col) => `<td>${String(row[col] ?? "")}</td>`).join("")}</tr>`).join("") : `<tr><td>No data</td></tr>`;
+  const html = `<html><body><table><thead><tr>${columns.map((c)=>`<th>${c}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table></body></html>`;
+  res.setHeader("Content-Type", "application/vnd.ms-excel; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  return res.send(html);
+}
+function sendCsv(res: any, filename: string, rows: Array<Record<string, any>>) {
+  const columns = rows.length ? Object.keys(rows[0]) : ["message"];
+  const escape = (value: any) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+  const csv = [columns.join(","), ...rows.map((row) => columns.map((col) => escape(row[col])).join(","))].join("\n");
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  return res.send(csv);
+}
 
 // ----------------------------------------------------------------------
 // 1. PROFIT & LOSS STATEMENT (قائمة الدخل)
@@ -128,7 +154,7 @@ router.get(
       // Build Revenue Category
       const salesAccount = accounts.find(a => a.code === '40100');
       const salesJournalAmt = salesAccount ? (accountJournalNet[salesAccount.id] || 0) : 0;
-      const totalRevenueAmt = totalSalesInvoices + salesJournalAmt;
+      const totalRevenueAmt = salesJournalAmt > 0 ? salesJournalAmt : totalSalesInvoices;
 
       const revenueCategories = [
         {
@@ -881,4 +907,67 @@ router.get(
   }
 );
 
+
+// ----------------------------------------------------------------------
+// CUSTOMER / SUPPLIER STATEMENTS
+// ----------------------------------------------------------------------
+router.get("/organizations/:organizationId/reports/customer-statement", async (req, res) => {
+  try {
+    const organizationId = getOrgId(req);
+    const customerId = String(req.query.customerId || "");
+    if (!customerId) return res.status(400).json({ error: "customerId is required" });
+
+    const [customer] = await db.select().from(businessPartiesTable).where(and(eq(businessPartiesTable.organizationId, organizationId), eq(businessPartiesTable.id, customerId))).limit(1);
+    if (!customer) return res.status(404).json({ error: "Customer not found" });
+
+    const invoices = await db.select().from(invoicesTable).where(and(eq(invoicesTable.organizationId, organizationId), eq(invoicesTable.customerId, customerId)));
+    const rows: any[] = [];
+    for (const inv of invoices) {
+      if (inv.status === "CANCELLED") continue;
+      rows.push({ date: inv.issueDate, type: "INVOICE", reference: inv.invoiceNumber, debit: Number(inv.totalAmount || 0), credit: 0 });
+      const payments = await db.select().from(journalEntriesTable).where(and(eq(journalEntriesTable.organizationId, organizationId), eq(journalEntriesTable.sourceDocumentType, "CUSTOMER_PAYMENT"), eq(journalEntriesTable.sourceDocumentId, inv.id)));
+      for (const p of payments) rows.push({ date: p.entryDate, type: "PAYMENT", reference: p.referenceNumber || inv.invoiceNumber, debit: 0, credit: Number(p.totalDebit || 0) });
+    }
+    rows.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    let balance = 0;
+    const entries = rows.map((row) => {
+      balance += row.debit - row.credit;
+      return { ...row, date: new Date(row.date).toISOString(), debit: row.debit.toFixed(2), credit: row.credit.toFixed(2), balance: balance.toFixed(2) };
+    });
+    if (req.query.format === "csv") return sendCsv(res, `customer-statement-${customerId}.csv`, entries);
+    return res.json({ partyType: "CUSTOMER", partyId: customerId, partyName: customer.businessNameEnglish || customer.legalNameEnglish || customer.email, currency: "SAR", openingBalance: "0.00", closingBalance: balance.toFixed(2), entries });
+  } catch (err: any) {
+    return res.status(500).json({ error: "Failed to generate customer statement", message: err.message });
+  }
+});
+
+router.get("/organizations/:organizationId/reports/supplier-statement", async (req, res) => {
+  try {
+    const organizationId = getOrgId(req);
+    const supplierId = String(req.query.supplierId || "");
+    if (!supplierId) return res.status(400).json({ error: "supplierId is required" });
+
+    const [supplier] = await db.select().from(businessPartiesTable).where(and(eq(businessPartiesTable.organizationId, organizationId), eq(businessPartiesTable.id, supplierId))).limit(1);
+    if (!supplier) return res.status(404).json({ error: "Supplier not found" });
+
+    const bills = await db.select().from(purchaseBillsTable).where(and(eq(purchaseBillsTable.organizationId, organizationId), eq(purchaseBillsTable.supplierId, supplierId)));
+    const rows: any[] = [];
+    for (const bill of bills) {
+      if (bill.status === "CANCELLED") continue;
+      rows.push({ date: bill.billDate, type: "BILL", reference: bill.billNumber, debit: 0, credit: Number(bill.totalAmount || 0) });
+      const payments = await db.select().from(journalEntriesTable).where(and(eq(journalEntriesTable.organizationId, organizationId), eq(journalEntriesTable.sourceDocumentType, "SUPPLIER_PAYMENT"), eq(journalEntriesTable.sourceDocumentId, bill.id)));
+      for (const p of payments) rows.push({ date: p.entryDate, type: "PAYMENT", reference: p.referenceNumber || bill.billNumber, debit: Number(p.totalCredit || 0), credit: 0 });
+    }
+    rows.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    let balance = 0;
+    const entries = rows.map((row) => {
+      balance += row.credit - row.debit;
+      return { ...row, date: new Date(row.date).toISOString(), debit: row.debit.toFixed(2), credit: row.credit.toFixed(2), balance: balance.toFixed(2) };
+    });
+    if (req.query.format === "csv") return sendCsv(res, `supplier-statement-${supplierId}.csv`, entries);
+    return res.json({ partyType: "SUPPLIER", partyId: supplierId, partyName: supplier.businessNameEnglish || supplier.legalNameEnglish || supplier.email, currency: "SAR", openingBalance: "0.00", closingBalance: balance.toFixed(2), entries });
+  } catch (err: any) {
+    return res.status(500).json({ error: "Failed to generate supplier statement", message: err.message });
+  }
+});
 export default router;

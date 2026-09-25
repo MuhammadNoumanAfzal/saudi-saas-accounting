@@ -3,6 +3,8 @@ import type { ModuleKey } from "@workspace/platform-core";
 import { getMembership, getOrCreateLocalUser } from "./auth";
 import { hasModuleEntitlement } from "../lib/moduleEntitlements";
 
+const readMethods = new Set(["GET", "HEAD", "OPTIONS"]);
+
 export function requireModule(moduleKey: ModuleKey): RequestHandler {
   return async (req, res, next) => {
     try {
@@ -28,6 +30,13 @@ export function requireModule(moduleKey: ModuleKey): RequestHandler {
         res.status(403).json({ error: "Module is not enabled" });
         return;
       }
+      if (!readMethods.has(req.method) && membership.role === "viewer") {
+        res.status(403).json({ error: "Permission denied" });
+        return;
+      }
+      res.locals.partyUser = user;
+      res.locals.partyMembership = membership;
+      res.locals.organizationRole = membership.role;
       next();
     } catch (error) {
       next(error);

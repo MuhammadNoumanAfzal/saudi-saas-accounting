@@ -8,13 +8,15 @@ import {
   useUpdatePurchaseBillStatus,
   useDeletePurchaseBill,
   getGetPurchaseBillQueryKey,
-  getListPurchaseBillsQueryKey
+  getListPurchaseBillsQueryKey,
+  customFetch
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { PlatformLoader } from '@/components/ui/platform-loader';
 import { 
-  ArrowLeft, ArrowRight, Building2, Calendar, FileText, CheckCircle2, Clock, Trash2, Printer, ShieldCheck, ShoppingBag, MapPin, Hash, XCircle
+  ArrowLeft, ArrowRight, Building2, Calendar, FileText, CheckCircle2, Clock, Trash2, Printer, ShieldCheck, ShoppingBag, MapPin, Hash, XCircle, Pencil
 } from 'lucide-react';
+import { BillCreateSheet } from './bill-create-sheet';
 
 interface BillDetailProps {
   billId: string;
@@ -42,6 +44,11 @@ export function BillDetail({ billId }: BillDetailProps) {
   const deleteMutation = useDeletePurchaseBill();
 
   const [updating, setUpdating] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentReference, setPaymentReference] = useState('');
+  const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().split('T')[0]);
 
   if (isLoading) {
     return (
@@ -103,6 +110,35 @@ export function BillDetail({ billId }: BillDetailProps) {
     } catch (err: any) {
       console.error(err);
       showAlert.error(t('Error', 'خطأ'), err.message || t('Status update failed', 'فشل تحديث حالة الفاتورة'));
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+
+  const handleRecordSupplierPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amount = Number(paymentAmount);
+    if (!amount || amount <= 0) {
+      showAlert.error(t('Invalid amount', 'مبلغ غير صحيح'), t('Enter a payment amount greater than zero.', 'أدخل مبلغ سداد أكبر من صفر.'));
+      return;
+    }
+    try {
+      setUpdating(true);
+      await customFetch(`/api/organizations/${orgId}/purchase-bills/${bill.id}/payments`, {
+        method: 'POST',
+        responseType: 'json',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount, referenceNumber: paymentReference || undefined, paymentDate: paymentDate ? new Date(paymentDate).toISOString() : undefined, method: 'BANK_TRANSFER', accountCode: '10200' })
+      });
+      setPaymentOpen(false);
+      setPaymentAmount('');
+      setPaymentReference('');
+      await refetch();
+      queryClient.invalidateQueries({ queryKey: getListPurchaseBillsQueryKey(orgId) });
+      showAlert.success(t('Payment recorded', 'تم تسجيل السداد'), t('Supplier payment was posted to the ledger.', 'تم ترحيل سداد المورد إلى دفتر الأستاذ.'));
+    } catch (err: any) {
+      showAlert.error(t('Payment failed', 'فشل السداد'), err?.message || t('Could not record payment.', 'تعذر تسجيل السداد.'));
     } finally {
       setUpdating(false);
     }
@@ -186,6 +222,32 @@ export function BillDetail({ billId }: BillDetailProps) {
 
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2">
+          {bill.status !== 'PAID' && bill.status !== 'CANCELLED' && (
+            <Button
+              variant="secondary"
+              onClick={() => setEditOpen(true)}
+              disabled={updating}
+              className="gap-2 text-xs py-2 px-4 font-semibold hover:bg-primary/10 hover:text-primary transition-colors"
+            >
+              <Pencil size={16} />
+              {t('Edit', 'تعديل')}
+            </Button>
+          )}
+          {bill.status !== 'PAID' && bill.status !== 'CANCELLED' && (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setPaymentAmount(bill.totalAmount || '');
+                setPaymentOpen(true);
+              }}
+              disabled={updating}
+              className="gap-2 text-xs py-2 px-4 font-semibold hover:bg-primary/10 hover:text-primary transition-colors"
+            >
+              <CreditCard size={16} />
+              {t('Record Payment', 'تسجيل سداد')}
+            </Button>
+          )}
+
           {bill.status !== 'PAID' && bill.status !== 'CANCELLED' && (
             <Button
               onClick={() => handleStatusUpdate('PAID')}
@@ -451,6 +513,27 @@ export function BillDetail({ billId }: BillDetailProps) {
         </div>
 
       </div>
+      <BillCreateSheet
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        billId={bill.id}
+        initialBill={bill}
+        onSuccess={() => {
+          refetch();
+          queryClient.invalidateQueries({ queryKey: getListPurchaseBillsQueryKey(orgId) });
+          setEditOpen(false);
+        }}
+      />      {paymentOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4 print:hidden">
+          <form onSubmit={handleRecordSupplierPayment} className="w-full max-w-md rounded-2xl bg-card border border-border shadow-2xl p-6 space-y-4">
+            <div><h3 className="text-lg font-bold">{t('Record Supplier Payment', 'تسجيل دفع للمورد')}</h3><p className="text-sm text-muted-foreground">{bill.billNumber}</p></div>
+            <label className="block text-sm font-semibold">{t('Amount', 'المبلغ')}<input className="mt-1 w-full h-10 rounded-lg border border-border bg-background px-3" type="number" step="0.01" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} /></label>
+            <label className="block text-sm font-semibold">{t('Reference', 'المرجع')}<input className="mt-1 w-full h-10 rounded-lg border border-border bg-background px-3" value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} /></label>
+            <label className="block text-sm font-semibold">{t('Payment Date', 'تاريخ السداد')}<input className="mt-1 w-full h-10 rounded-lg border border-border bg-background px-3" type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} /></label>
+            <div className="flex justify-end gap-2 pt-2"><Button type="button" variant="secondary" onClick={() => setPaymentOpen(false)}>{t('Cancel', 'إلغاء')}</Button><Button type="submit" disabled={updating}>{t('Post Payment', 'ترحيل السداد')}</Button></div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

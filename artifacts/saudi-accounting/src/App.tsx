@@ -109,6 +109,8 @@ import { ProfitLossPage } from './pages/profit-loss-page';
 import { BalanceSheetPage } from './pages/balance-sheet-page';
 import { VatReturnPage } from './pages/vat-return-page';
 import { AccountLedgerPage } from './pages/account-ledger-page';
+import { CustomerStatementPage } from './pages/customer-statement-page';
+import { SupplierStatementPage } from './pages/supplier-statement-page';
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
@@ -692,7 +694,16 @@ export default function App() {
               </AuthGuard>
             </Route>
 
-            <Route path="/reports/account-ledger">
+            <Route path="/reports/customer-statement">
+              <AuthGuard>
+                <AppShell><CustomerStatementPage /></AppShell>
+              </AuthGuard>
+            </Route>
+            <Route path="/reports/supplier-statement">
+              <AuthGuard>
+                <AppShell><SupplierStatementPage /></AppShell>
+              </AuthGuard>
+            </Route>            <Route path="/reports/account-ledger">
               <AuthGuard>
                 <ModuleGuard moduleKey="finance">
                   <AccountLedgerPage />

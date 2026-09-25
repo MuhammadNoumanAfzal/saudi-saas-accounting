@@ -32,6 +32,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
 
   const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization?.id || '';
+  const activeMembership = session?.organizations?.find(item => item.organization.id === orgId) ?? session?.organizations?.[0];
+  const canWriteFinance = activeMembership?.role !== 'viewer';
   const { data: orgModules } = useListOrganizationModules(orgId, {
     query: { enabled: !!orgId, queryKey: getListOrganizationModulesQueryKey(orgId) }
   });
@@ -125,6 +127,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         { href: '/reports/balance-sheet', label: t('Balance Sheet', 'الميزانية العمومية') },
         { href: '/reports/zatca-vat-return', label: t('ZATCA VAT Return', 'إقرار الضريبة') },
         { href: '/reports/account-ledger', label: t('Account Ledger', 'كشف حساب') },
+        { href: '/reports/customer-statement', label: t('Customer Statement', 'كشف العميل') },
+        { href: '/reports/supplier-statement', label: t('Supplier Statement', 'كشف المورد') },
       ]
     },
   ];
@@ -422,11 +426,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <span>{t('Search...', 'بحث...')}</span>
               <kbd className="ms-2 pointer-events-none inline-flex h-5 items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium opacity-100"><span className="text-xs">⌘</span>K</kbd>
             </button>
-
-            <button onClick={() => setOverlay('create')} className="flex items-center justify-center h-8 w-8 rounded-lg text-primary hover:bg-primary/10 transition-colors" title={t('Quick create', 'إنشاء سريع')}>
-              <Plus size={18} />
-            </button>
-
+            {canWriteFinance && (
+              <button onClick={() => setOverlay('create')} className="flex items-center justify-center h-8 w-8 rounded-lg text-primary hover:bg-primary/10 transition-colors" title={t('Quick create', 'Quick create')}>
+                <Plus size={18} />
+              </button>
+            )}
             <button onClick={() => setOverlay('notifications')} className="flex items-center justify-center h-8 w-8 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" title={t('Notifications', 'الإشعارات')}>
               <Bell size={18} />
             </button>
@@ -589,7 +593,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             )}
 
-            {overlay === 'create' && (
+            {overlay === 'create' && canWriteFinance && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-5">
                 {[
                   { label: t('Sales Invoice', 'فاتورة مبيعات'), desc: t('Create ZATCA Phase 2 E-Invoice', 'إنشاء فاتورة ضريبية إلكترونية'), route: '/finance/invoices?new=1', icon: Receipt, color: 'text-emerald-600 bg-emerald-500/10' },

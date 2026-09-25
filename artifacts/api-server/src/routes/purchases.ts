@@ -12,6 +12,8 @@ import {
 import { requireAuthentication } from "../middlewares/auth";
 import { requireModule } from "../middlewares/moduleEntitlement";
 import { writeAuditLog } from "../lib/audit";
+import { UpdatePurchaseBillBody } from "@workspace/api-zod";
+import { getPostedAmount, postJournalEntry } from "../lib/accountingPost";
 
 const router: IRouter = Router();
 router.use(requireAuthentication);
@@ -75,6 +77,7 @@ async function getNextExpenseNumber(organizationId: string): Promise<string> {
 function calculateBillTotals(items: Array<any>) {
   let subtotalAcc = 0;
   let taxAcc = 0;
+  let discountAcc = 0;
 
   const processed = items.map((it: any, idx: number) => {
     const qty = Number(it.quantity) || 1;
@@ -88,6 +91,7 @@ function calculateBillTotals(items: Array<any>) {
     const lineTotal = lineSub + lineTax;
 
     subtotalAcc += lineSub;
+    discountAcc += disc;
     taxAcc += lineTax;
 
     return {
@@ -111,7 +115,7 @@ function calculateBillTotals(items: Array<any>) {
 
   return {
     subtotal: subtotalAcc.toFixed(2),
-    discountAmount: "0.00",
+    discountAmount: discountAcc.toFixed(2),
     taxAmount: taxAcc.toFixed(2),
     totalAmount: totalAcc.toFixed(2),
     items: processed,
@@ -295,6 +299,20 @@ router.post("/organizations/:organizationId/purchase-bills", async (req, res) =>
       newValues: { billNumber: newBill.billNumber, totalAmount: newBill.totalAmount },
     });
 
+    await postJournalEntry({
+      organizationId: orgId,
+      sourceDocumentType: "PURCHASE_BILL",
+      sourceDocumentId: newBill.id,
+      referenceNumber: newBill.billNumber,
+      description: `Purchase bill ${newBill.billNumber}`,
+      entryDate: newBill.billDate,
+      replaceExisting: true,
+      lines: [
+        { accountCode: "50500", debit: newBill.subtotal, description: "Purchases / expense" },
+        { accountCode: "10400", debit: newBill.taxAmount, description: "Input VAT" },
+        { accountCode: "20100", credit: newBill.totalAmount, description: "Accounts payable" },
+      ],
+    });
     const responseObj = {
       id: newBill.id,
       organizationId: newBill.organizationId,
@@ -350,6 +368,20 @@ router.get("/organizations/:organizationId/purchase-bills/:billId", async (req, 
       .where(eq(purchaseBillItemsTable.billId, bill.id))
       .orderBy(purchaseBillItemsTable.sortOrder);
 
+    await postJournalEntry({
+      organizationId: orgId,
+      sourceDocumentType: "PURCHASE_BILL",
+      sourceDocumentId: newBill.id,
+      referenceNumber: newBill.billNumber,
+      description: `Purchase bill ${newBill.billNumber}`,
+      entryDate: newBill.billDate,
+      replaceExisting: true,
+      lines: [
+        { accountCode: "50500", debit: newBill.subtotal, description: "Purchases / expense" },
+        { accountCode: "10400", debit: newBill.taxAmount, description: "Input VAT" },
+        { accountCode: "20100", credit: newBill.totalAmount, description: "Accounts payable" },
+      ],
+    });
     const responseObj = {
       id: bill.id,
       organizationId: bill.organizationId,
@@ -425,6 +457,20 @@ router.patch("/organizations/:organizationId/purchase-bills/:billId/status", asy
       newValues: { newStatus: status },
     });
 
+    await postJournalEntry({
+      organizationId: orgId,
+      sourceDocumentType: "PURCHASE_BILL",
+      sourceDocumentId: newBill.id,
+      referenceNumber: newBill.billNumber,
+      description: `Purchase bill ${newBill.billNumber}`,
+      entryDate: newBill.billDate,
+      replaceExisting: true,
+      lines: [
+        { accountCode: "50500", debit: newBill.subtotal, description: "Purchases / expense" },
+        { accountCode: "10400", debit: newBill.taxAmount, description: "Input VAT" },
+        { accountCode: "20100", credit: newBill.totalAmount, description: "Accounts payable" },
+      ],
+    });
     const responseObj = {
       id: updatedBill.id,
       organizationId: updatedBill.organizationId,
@@ -638,6 +684,20 @@ router.post("/organizations/:organizationId/expenses", async (req, res) => {
       newValues: { expenseNumber: newExpense.expenseNumber, amount: newExpense.totalAmount },
     });
 
+    await postJournalEntry({
+      organizationId: orgId,
+      sourceDocumentType: "PURCHASE_BILL",
+      sourceDocumentId: newBill.id,
+      referenceNumber: newBill.billNumber,
+      description: `Purchase bill ${newBill.billNumber}`,
+      entryDate: newBill.billDate,
+      replaceExisting: true,
+      lines: [
+        { accountCode: "50500", debit: newBill.subtotal, description: "Purchases / expense" },
+        { accountCode: "10400", debit: newBill.taxAmount, description: "Input VAT" },
+        { accountCode: "20100", credit: newBill.totalAmount, description: "Accounts payable" },
+      ],
+    });
     const responseObj = {
       id: newExpense.id,
       organizationId: newExpense.organizationId,
@@ -685,6 +745,20 @@ router.get("/organizations/:organizationId/expenses/:expenseId", async (req, res
     }
 
     const e = expenses[0];
+    await postJournalEntry({
+      organizationId: orgId,
+      sourceDocumentType: "PURCHASE_BILL",
+      sourceDocumentId: newBill.id,
+      referenceNumber: newBill.billNumber,
+      description: `Purchase bill ${newBill.billNumber}`,
+      entryDate: newBill.billDate,
+      replaceExisting: true,
+      lines: [
+        { accountCode: "50500", debit: newBill.subtotal, description: "Purchases / expense" },
+        { accountCode: "10400", debit: newBill.taxAmount, description: "Input VAT" },
+        { accountCode: "20100", credit: newBill.totalAmount, description: "Accounts payable" },
+      ],
+    });
     const responseObj = {
       id: e.id,
       organizationId: e.organizationId,

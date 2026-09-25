@@ -444,4 +444,50 @@ router.post("/organizations/:organizationId/quotations/:quotationId/status", asy
   res.json(updated);
 });
 
+// DELETE /api/organizations/:organizationId/quotations/:quotationId
+router.delete("/organizations/:organizationId/quotations/:quotationId", async (req, res): Promise<void> => {
+  const organizationId = getOrgId(req);
+  const quotationId = getQuotationId(req);
+
+  const existing = await getFullQuotation(organizationId, quotationId);
+  if (!existing) {
+    res.status(404).json({ error: "Quotation not found" });
+    return;
+  }
+
+  if (existing.status === "CONVERTED") {
+    res.status(409).json({ error: "Converted quotations cannot be deleted" });
+    return;
+  }
+
+  await db
+    .delete(quotationItemsTable)
+    .where(
+      and(
+        eq(quotationItemsTable.organizationId, organizationId),
+        eq(quotationItemsTable.quotationId, quotationId),
+      ),
+    );
+
+  await db
+    .delete(quotationsTable)
+    .where(
+      and(
+        eq(quotationsTable.organizationId, organizationId),
+        eq(quotationsTable.id, quotationId),
+      ),
+    );
+
+  await writeAuditLog({
+    organizationId,
+    userId: res.locals?.partyUser?.id,
+    action: "quotation.deleted",
+    entityType: "quotation",
+    entityId: quotationId,
+    previousValues: existing,
+    req,
+  });
+
+  res.status(204).send();
+});
 export default router;

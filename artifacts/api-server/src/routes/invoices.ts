@@ -18,6 +18,7 @@ import { requireAuthentication } from "../middlewares/auth";
 import { requireModule } from "../middlewares/moduleEntitlement";
 import { writeAuditLog } from "../lib/audit";
 import { generateZatcaTlvQrCode } from "../lib/zatca";
+import { getPostedAmount, postJournalEntry } from "../lib/accountingPost";
 
 const router: IRouter = Router();
 router.use(requireAuthentication);
@@ -56,6 +57,7 @@ async function getNextInvoiceNumber(organizationId: string): Promise<string> {
 function calculateInvoiceTotals(items: Array<any>) {
   let subtotalAcc = 0;
   let taxAcc = 0;
+  let discountAcc = 0;
 
   const processed = items.map((it: any, idx: number) => {
     const qty = Number(it.quantity) || 1;
@@ -69,6 +71,7 @@ function calculateInvoiceTotals(items: Array<any>) {
     const lineTotal = lineSub + lineTax;
 
     subtotalAcc += lineSub;
+    discountAcc += disc;
     taxAcc += lineTax;
 
     return {
@@ -92,7 +95,7 @@ function calculateInvoiceTotals(items: Array<any>) {
 
   return {
     subtotal: subtotalAcc.toFixed(2),
-    discountAmount: "0.00",
+    discountAmount: discountAcc.toFixed(2),
     taxAmount: taxAcc.toFixed(2),
     totalAmount: totalAcc.toFixed(2),
     items: processed,
@@ -237,7 +240,7 @@ router.post("/organizations/:organizationId/invoices", async (req, res): Promise
       discountAmount: totals.discountAmount,
       taxAmount: totals.taxAmount,
       totalAmount: totals.totalAmount,
-      status: "ISSUED",
+      status: "DRAFT",
       zatcaQrCode,
       notes: data.notes || null,
       terms: data.terms || null,
@@ -371,6 +374,42 @@ router.post("/organizations/:organizationId/invoices/:invoiceId/status", async (
 
   const { status } = parsed.data;
 
+  if (status === "ISSUED" || status === "PAID") {
+    await postJournalEntry({
+      organizationId,
+      sourceDocumentType: "INVOICE",
+      sourceDocumentId: invoiceId,
+      referenceNumber: existing.invoiceNumber,
+      description: `Sales invoice ${existing.invoiceNumber}`,
+      entryDate: existing.issueDate,
+      replaceExisting: true,
+      lines: [
+        { accountCode: "10300", debit: existing.totalAmount, description: "Accounts receivable" },
+        { accountCode: "40100", credit: existing.subtotal, description: "Sales revenue" },
+        { accountCode: "20200", credit: existing.taxAmount, description: "Output VAT" },
+      ],
+    });
+  }
+
+  if (status === "PAID") {
+    const paidSoFar = await getPostedAmount(organizationId, "CUSTOMER_PAYMENT", invoiceId, "10200", "debit");
+    const remaining = Math.max(0, Number(existing.totalAmount) - paidSoFar);
+    if (remaining > 0) {
+      await postJournalEntry({
+        organizationId,
+        sourceDocumentType: "CUSTOMER_PAYMENT",
+        sourceDocumentId: invoiceId,
+        referenceNumber: existing.invoiceNumber,
+        description: `Customer receipt ${existing.invoiceNumber}`,
+        entryDate: new Date(),
+        lines: [
+          { accountCode: "10200", debit: remaining, description: "Bank receipt" },
+          { accountCode: "10300", credit: remaining, description: "Accounts receivable settlement" },
+        ],
+      });
+    }
+  }
+
   await db
     .update(invoicesTable)
     .set({ status, updatedAt: new Date() })
@@ -396,6 +435,48 @@ router.post("/organizations/:organizationId/invoices/:invoiceId/status", async (
   res.json(updated);
 });
 
+
+// POST /api/organizations/:organizationId/invoices/:invoiceId/payments
+router.post("/organizations/:organizationId/invoices/:invoiceId/payments", async (req, res): Promise<void> => {
+  const organizationId = getOrgId(req);
+  const invoiceId = getInvoiceId(req);
+  const invoice = await getFullInvoice(organizationId, invoiceId);
+  if (!invoice) {
+    res.status(404).json({ error: "Invoice not found" });
+    return;
+  }
+
+  const amount = Number(req.body?.amount || 0);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    res.status(400).json({ error: "Payment amount must be greater than zero" });
+    return;
+  }
+
+  if (invoice.status === "DRAFT") {
+    res.status(409).json({ error: "Draft invoices must be finalized before payment" });
+    return;
+  }
+
+  await postJournalEntry({
+    organizationId,
+    sourceDocumentType: "CUSTOMER_PAYMENT",
+    sourceDocumentId: invoiceId,
+    referenceNumber: req.body?.referenceNumber || invoice.invoiceNumber,
+    description: `Customer receipt ${invoice.invoiceNumber}`,
+    entryDate: req.body?.paymentDate ? new Date(req.body.paymentDate) : new Date(),
+    lines: [
+      { accountCode: req.body?.accountCode || "10200", debit: amount, description: req.body?.method || "Customer receipt" },
+      { accountCode: "10300", credit: amount, description: "Accounts receivable settlement" },
+    ],
+  });
+
+  const paidTotal = await getPostedAmount(organizationId, "CUSTOMER_PAYMENT", invoiceId, "10200", "debit");
+  const nextStatus = paidTotal + 0.005 >= Number(invoice.totalAmount) ? "PAID" : "PARTIALLY_PAID";
+  await db.update(invoicesTable).set({ status: nextStatus, updatedAt: new Date() }).where(and(eq(invoicesTable.organizationId, organizationId), eq(invoicesTable.id, invoiceId)));
+  await writeAuditLog({ organizationId, userId: res.locals?.partyUser?.id, action: "invoice.payment_recorded", entityType: "invoice", entityId: invoiceId, newValues: { amount, paidTotal, status: nextStatus }, req });
+  const updated = await getFullInvoice(organizationId, invoiceId);
+  res.status(201).json(updated);
+});
 // POST /api/organizations/:organizationId/quotations/:quotationId/convert
 router.post("/organizations/:organizationId/quotations/:quotationId/convert", async (req, res): Promise<void> => {
   const organizationId = getOrgId(req);

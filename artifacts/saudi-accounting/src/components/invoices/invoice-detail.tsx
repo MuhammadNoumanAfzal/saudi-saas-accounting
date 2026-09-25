@@ -6,6 +6,7 @@ import {
   useGetCurrentSession, 
   useGetInvoice, 
   useUpdateInvoiceStatus,
+  customFetch,
   getGetInvoiceQueryKey,
   getListInvoicesQueryKey
 } from '@workspace/api-client-react';
@@ -39,6 +40,10 @@ export function InvoiceDetail({ id }: { id: string }) {
   const queryClient = useQueryClient();
 
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentReference, setPaymentReference] = useState('');
+  const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().split('T')[0]);
 
   const { data: fetchedInvoice, isLoading, refetch } = useGetInvoice(orgId, id, {
     query: {
@@ -91,6 +96,35 @@ export function InvoiceDetail({ id }: { id: string }) {
       }
     } catch (err: any) {
       showAlert.error(t('Error', 'خطأ'), err?.message || t('Failed to update invoice status', 'فشل تحديث حالة الفاتورة'));
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+
+  const handleRecordPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amount = Number(paymentAmount);
+    if (!amount || amount <= 0) {
+      showAlert.error(t('Invalid amount', 'مبلغ غير صحيح'), t('Enter a payment amount greater than zero.', 'أدخل مبلغ سداد أكبر من صفر.'));
+      return;
+    }
+    try {
+      setUpdatingStatus(true);
+      await customFetch(`/api/organizations/${orgId}/invoices/${id}/payments`, {
+        method: 'POST',
+        responseType: 'json',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount, referenceNumber: paymentReference || undefined, paymentDate: paymentDate ? new Date(paymentDate).toISOString() : undefined, method: 'BANK_TRANSFER', accountCode: '10200' })
+      });
+      setPaymentOpen(false);
+      setPaymentAmount('');
+      setPaymentReference('');
+      await refetch();
+      queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey(orgId) });
+      showAlert.success(t('Payment recorded', 'تم تسجيل السداد'), t('Invoice payment was posted to the ledger.', 'تم ترحيل سداد الفاتورة إلى دفتر الأستاذ.'));
+    } catch (err: any) {
+      showAlert.error(t('Payment failed', 'فشل السداد'), err?.message || t('Could not record payment.', 'تعذر تسجيل السداد.'));
     } finally {
       setUpdatingStatus(false);
     }
@@ -352,7 +386,18 @@ ${invoiceLinesXml}
             {t('Download ZATCA XML', 'تحميل XML (زكاة)')}
           </Button>
 
-          {invoice.status !== 'PAID' && invoice.status !== 'CANCELLED' && (
+          {invoice.status === 'DRAFT' && (
+            <Button
+              variant="primary"
+              disabled={updatingStatus}
+              onClick={() => handleStatusChange('ISSUED')}
+              className="gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs py-2 px-4 font-bold shadow-md"
+            >
+              <ShieldCheck size={16} />
+              {t('Finalize / Issue', 'إصدار الفاتورة')}
+            </Button>
+          )}
+          {invoice.status !== 'DRAFT' && invoice.status !== 'PAID' && invoice.status !== 'CANCELLED' && (
             <Button
               variant="primary"
               disabled={updatingStatus}
@@ -633,6 +678,17 @@ ${invoiceLinesXml}
         </div>
 
       </div>
+      {paymentOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4 print:hidden">
+          <form onSubmit={handleRecordPayment} className="w-full max-w-md rounded-2xl bg-card border border-border shadow-2xl p-6 space-y-4">
+            <div><h3 className="text-lg font-bold">{t('Record Customer Receipt', 'تسجيل قبض من العميل')}</h3><p className="text-sm text-muted-foreground">{invoice.invoiceNumber}</p></div>
+            <label className="block text-sm font-semibold">{t('Amount', 'المبلغ')}<input className="mt-1 w-full h-10 rounded-lg border border-border bg-background px-3" type="number" step="0.01" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} /></label>
+            <label className="block text-sm font-semibold">{t('Reference', 'المرجع')}<input className="mt-1 w-full h-10 rounded-lg border border-border bg-background px-3" value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} /></label>
+            <label className="block text-sm font-semibold">{t('Payment Date', 'تاريخ السداد')}<input className="mt-1 w-full h-10 rounded-lg border border-border bg-background px-3" type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} /></label>
+            <div className="flex justify-end gap-2 pt-2"><Button type="button" variant="secondary" onClick={() => setPaymentOpen(false)}>{t('Cancel', 'إلغاء')}</Button><Button type="submit" disabled={updatingStatus}>{t('Post Payment', 'ترحيل السداد')}</Button></div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
