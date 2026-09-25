@@ -710,14 +710,21 @@ export default function App() {
 
             <Route path="/reports/customer-statement">
               <AuthGuard>
-                <AppShell><CustomerStatementPage /></AppShell>
+                <ModuleGuard moduleKey="finance">
+                  <CustomerStatementPage />
+                </ModuleGuard>
               </AuthGuard>
             </Route>
+
             <Route path="/reports/supplier-statement">
               <AuthGuard>
-                <AppShell><SupplierStatementPage /></AppShell>
+                <ModuleGuard moduleKey="finance">
+                  <SupplierStatementPage />
+                </ModuleGuard>
               </AuthGuard>
-            </Route>            <Route path="/reports/account-ledger">
+            </Route>
+
+            <Route path="/reports/account-ledger">
               <AuthGuard>
                 <ModuleGuard moduleKey="finance">
                   <AccountLedgerPage />
