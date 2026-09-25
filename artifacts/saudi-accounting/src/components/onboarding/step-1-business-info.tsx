@@ -149,20 +149,56 @@ export function Step1BusinessInfo({ form, updateField, errors, setErrors, t }: S
         <div className="space-y-2">
           <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
             <Image size={14} className="text-primary" />
-            {t('Company Logo URL', 'رابط شعار المنشأة')}
+            {t('Company Logo File', 'شعار المنشأة (ملف الصورة)')}
           </label>
-          <input
-            type="url"
-            className={`field focus:ring-2 focus:ring-primary/20 transition-all ${
-              errors.logoUrl ? 'border-destructive ring-2 ring-destructive/30 bg-destructive/5' : ''
-            }`}
-            value={form.logoUrl || ''}
-            onChange={e => {
-              updateField('logoUrl', e.target.value);
-              if (errors.logoUrl) setErrors(prev => ({ ...prev, logoUrl: '' }));
-            }}
-            placeholder="https://company.sa/logo.png"
-          />
+          <div className="flex items-center gap-3">
+            {form.logoUrl ? (
+              <div className="relative group w-14 h-14 rounded-xl border border-border p-1 bg-muted/40 flex items-center justify-center overflow-hidden shrink-0">
+                <img src={form.logoUrl} alt="Logo Preview" className="max-w-full max-h-full object-contain" />
+                <button
+                  type="button"
+                  onClick={() => updateField('logoUrl', '')}
+                  className="absolute inset-0 bg-black/60 text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                >
+                  {t('Remove', 'حذف')}
+                </button>
+              </div>
+            ) : null}
+            <div className="flex-1">
+              <input
+                type="file"
+                accept="image/*"
+                id="company-logo-file"
+                className="hidden"
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    if (file.size > 5 * 1024 * 1024) {
+                      setErrors(prev => ({ ...prev, logoUrl: t('Image file size must be less than 5MB', 'حجم ملف الصورة يجب أن يكون أقل من 5 ميجابايت') }));
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      updateField('logoUrl', event.target?.result as string);
+                      if (errors.logoUrl) setErrors(prev => ({ ...prev, logoUrl: '' }));
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+              />
+              <label
+                htmlFor="company-logo-file"
+                className="field flex items-center justify-between cursor-pointer hover:bg-muted/30 transition-all"
+              >
+                <span className="text-xs text-muted-foreground truncate">
+                  {form.logoUrl ? t('Change Logo File...', 'تغيير ملف الشعار...') : t('Select logo image from your computer...', 'اختر صورة الشعار من جهازك...')}
+                </span>
+                <span className="py-1 px-2.5 rounded-lg bg-primary/10 text-primary text-xs font-bold shrink-0">
+                  {t('Browse File', 'اختر ملفاً')}
+                </span>
+              </label>
+            </div>
+          </div>
           {errors.logoUrl && <p className="text-[11px] text-destructive font-bold">{errors.logoUrl}</p>}
         </div>
       </div>

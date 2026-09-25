@@ -96,7 +96,7 @@ export function Onboarding() {
       if (!form.phone?.trim() || form.phone.trim().length < 7) {
         step1Errors.phone = t('Valid business phone is required.', 'رقم هاتف المنشأة الصحيح مطلوب.');
       }
-      const optionalUrlFields: Array<keyof OrganizationInput> = ['website', 'logoUrl'];
+      const optionalUrlFields: Array<keyof OrganizationInput> = ['website'];
       optionalUrlFields.forEach(key => {
         const value = String(form[key] || '').trim();
         if (!value) return;
