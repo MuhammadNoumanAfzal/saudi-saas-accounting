@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { useGetCurrentSession, useGetProfitAndLoss } from '@workspace/api-client-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useGetCurrentSession, useGetProfitAndLoss, getGetProfitAndLossQueryKey } from '@workspace/api-client-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation, formatCurrency } from '@/lib/utils';
-import { Printer, Calendar, TrendingUp, TrendingDown, DollarSign, Building2, FileText, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { showAlert } from '@/lib/alerts';
+import { Printer, RefreshCw, FileText, Sparkles, ShieldCheck, DownloadCloud } from 'lucide-react';
 import { PlatformLoader } from '@/components/ui/platform-loader';
+import { PnlKpiCards } from './pnl-kpi-cards';
 
 export function ProfitLossReport() {
   const { t, isRtl } = useTranslation();
@@ -33,11 +34,17 @@ export function ProfitLossReport() {
   };
 
   const { startDate, endDate } = getDates();
-  const { data: pnl, isLoading } = useGetProfitAndLoss(orgId, {
-    startDate,
-    endDate,
-  }, {
-    query: { enabled: !!orgId }
+
+  // Fast React Query caching (10 mins staleTime for 0ms instant load latency)
+  const queryParams = { startDate, endDate };
+  const { data: pnl, isLoading, refetch } = useGetProfitAndLoss(orgId, queryParams, {
+    query: { 
+      enabled: Boolean(orgId),
+      staleTime: 10 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      queryKey: getGetProfitAndLossQueryKey(orgId, queryParams)
+    }
   });
 
   const handlePrint = () => {
@@ -49,52 +56,134 @@ export function ProfitLossReport() {
   const vatNumber = currentOrg?.vatNumber || '310998877600003';
   const crNumber = currentOrg?.commercialRegistrationNumber || '1010889922';
 
+  const handleExportCSV = () => {
+    if (!pnl) return;
+    const headers = ['Category / Item Code', 'Name English', 'Name Arabic', 'Amount (SAR)'];
+    const rows: string[][] = [];
+
+    rows.push(['OPERATING REVENUE', '', '', String(pnl.totalRevenue || 0)]);
+    pnl.revenueCategories?.forEach(cat => {
+      cat.items?.forEach(item => {
+        rows.push([item.code || '', item.nameEnglish || '', item.nameArabic || '', String(item.amount || 0)]);
+      });
+    });
+
+    rows.push(['COST OF SALES', '', '', String(pnl.totalCostOfSales || 0)]);
+    rows.push(['GROSS PROFIT', '', '', String(pnl.grossProfit || 0)]);
+
+    rows.push(['OPERATING EXPENSES', '', '', String(pnl.totalExpenses || 0)]);
+    pnl.expenseCategories?.forEach(cat => {
+      cat.items?.forEach(item => {
+        rows.push([item.code || '', item.nameEnglish || '', item.nameArabic || '', String(item.amount || 0)]);
+      });
+    });
+
+    rows.push(['NET PROFIT / LOSS', '', '', String(pnl.netProfit || 0)]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.map(cell => `"${cell}"`).join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `profit_loss_${datePreset}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showAlert.toast(t('Profit & Loss Statement Exported!', 'تم تصدير قائمة الدخل بنجاح!'), 'success');
+  };
+
   return (
     <div className="space-y-6 fade-up pb-16 print:p-0 print:m-0 print:space-y-0">
       
-      {/* Top Header Controls (Hidden on Print) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden bg-card/70 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm">
+      {/* Luxury Header & Action Toolbar Bar (Hidden on Print) */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 print:hidden p-5 rounded-2xl bg-gradient-to-r from-card via-card to-primary/5 border border-border shadow-xs">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              {t('Profit & Loss Statement', 'قائمة الدخل (الأرباح والخسائر)')}
-            </h1>
-            <span className="rounded-full bg-primary/10 text-primary px-3 py-0.5 text-xs font-extrabold border border-primary/20">
-              SOCPA GAAP
+          <div className="flex items-center gap-2 mb-1">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-extrabold uppercase tracking-wider border border-primary/20">
+              <Sparkles className="w-3 h-3 text-amber-500" />
+              <span>SOCPA GAAP</span>
+            </span>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">
+              <ShieldCheck size={13} /> ZATCA Verified
             </span>
           </div>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <h1 className="text-2xl font-black tracking-tight text-foreground">
+            {t('Profit & Loss Statement', 'قائمة الدخل (الأرباح والخسائر)')}
+          </h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
             {t('Financial income, cost of sales, and operating expenditure statement.', 'بيان الإيرادات والتكاليف والمصروفات التشغيلية عن الفترة المحددة.')}
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex bg-muted p-1 rounded-xl text-xs font-bold border border-border">
+        {/* Uniform Single-Line Action Toolbar */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 shrink-0">
+          <div className="flex bg-muted p-1 rounded-xl text-xs font-bold border border-border shrink-0">
             <button
+              type="button"
               onClick={() => setDatePreset('this_month')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${datePreset === 'this_month' ? 'bg-background shadow text-foreground font-extrabold' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${datePreset === 'this_month' ? 'bg-background shadow-xs text-foreground font-extrabold' : 'text-muted-foreground hover:text-foreground'}`}
             >
               {t('This Month', 'هذا الشهر')}
             </button>
             <button
+              type="button"
               onClick={() => setDatePreset('this_quarter')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${datePreset === 'this_quarter' ? 'bg-background shadow text-foreground font-extrabold' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${datePreset === 'this_quarter' ? 'bg-background shadow-xs text-foreground font-extrabold' : 'text-muted-foreground hover:text-foreground'}`}
             >
               {t('This Quarter', 'هذا الربع')}
             </button>
             <button
+              type="button"
               onClick={() => setDatePreset('this_year')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${datePreset === 'this_year' ? 'bg-background shadow text-foreground font-extrabold' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${datePreset === 'this_year' ? 'bg-background shadow-xs text-foreground font-extrabold' : 'text-muted-foreground hover:text-foreground'}`}
             >
               {t('Year to Date', 'حتى تاريخه')}
             </button>
           </div>
-          <Button onClick={handlePrint} className="gap-2 text-xs py-2 px-4 font-bold bg-primary hover:bg-primary/90 text-primary-foreground">
+
+          <Button
+            type="button"
+            onClick={() => refetch()}
+            variant="outline"
+            size="sm"
+            className="h-9 px-3 rounded-xl border border-border bg-card hover:bg-primary/5 hover:border-primary/40 text-foreground hover:text-primary transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 shadow-xs flex items-center gap-1.5"
+            title={t('Refresh Data', 'تحديث')}
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs">{t('Refresh', 'تحديث')}</span>
+          </Button>
+
+          <Button
+            type="button"
+            onClick={handleExportCSV}
+            variant="outline"
+            size="sm"
+            className="h-9 px-3 rounded-xl border border-border bg-card hover:bg-primary/5 hover:border-primary/40 text-foreground hover:text-primary transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 shadow-xs flex items-center gap-1.5"
+          >
+            <DownloadCloud className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs">{t('Export', 'تصدير')}</span>
+          </Button>
+
+          <Button 
+            type="button"
+            onClick={handlePrint} 
+            className="h-9 px-3.5 rounded-xl btn-primary shadow-xs hover:shadow-md hover:scale-[1.02] transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 flex items-center gap-1.5"
+          >
             <Printer className="w-4 h-4" />
-            <span>{t('Print Report PDF', 'طباعة التقرير')}</span>
+            <span>{t('Print Statement PDF', 'طباعة التقرير')}</span>
           </Button>
         </div>
       </div>
+
+      {/* KPI Cards Component */}
+      <PnlKpiCards
+        totalRevenue={Number(pnl?.totalRevenue || 0)}
+        grossProfit={Number(pnl?.grossProfit || 0)}
+        totalExpenses={Number(pnl?.totalExpenses || 0)}
+        netProfit={Number(pnl?.netProfit || 0)}
+        currency={pnl?.currency || 'SAR'}
+        isLoading={isLoading}
+      />
 
       {isLoading ? (
         <PlatformLoader
@@ -103,7 +192,7 @@ export function ProfitLossReport() {
         />
       ) : (
         /* Printable Official Income Statement Document Container */
-        <div className="print-document soft-card p-6 sm:p-10 bg-card border shadow-lg rounded-2xl space-y-8 print:shadow-none print:border-none print:p-0 print:m-0 print:space-y-6">
+        <div className="print-document soft-card p-6 sm:p-10 bg-card border shadow-xs rounded-2xl space-y-8 print:shadow-none print:border-none print:p-0 print:m-0 print:space-y-6">
           
           {/* Header Bar */}
           <div className="flex flex-col sm:flex-row justify-between items-start border-b border-border pb-6 gap-6 print:pb-4">
@@ -143,51 +232,6 @@ export function ProfitLossReport() {
                 <div>
                   <span className="font-semibold text-foreground">{t('CR Number:', 'السجل التجاري:')}</span> {crNumber}
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Summary KPI Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 print:grid-cols-4">
-            <div className="p-4 rounded-xl border bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200">
-              <div className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
-                {t('Total Revenue', 'إجمالي الإيرادات')}
-              </div>
-              <div className="text-2xl font-black font-mono mt-1 text-emerald-700 dark:text-emerald-300">
-                {formatCurrency(Number(pnl?.totalRevenue || 0), pnl?.currency || 'SAR', isRtl ? 'ar-SA' : 'en-US')}
-              </div>
-            </div>
-
-            <div className="p-4 rounded-xl border bg-blue-500/10 border-blue-500/30 text-blue-950 dark:text-blue-200">
-              <div className="text-xs font-bold uppercase tracking-wider text-blue-800 dark:text-blue-300">
-                {t('Gross Profit', 'مجمل الربح')}
-              </div>
-              <div className="text-2xl font-black font-mono mt-1 text-blue-700 dark:text-blue-300">
-                {formatCurrency(Number(pnl?.grossProfit || 0), pnl?.currency || 'SAR', isRtl ? 'ar-SA' : 'en-US')}
-              </div>
-            </div>
-
-            <div className="p-4 rounded-xl border bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-200">
-              <div className="text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">
-                {t('Operating Expenses', 'المصروفات التشغيلية')}
-              </div>
-              <div className="text-2xl font-black font-mono mt-1 text-amber-700 dark:text-amber-300">
-                {formatCurrency(Number(pnl?.totalExpenses || 0), pnl?.currency || 'SAR', isRtl ? 'ar-SA' : 'en-US')}
-              </div>
-            </div>
-
-            <div className={`p-4 rounded-xl border ${
-              Number(pnl?.netProfit || 0) >= 0 
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200' 
-                : 'bg-rose-500/10 border-rose-500/30 text-rose-950 dark:text-rose-200'
-            }`}>
-              <div className="text-xs font-bold uppercase tracking-wider">
-                {Number(pnl?.netProfit || 0) >= 0 ? t('Net Profit', 'صافي الربح') : t('Net Loss', 'صافي الخسارة')}
-              </div>
-              <div className={`text-2xl font-black font-mono mt-1 ${
-                Number(pnl?.netProfit || 0) >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'
-              }`}>
-                {formatCurrency(Number(pnl?.netProfit || 0), pnl?.currency || 'SAR', isRtl ? 'ar-SA' : 'en-US')}
               </div>
             </div>
           </div>

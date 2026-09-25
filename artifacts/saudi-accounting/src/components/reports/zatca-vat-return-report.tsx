@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { useGetCurrentSession, useGetZatcaVatReturn } from '@workspace/api-client-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useGetCurrentSession, useGetZatcaVatReturn, getGetZatcaVatReturnQueryKey } from '@workspace/api-client-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation, formatCurrency } from '@/lib/utils';
-import { Printer, ShieldCheck, ArrowUpRight, ArrowDownRight, Building2, FileText, CheckCircle2 } from 'lucide-react';
+import { showAlert } from '@/lib/alerts';
+import { Printer, ShieldCheck, ArrowUpRight, ArrowDownRight, FileText, Sparkles, RefreshCw, DownloadCloud } from 'lucide-react';
 import { PlatformLoader } from '@/components/ui/platform-loader';
+import { ZatcaVatKpiCards } from './zatca-vat-kpi-cards';
 
 export function ZatcaVatReturnReport() {
   const { t, isRtl } = useTranslation();
@@ -28,11 +29,17 @@ export function ZatcaVatReturnReport() {
   };
 
   const { startDate, endDate } = getDates();
-  const { data: vat, isLoading } = useGetZatcaVatReturn(orgId, {
-    startDate,
-    endDate,
-  }, {
-    query: { enabled: !!orgId }
+
+  // Fast React Query caching (10 mins staleTime for 0ms instant load latency)
+  const queryParams = { startDate, endDate };
+  const { data: vat, isLoading, refetch } = useGetZatcaVatReturn(orgId, queryParams, {
+    query: { 
+      enabled: Boolean(orgId),
+      staleTime: 10 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      queryKey: getGetZatcaVatReturnQueryKey(orgId, queryParams)
+    }
   });
 
   const handlePrint = () => {
@@ -44,46 +51,123 @@ export function ZatcaVatReturnReport() {
   const vatNumber = currentOrg?.vatNumber || '310998877600003';
   const crNumber = currentOrg?.commercialRegistrationNumber || '1010889922';
 
+  const handleExportCSV = () => {
+    if (!vat) return;
+    const headers = ['Box #', 'Section / Description', 'Taxable Amount (SAR)', 'VAT Amount (SAR)'];
+    const rows: string[][] = [];
+
+    rows.push(['SECTION 1: VAT ON SALES / OUTPUT TAX', '', '', '']);
+    vat.salesBoxes?.forEach(box => {
+      rows.push([String(box.boxNumber), isRtl ? box.titleAr : box.titleEn, String(box.taxableAmount || 0), String(box.vatAmount || 0)]);
+    });
+    rows.push(['5', 'TOTAL SALES & OUTPUT VAT', String(vat.totalSalesTaxable || 0), String(vat.totalOutputVat || 0)]);
+
+    rows.push(['SECTION 2: VAT ON PURCHASES / INPUT TAX', '', '', '']);
+    vat.purchaseBoxes?.forEach(box => {
+      rows.push([String(box.boxNumber), isRtl ? box.titleAr : box.titleEn, String(box.taxableAmount || 0), String(box.vatAmount || 0)]);
+    });
+    rows.push(['10', 'TOTAL PURCHASES & INPUT VAT', String(vat.totalPurchasesTaxable || 0), String(vat.totalInputVat || 0)]);
+
+    rows.push(['11', 'NET VAT DUE / REFUNDABLE FOR THE PERIOD', '', String(vat.netVatPayable || 0)]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.map(cell => `"${cell}"`).join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `zatca_form21_${datePreset}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showAlert.toast(t('ZATCA Form 21 Exported Successfully!', 'تم تصدير الإقرار الضريبي بنجاح!'), 'success');
+  };
+
   return (
     <div className="space-y-6 fade-up pb-16 print:p-0 print:m-0 print:space-y-0">
       
-      {/* Top Header Controls (Hidden on Print) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden bg-card/70 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm">
+      {/* Luxury Header & Action Toolbar Bar (Hidden on Print) */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 print:hidden p-5 rounded-2xl bg-gradient-to-r from-card via-card to-primary/5 border border-border shadow-xs">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              {t('ZATCA Official VAT Return Report', 'إقرار ضريبة القيمة المضافة - هيئة الزكاة والضريبة')}
-            </h1>
-            <span className="rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-0.5 text-xs font-extrabold border border-emerald-500/20">
-              GAZT 15% VAT
+          <div className="flex items-center gap-2 mb-1">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-extrabold uppercase tracking-wider border border-primary/20">
+              <Sparkles className="w-3 h-3 text-amber-500" />
+              <span>GAZT 15% VAT</span>
+            </span>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">
+              <ShieldCheck size={13} /> ZATCA Compliant
             </span>
           </div>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <h1 className="text-2xl font-black tracking-tight text-foreground">
+            {t('ZATCA Official VAT Return Report', 'إقرار ضريبة القيمة المضافة - هيئة الزكاة والضريبة')}
+          </h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
             {t('Official Saudi Form 21 Tax Return summary for Output Tax vs Input Tax refund calculation.', 'ملخص الإقرار الضريبي الرسمي نموذج 21 لحساب ضريبة المخرجات والمدخلات المستردة.')}
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex bg-muted p-1 rounded-xl text-xs font-bold border border-border">
+        {/* Uniform Single-Line Action Toolbar */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 shrink-0">
+          <div className="flex bg-muted p-1 rounded-xl text-xs font-bold border border-border shrink-0">
             <button
+              type="button"
               onClick={() => setDatePreset('this_quarter')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${datePreset === 'this_quarter' ? 'bg-background shadow text-foreground font-extrabold' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${datePreset === 'this_quarter' ? 'bg-background shadow-xs text-foreground font-extrabold' : 'text-muted-foreground hover:text-foreground'}`}
             >
               {t('Quarterly Tax Period', 'الفترة الربع سنوية')}
             </button>
             <button
+              type="button"
               onClick={() => setDatePreset('this_month')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${datePreset === 'this_month' ? 'bg-background shadow text-foreground font-extrabold' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${datePreset === 'this_month' ? 'bg-background shadow-xs text-foreground font-extrabold' : 'text-muted-foreground hover:text-foreground'}`}
             >
               {t('Monthly Tax Period', 'الفترة الشهرية')}
             </button>
           </div>
-          <Button onClick={handlePrint} className="gap-2 text-xs py-2 px-4 font-bold bg-primary hover:bg-primary/90 text-primary-foreground">
+
+          <Button
+            type="button"
+            onClick={() => refetch()}
+            variant="outline"
+            size="sm"
+            className="h-9 px-3 rounded-xl border border-border bg-card hover:bg-primary/5 hover:border-primary/40 text-foreground hover:text-primary transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 shadow-xs flex items-center gap-1.5"
+            title={t('Refresh Data', 'تحديث')}
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs">{t('Refresh', 'تحديث')}</span>
+          </Button>
+
+          <Button
+            type="button"
+            onClick={handleExportCSV}
+            variant="outline"
+            size="sm"
+            className="h-9 px-3 rounded-xl border border-border bg-card hover:bg-primary/5 hover:border-primary/40 text-foreground hover:text-primary transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 shadow-xs flex items-center gap-1.5"
+          >
+            <DownloadCloud className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs">{t('Export', 'تصدير')}</span>
+          </Button>
+
+          <Button 
+            type="button"
+            onClick={handlePrint} 
+            className="h-9 px-3.5 rounded-xl btn-primary shadow-xs hover:shadow-md hover:scale-[1.02] transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 flex items-center gap-1.5"
+          >
             <Printer className="w-4 h-4" />
             <span>{t('Print Form 21 PDF', 'طباعة النموذج 21')}</span>
           </Button>
         </div>
       </div>
+
+      {/* KPI Cards Component */}
+      <ZatcaVatKpiCards
+        totalSalesTaxable={Number(vat?.totalSalesTaxable || 0)}
+        totalOutputVat={Number(vat?.totalOutputVat || 0)}
+        totalPurchasesTaxable={Number(vat?.totalPurchasesTaxable || 0)}
+        totalInputVat={Number(vat?.totalInputVat || 0)}
+        netVatPayable={Number(vat?.netVatPayable || 0)}
+        isRefundable={vat?.isRefundable ?? false}
+        isLoading={isLoading}
+      />
 
       {isLoading ? (
         <PlatformLoader
@@ -92,7 +176,7 @@ export function ZatcaVatReturnReport() {
         />
       ) : (
         /* Printable Official ZATCA Declaration Form Container */
-        <div className="print-document soft-card p-6 sm:p-10 bg-card border shadow-lg rounded-2xl space-y-8 print:shadow-none print:border-none print:p-0 print:m-0 print:space-y-6">
+        <div className="print-document soft-card p-6 sm:p-10 bg-card border shadow-xs rounded-2xl space-y-8 print:shadow-none print:border-none print:p-0 print:m-0 print:space-y-6">
           
           {/* Form Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start border-b border-border pb-6 gap-6 print:pb-4">
@@ -147,7 +231,7 @@ export function ZatcaVatReturnReport() {
                 {vat?.isRefundable ? <ArrowDownRight className="w-4 h-4 text-emerald-600" /> : <ArrowUpRight className="w-4 h-4 text-amber-600" />}
                 <span>
                   {vat?.isRefundable 
-                    ? t('NET VAT REFUNDABLE / CREDIT (استرداد ضريبي لك للم المنشأة)', 'صافي الضريبة المستردة للشركة') 
+                    ? t('NET VAT REFUNDABLE / CREDIT (استرداد ضريبي للمنشأة)', 'صافي الضريبة المستردة للشركة') 
                     : t('NET VAT PAYABLE TO ZATCA (ضريبة مستحقة للهيئة)', 'صافي الضريبة الواجب أداؤها للهيئة')}
                 </span>
               </div>
@@ -162,13 +246,10 @@ export function ZatcaVatReturnReport() {
               <div className="text-3xl font-black font-mono text-primary tracking-tight">
                 {formatCurrency(Number(vat?.netVatPayable || 0), 'SAR', isRtl ? 'ar-SA' : 'en-US')}
               </div>
-              <div className="text-[10px] font-bold text-muted-foreground uppercase text-center sm:text-right">
-                {t('SAR (ر.س)', 'ريال سعودي')}
-              </div>
             </div>
           </div>
 
-          {/* Section 1: Sales / Output Tax (المبيعات والضريبة المستحقة) */}
+          {/* Section 1: Sales / Output Tax */}
           <div className="space-y-3">
             <div className="flex items-center justify-between border-b border-border pb-2">
               <h3 className="text-xs uppercase font-extrabold text-emerald-700 dark:text-emerald-400 tracking-wider flex items-center gap-1.5">
@@ -210,7 +291,7 @@ export function ZatcaVatReturnReport() {
             </div>
           </div>
 
-          {/* Section 2: Purchases / Input Tax (المشتريات والضريبة المستردة) */}
+          {/* Section 2: Purchases / Input Tax */}
           <div className="space-y-3">
             <div className="flex items-center justify-between border-b border-border pb-2">
               <h3 className="text-xs uppercase font-extrabold text-amber-700 dark:text-amber-400 tracking-wider flex items-center gap-1.5">
@@ -257,7 +338,7 @@ export function ZatcaVatReturnReport() {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="space-y-1 text-center sm:text-start">
                 <div className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <CheckCircle2 size={16} className="text-primary" />
+                  <ShieldCheck size={16} className="text-primary" />
                   <span>{t('BOX 11: TOTAL VAT DUE / REFUNDABLE FOR THE PERIOD', 'الخانة ١١: إجمالي الضريبة المستحقة / المستردة عن الفترة')}</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
