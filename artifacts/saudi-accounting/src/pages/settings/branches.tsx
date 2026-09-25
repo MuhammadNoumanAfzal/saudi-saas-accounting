@@ -34,28 +34,6 @@ export function BranchesSettings() {
       phone: org?.phone || '+966 11 400 9988',
       isHQ: true,
       status: 'ACTIVE'
-    },
-    {
-      id: 'br_2',
-      code: 'JED-002',
-      nameEn: 'Jeddah Commercial Hub Branch',
-      nameAr: 'فرع جدة التجاري',
-      city: 'Jeddah (جدة)',
-      district: 'Al-Corniche District',
-      phone: '+966 12 600 7744',
-      isHQ: false,
-      status: 'ACTIVE'
-    },
-    {
-      id: 'br_3',
-      code: 'DMM-003',
-      nameEn: 'Dammam Eastern Province Branch',
-      nameAr: 'فرع الدمام والمنطقة الشرقية',
-      city: 'Dammam (الدمام)',
-      district: 'Al-Shati District',
-      phone: '+966 13 800 3311',
-      isHQ: false,
-      status: 'ACTIVE'
     }
   ];
 
