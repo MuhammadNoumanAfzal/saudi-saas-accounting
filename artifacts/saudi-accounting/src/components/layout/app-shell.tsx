@@ -10,7 +10,7 @@ import {
   Search, Plus, Bell, HelpCircle, ChevronRight, ChevronDown, Check, Grid, ArrowLeft,
   ArrowRight, FileText
 } from 'lucide-react';
-import { useTranslation } from '@/lib/utils';
+import { useTranslation, setGlobalLanguage } from '@/lib/utils';
 import { showAlert } from '@/lib/alerts';
 import { queryClient } from '@/lib/queryClient';
 import { prefetchSalesModule } from '@/lib/sales-prefetch';
@@ -42,6 +42,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setCollapsed(session?.preferences?.sidebarCollapsed ?? false);
   }, [session?.preferences?.sidebarCollapsed]);
+
+  useEffect(() => {
+    if (session?.preferences?.language) {
+      const stored = localStorage.getItem('nexus_lang');
+      if (session.preferences.language !== stored && (session.preferences.language === 'ar' || session.preferences.language === 'en')) {
+        setGlobalLanguage(session.preferences.language as 'ar' | 'en');
+      }
+    }
+  }, [session?.preferences?.language]);
 
   useEffect(() => {
     document.documentElement.dir = isRtl ? 'rtl' : 'ltr';

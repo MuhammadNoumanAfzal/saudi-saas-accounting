@@ -1,5 +1,5 @@
 import { useGetCurrentSession, useUpdateUserPreferences, getGetCurrentSessionQueryKey } from '@workspace/api-client-react';
-import { useTranslation, Button } from '@/lib/utils';
+import { useTranslation, Button, setGlobalLanguage } from '@/lib/utils';
 import { queryClient } from '@/lib/queryClient';
 import { showAlert } from '@/lib/alerts';
 import { Languages, Globe, CheckCircle2, Clock, DollarSign, Calendar, Sparkles, ShieldCheck, RefreshCw } from 'lucide-react';
@@ -8,13 +8,13 @@ export function LanguageSettings() {
   const { data: session, refetch } = useGetCurrentSession({
     query: { staleTime: 10 * 60 * 1000 }
   });
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const update = useUpdateUserPreferences();
 
-  const currentLang = session?.preferences?.language || 'en';
+  const currentLang = (session?.preferences?.language as 'en' | 'ar') || lang || 'en';
 
   const setLanguage = (language: 'en' | 'ar') => {
-    if (language === currentLang) return;
+    setGlobalLanguage(language);
     update.mutate({ data: { language } }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetCurrentSessionQueryKey() });
