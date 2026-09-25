@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/lib/utils';
+import { showAlert } from '@/lib/alerts';
+import { getErrorMessage } from '@/lib/form-errors';
 import { customFetch, useGetCurrentSession } from '@workspace/api-client-react';
 import { Store, Zap, ShieldCheck, QrCode, CheckCircle2, KeyRound, Building2, Send, RefreshCw, AlertCircle, Sparkles, Server } from 'lucide-react';
 
@@ -70,7 +72,7 @@ export function ZatcaSettings() {
   const handleOnboard = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!otpCode || otpCode.trim().length !== 6) {
-      alert(t('Please enter a valid 6-digit ZATCA OTP code.', 'يرجى إدخال رمز التحقق ZATCA المكون من 6 أرقام.'));
+      showAlert.warning(t('Invalid OTP', 'رمز تحقق غير صحيح'), t('Please enter a valid 6-digit ZATCA OTP code.', 'يرجى إدخال رمز التحقق ZATCA المكون من 6 أرقام.'));
       return;
     }
 
@@ -91,13 +93,13 @@ export function ZatcaSettings() {
 
       if (data.success) {
         setCsidActive(true);
-        alert(t(data.message || 'ZATCA Compliance CSID Certificate successfully issued!', 'تم إصدار شهادة CSID وتوثيقها بنجاح!'));
+        showAlert.success(t('ZATCA CSID Issued', 'تم إصدار شهادة ZATCA'), t(data.message || 'ZATCA Compliance CSID Certificate successfully issued!', 'تم إصدار شهادة CSID وتوثيقها بنجاح!'));
       } else {
-        alert(data.error || 'ZATCA Onboarding failed');
+        showAlert.error(t('ZATCA Onboarding Failed', 'فشل ربط ZATCA'), data.error || 'ZATCA Onboarding failed');
       }
     } catch (err: any) {
       setLoading(false);
-      alert(err.message || 'Failed to connect to ZATCA endpoint');
+      showAlert.error(t('ZATCA Connection Failed', 'فشل اتصال ZATCA'), getErrorMessage(err, 'Failed to connect to ZATCA endpoint'));
     }
   };
 
@@ -132,7 +134,7 @@ export function ZatcaSettings() {
     } catch (err: any) {
       setTestResult({
         status: 'error',
-        message: err.message || 'Network error executing compliance test',
+        message: getErrorMessage(err, 'Network error executing compliance test'),
       });
     }
   };

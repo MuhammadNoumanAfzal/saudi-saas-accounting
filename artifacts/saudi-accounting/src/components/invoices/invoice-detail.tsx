@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useTranslation, Button } from '@/lib/utils';
 import { showAlert } from '@/lib/alerts';
+import { getErrorMessage } from '@/lib/form-errors';
 import { 
   useGetCurrentSession, 
   useGetInvoice, 
@@ -95,7 +96,7 @@ export function InvoiceDetail({ id }: { id: string }) {
         showAlert.toast(t('Invoice status updated successfully!', 'تم تحديث حالة الفاتورة بنجاح!'));
       }
     } catch (err: any) {
-      showAlert.error(t('Error', 'خطأ'), err?.message || t('Failed to update invoice status', 'فشل تحديث حالة الفاتورة'));
+      showAlert.error(t('Error', 'خطأ'), getErrorMessage(err, t('Failed to update invoice status', 'فشل تحديث حالة الفاتورة')));
     } finally {
       setUpdatingStatus(false);
     }
@@ -124,7 +125,7 @@ export function InvoiceDetail({ id }: { id: string }) {
       queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey(orgId) });
       showAlert.success(t('Payment recorded', 'تم تسجيل السداد'), t('Invoice payment was posted to the ledger.', 'تم ترحيل سداد الفاتورة إلى دفتر الأستاذ.'));
     } catch (err: any) {
-      showAlert.error(t('Payment failed', 'فشل السداد'), err?.message || t('Could not record payment.', 'تعذر تسجيل السداد.'));
+      showAlert.error(t('Payment failed', 'فشل السداد'), getErrorMessage(err, t('Could not record payment.', 'تعذر تسجيل السداد.')));
     } finally {
       setUpdatingStatus(false);
     }

@@ -10,6 +10,7 @@ import {
 import { queryClient } from '@/lib/queryClient';
 import { useTranslation } from '@/lib/utils';
 import { showAlert } from '@/lib/alerts';
+import { getErrorMessage } from '@/lib/form-errors';
 import { Globe2, ArrowRight, ArrowLeft, ArrowUpRight } from 'lucide-react';
 import type { OrganizationInput } from '@workspace/api-client-react';
 
@@ -171,7 +172,7 @@ export function Onboarding() {
           );
         },
         onError: (error) => {
-          showAlert.error(t('Unable to create organization', 'Unable to create organization'), error instanceof Error ? error.message : t('Please try again.', 'Please try again.'));
+          showAlert.error(t('Unable to create organization', 'Unable to create organization'), getErrorMessage(error, t('Please try again.', 'Please try again.')));
         }
       });
     } else if (existingOrgId) {
@@ -182,7 +183,7 @@ export function Onboarding() {
           queryClient.invalidateQueries({ queryKey: getGetCurrentSessionQueryKey() });
         },
         onError: (error) => {
-          showAlert.error(t('Unable to save onboarding progress', 'Unable to save onboarding progress'), error instanceof Error ? error.message : t('Please try again.', 'Please try again.'));
+          showAlert.error(t('Unable to save onboarding progress', 'Unable to save onboarding progress'), getErrorMessage(error, t('Please try again.', 'Please try again.')));
         }
       });
     }
@@ -208,13 +209,13 @@ export function Onboarding() {
               setLocation('/finance');
             },
             onError: (error) => {
-              showAlert.error(t('Unable to save preferences', 'Unable to save preferences'), error instanceof Error ? error.message : t('Please try again.', 'Please try again.'));
+              showAlert.error(t('Unable to save preferences', 'Unable to save preferences'), getErrorMessage(error, t('Please try again.', 'Please try again.')));
             }
           },
         );
       },
       onError: (error) => {
-        showAlert.error(t('Unable to finish onboarding', 'Unable to finish onboarding'), error instanceof Error ? error.message : t('Please try again.', 'Please try again.'));
+        showAlert.error(t('Unable to finish onboarding', 'Unable to finish onboarding'), getErrorMessage(error, t('Please try again.', 'Please try again.')));
       }
     });
   };

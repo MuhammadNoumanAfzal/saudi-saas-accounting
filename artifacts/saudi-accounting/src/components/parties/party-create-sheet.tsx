@@ -12,6 +12,7 @@ import {
 } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
 import { queryClient } from '@/lib/queryClient';
+import { getErrorMessage } from '@/lib/form-errors';
 import { X, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import * as z from 'zod';
 
@@ -277,7 +278,7 @@ export function PartyCreateSheet({
         onSuccess(data.id);
       },
       onError: (err: any) => {
-        setErrors({ submit: err?.message || t('Something went wrong', 'حدث خطأ ما') });
+        setErrors({ submit: getErrorMessage(err, t('Something went wrong', 'حدث خطأ ما')) });
         const container = document.getElementById('party-form-container');
         if (container) container.scrollTop = 0;
       }

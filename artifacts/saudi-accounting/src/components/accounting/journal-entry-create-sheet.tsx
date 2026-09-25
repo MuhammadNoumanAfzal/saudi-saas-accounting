@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation, Button } from '@/lib/utils';
+import { getErrorMessage } from '@/lib/form-errors';
 import { 
   useGetCurrentSession, 
   useListAccounts,
@@ -166,7 +167,7 @@ export function JournalEntryCreateSheet({ open, onOpenChange, onSuccess }: Journ
       onSuccess();
     } catch (err: any) {
       console.error(err);
-      setErrors({ submit: err.message || (isRtl ? 'فشل حفظ القيد المحاسبي' : 'Failed to save journal entry') });
+      setErrors({ submit: getErrorMessage(err, (isRtl ? 'فشل حفظ القيد المحاسبي' : 'Failed to save journal entry')) });
     }
   };
 

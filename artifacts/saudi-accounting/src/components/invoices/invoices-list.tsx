@@ -8,9 +8,10 @@ import {
 } from '@workspace/api-client-react';
 import type { Invoice } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
-import { ShieldCheck, Plus, Search, Filter, Receipt, Eye, CheckCircle2, XCircle, ArrowRight, ArrowLeft, Clock } from 'lucide-react';
+import { ShieldCheck, Plus, Search, Filter, Receipt, CheckCircle2, XCircle, ArrowRight, ArrowLeft, Clock } from 'lucide-react';
 import { InvoiceCreateSheet } from './invoice-create-sheet';
 import { SkeletonTable } from '@/components/ui/platform-loader';
+import { RowActions } from '@/components/ui/row-actions';
 
 interface InvoicesListProps {
   onSelectInvoice?: (id: string) => void;
@@ -286,14 +287,10 @@ export function InvoicesList({ onSelectInvoice }: InvoicesListProps) {
                       {getStatusBadge(inv.status)}
                     </td>
                     <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
-                      <Button
-                        variant="secondary"
-                        onClick={() => handleRowClick(inv.id)}
-                        className="gap-1 text-xs py-1 px-2.5"
-                      >
-                        <Eye size={14} />
-                        {t('View', 'عرض')}
-                      </Button>
+                      <RowActions
+                        onView={() => handleRowClick(inv.id)}
+                        viewLabel={t('View', 'عرض')}
+                      />
                     </td>
                   </tr>
                 ))}

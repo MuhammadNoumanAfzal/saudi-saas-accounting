@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useTranslation, Button } from '@/lib/utils';
 import { showAlert } from '@/lib/alerts';
+import { getErrorMessage } from '@/lib/form-errors';
 import { 
   useGetCurrentSession, 
   useGetQuotation, 
@@ -90,7 +91,7 @@ export function QuotationDetail({ id }: { id: string }) {
         showAlert.toast(t('Quotation status updated successfully!', 'تم تحديث حالة عرض السعر بنجاح!'));
       }
     } catch (err: any) {
-      showAlert.error(t('Error', 'خطأ'), err?.message || t('Failed to update quotation status', 'فشل تحديث حالة عرض السعر'));
+      showAlert.error(t('Error', 'خطأ'), getErrorMessage(err, t('Failed to update quotation status', 'فشل تحديث حالة عرض السعر')));
     } finally {
       setUpdatingStatus(false);
     }

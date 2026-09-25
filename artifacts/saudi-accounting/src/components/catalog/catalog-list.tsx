@@ -11,11 +11,13 @@ import {
   getListCatalogUnitsQueryKey
 } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
-import { Search, Plus, Filter, MoreHorizontal, Package, FileCode2, UploadCloud, DownloadCloud, Eye } from 'lucide-react';
+import { Search, Plus, Filter, MoreHorizontal, Package, FileCode2, UploadCloud, DownloadCloud } from 'lucide-react';
 import { CatalogCreateSheet } from './catalog-create-sheet';
 import { CatalogImportSheet } from './catalog-import-sheet';
 import { SkeletonTable } from '@/components/ui/platform-loader';
 import type { CatalogItemType, CatalogItemStatus } from '@workspace/api-client-react';
+import { getErrorMessage } from '@/lib/form-errors';
+import { RowActions } from '@/components/ui/row-actions';
 
 export function CatalogList() {
   const { t, isRtl } = useTranslation();
@@ -256,15 +258,10 @@ export function CatalogList() {
                           </span>
                         </td>
                         <td className="px-5 py-4 text-center" onClick={e => e.stopPropagation()}>
-                          <Button 
-                            variant="secondary" 
-                            size="sm"
-                            className="h-8 px-3 text-xs font-bold gap-1.5 hover:bg-primary hover:text-primary-foreground transition-colors border-border shadow-none" 
-                            onClick={() => setLocation(`/finance/items/${item.id}`)}
-                          >
-                            <Eye size={14} />
-                            {t('View', 'عرض')}
-                          </Button>
+                          <RowActions
+                            onView={() => setLocation(`/finance/items/${item.id}`)}
+                            viewLabel={t('View', 'عرض')}
+                          />
                         </td>
                       </tr>
                     );
@@ -304,10 +301,10 @@ export function CatalogList() {
                         <div><span className="opacity-70">{t('Sales', 'البيع')}:</span> <span className="font-bold text-foreground">SAR {item.salesPrice}</span></div>
                         <div><span className="opacity-70">{t('Purchases', 'الشراء')}:</span> <span className="font-bold text-foreground">SAR {item.purchasePrice}</span></div>
                       </div>
-                      <Button variant="secondary" size="sm" className="h-8 px-3 text-xs font-bold gap-1">
-                        <Eye size={14} />
-                        {t('View', 'عرض')}
-                      </Button>
+                      <RowActions
+                        onView={() => setLocation(`/finance/items/${item.id}`)}
+                        viewLabel={t('View', 'عرض')}
+                      />
                     </div>
                   </div>
                 );

@@ -15,6 +15,7 @@ import {
   CatalogItem
 } from '@workspace/api-client-react';
 import { queryClient } from '@/lib/queryClient';
+import { getErrorMessage } from '@/lib/form-errors';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 export function CatalogCreateSheet({ 
@@ -175,7 +176,7 @@ export function CatalogCreateSheet({
           onSuccess(initialData.id);
         },
         onError: (err: any) => {
-          setErrors({ submit: err?.message || t('Something went wrong', 'حدث خطأ ما') });
+          setErrors({ submit: getErrorMessage(err, t('Something went wrong', 'حدث خطأ ما')) });
           const container = document.getElementById('item-form-container');
           if (container) container.scrollTop = 0;
         }
@@ -196,7 +197,7 @@ export function CatalogCreateSheet({
           onSuccess(data.id);
         },
         onError: (err: any) => {
-          setErrors({ submit: err?.message || t('Something went wrong', 'حدث خطأ ما') });
+          setErrors({ submit: getErrorMessage(err, t('Something went wrong', 'حدث خطأ ما')) });
           const container = document.getElementById('item-form-container');
           if (container) container.scrollTop = 0;
         }

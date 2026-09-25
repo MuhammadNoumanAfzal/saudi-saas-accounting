@@ -1,4 +1,5 @@
 import { useTranslation, Button } from '@/lib/utils';
+import { showAlert } from '@/lib/alerts';
 import type { PartyAddress } from '@workspace/api-client-react';
 import { MapPin, Plus, Edit, Trash } from 'lucide-react';
 
@@ -9,7 +10,7 @@ export function AddressesTab({ partyId, orgId, addresses }: { partyId: string, o
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-bold">{t('Addresses', 'العناوين')}</h3>
-        <Button variant="secondary" onClick={() => alert('Add address coming soon')}>
+        <Button variant="secondary" onClick={() => showAlert.warning(t('Coming Soon', 'قريباً'), t('Address editing is coming soon', 'Address editing is coming soon'))}>
           <Plus size={16} />
           <span>{t('Add Address', 'إضافة عنوان')}</span>
         </Button>
@@ -19,7 +20,7 @@ export function AddressesTab({ partyId, orgId, addresses }: { partyId: string, o
         <div className="soft-card p-12 text-center border-dashed">
           <h3 className="font-bold mb-2">{t('No addresses yet', 'لا توجد عناوين بعد')}</h3>
           <p className="text-sm text-muted-foreground mb-4">{t('Add billing or shipping addresses.', 'أضف عناوين الفوترة أو الشحن.')}</p>
-          <Button variant="secondary" onClick={() => alert('Add address coming soon')}>
+          <Button variant="secondary" onClick={() => showAlert.warning(t('Coming Soon', 'قريباً'), t('Address editing is coming soon', 'Address editing is coming soon'))}>
             <Plus size={16} /> {t('Add Address', 'إضافة عنوان')}
           </Button>
         </div>

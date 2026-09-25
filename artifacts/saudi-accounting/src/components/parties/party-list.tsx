@@ -11,11 +11,13 @@ import {
   customFetch
 } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
-import { Search, Plus, Filter, MoreHorizontal, User, Building2, UploadCloud, DownloadCloud, ChevronRight, ChevronLeft, Eye, Trash2 } from 'lucide-react';
+import { Search, Plus, Filter, MoreHorizontal, User, Building2, UploadCloud, DownloadCloud, ChevronRight, ChevronLeft } from 'lucide-react';
 import { PartyCreateSheet } from './party-create-sheet';
 import { PartyImportSheet } from './party-import-sheet';
 import { SkeletonTable } from '@/components/ui/platform-loader';
 import { queryClient } from '@/lib/queryClient';
+import { getErrorMessage } from '@/lib/form-errors';
+import { RowActions } from '@/components/ui/row-actions';
 
 export function PartyList({ role }: { role: 'customer' | 'supplier' }) {
   const { t, isRtl } = useTranslation();
@@ -145,7 +147,7 @@ export function PartyList({ role }: { role: 'customer' | 'supplier' }) {
     } catch (err: any) {
       showAlert.error(
         t('Export Failed', 'فشل التصدير'),
-        err?.message || t('Could not export CSV data file.', 'تعذر تصدير ملف بيانات CSV.')
+        getErrorMessage(err, t('Could not export CSV data file.', 'تعذر تصدير ملف بيانات CSV.'))
       );
     } finally {
       setExporting(false);
@@ -300,26 +302,12 @@ export function PartyList({ role }: { role: 'customer' | 'supplier' }) {
                           SAR 0.00
                         </td>
                         <td className="px-5 py-4 text-center" onClick={e => e.stopPropagation()}>
-                          <div className="flex items-center justify-center gap-1.5">
-                            <Button 
-                              variant="secondary" 
-                              size="sm"
-                              className="h-8 px-2.5 text-xs font-bold gap-1 hover:bg-primary hover:text-primary-foreground transition-colors border-border shadow-none" 
-                              onClick={() => setLocation(`/finance/${role}s/${item.id}`)}
-                            >
-                              <Eye size={14} />
-                              {t('View', 'عرض')}
-                            </Button>
-                            <Button 
-                              variant="secondary" 
-                              size="sm"
-                              className="h-8 px-2 text-xs font-bold text-red-500 hover:bg-red-500 hover:text-white transition-colors border-border shadow-none" 
-                              onClick={() => handleDeleteParty(item.id, item.displayName)}
-                              title={t('Delete', 'حذف')}
-                            >
-                              <Trash2 size={14} />
-                            </Button>
-                          </div>
+                          <RowActions
+                            onView={() => setLocation(`/finance/${role}s/${item.id}`)}
+                            onDelete={() => handleDeleteParty(item.id, item.displayName)}
+                            viewLabel={t('View', 'عرض')}
+                            deleteLabel={t('Delete', 'حذف')}
+                          />
                         </td>
                       </tr>
                     );
@@ -353,13 +341,12 @@ export function PartyList({ role }: { role: 'customer' | 'supplier' }) {
                         }`}>
                           {isAct ? t('Active', 'نشط') : t('Inactive', 'غير نشط')}
                         </span>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleDeleteParty(item.id, item.displayName); }} 
-                          className="p-1 text-red-500 hover:bg-red-500/10 rounded"
-                          title={t('Delete', 'حذف')}
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <RowActions
+                          onView={() => setLocation(`/finance/${role}s/${item.id}`)}
+                          onDelete={() => handleDeleteParty(item.id, item.displayName)}
+                          viewLabel={t('View', 'عرض')}
+                          deleteLabel={t('Delete', 'حذف')}
+                        />
                       </div>
                     </div>
                     <div className="flex justify-between items-end mt-3 text-xs text-muted-foreground">

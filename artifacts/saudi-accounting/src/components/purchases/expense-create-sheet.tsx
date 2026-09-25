@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation, Button } from '@/lib/utils';
+import { getErrorMessage } from '@/lib/form-errors';
 import { showAlert } from '@/lib/alerts';
 import { 
   useGetCurrentSession, 
@@ -108,7 +109,7 @@ export function ExpenseCreateSheet({ open, onOpenChange, onSuccess }: ExpenseCre
       onSuccess();
     } catch (err: any) {
       console.error(err);
-      setErrors({ submit: err.message || (isRtl ? 'فشل تسجيل المصروف' : 'Failed to record expense') });
+      setErrors({ submit: getErrorMessage(err, (isRtl ? 'فشل تسجيل المصروف' : 'Failed to record expense')) });
     }
   };
 

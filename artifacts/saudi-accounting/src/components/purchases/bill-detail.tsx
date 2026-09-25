@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useTranslation, Button } from '@/lib/utils';
 import { showAlert } from '@/lib/alerts';
+import { getErrorMessage } from '@/lib/form-errors';
 import { 
   useGetCurrentSession, 
   useGetPurchaseBill,
@@ -109,7 +110,7 @@ export function BillDetail({ billId }: BillDetailProps) {
       }
     } catch (err: any) {
       console.error(err);
-      showAlert.error(t('Error', 'خطأ'), err.message || t('Status update failed', 'فشل تحديث حالة الفاتورة'));
+      showAlert.error(t('Error', 'خطأ'), getErrorMessage(err, t('Status update failed', 'فشل تحديث حالة الفاتورة')));
     } finally {
       setUpdating(false);
     }
@@ -138,7 +139,7 @@ export function BillDetail({ billId }: BillDetailProps) {
       queryClient.invalidateQueries({ queryKey: getListPurchaseBillsQueryKey(orgId) });
       showAlert.success(t('Payment recorded', 'تم تسجيل السداد'), t('Supplier payment was posted to the ledger.', 'تم ترحيل سداد المورد إلى دفتر الأستاذ.'));
     } catch (err: any) {
-      showAlert.error(t('Payment failed', 'فشل السداد'), err?.message || t('Could not record payment.', 'تعذر تسجيل السداد.'));
+      showAlert.error(t('Payment failed', 'فشل السداد'), getErrorMessage(err, t('Could not record payment.', 'تعذر تسجيل السداد.')));
     } finally {
       setUpdating(false);
     }
@@ -161,7 +162,7 @@ export function BillDetail({ billId }: BillDetailProps) {
       setLocation('/finance/bills');
     } catch (err: any) {
       console.error(err);
-      showAlert.error(t('Error', 'خطأ'), err.message || t('Delete failed', 'فشل عملية الحذف'));
+      showAlert.error(t('Error', 'خطأ'), getErrorMessage(err, t('Delete failed', 'فشل عملية الحذف')));
     }
   };
 

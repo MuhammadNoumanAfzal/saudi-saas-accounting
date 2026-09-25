@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation, Button } from '@/lib/utils';
+import { getErrorMessage } from '@/lib/form-errors';
 import { showAlert } from '@/lib/alerts';
 import { 
   useGetCurrentSession, 
@@ -218,7 +219,7 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess, billId, initial
       onSuccess();
     } catch (err: any) {
       console.error(err);
-      const msg = err?.message || (isRtl ? 'فشل إنشاء فاتورة الشراء' : 'Failed to create purchase bill');
+      const msg = getErrorMessage(err, (isRtl ? 'فشل إنشاء فاتورة الشراء' : 'Failed to create purchase bill'));
       setErrors({ submit: msg });
       showAlert.error(t('Error', 'خطأ'), msg);
     }

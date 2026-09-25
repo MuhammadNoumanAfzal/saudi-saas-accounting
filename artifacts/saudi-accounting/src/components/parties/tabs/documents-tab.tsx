@@ -1,4 +1,5 @@
 import { useTranslation, Button } from '@/lib/utils';
+import { showAlert } from '@/lib/alerts';
 import { useListPartyDocuments, getListPartyDocumentsQueryKey } from '@workspace/api-client-react';
 import { FileText, Plus, Download, Edit, Trash } from 'lucide-react';
 
@@ -16,7 +17,7 @@ export function DocumentsTab({ partyId, orgId }: { partyId: string, orgId: strin
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-bold">{t('Documents', 'المستندات')}</h3>
-        <Button variant="secondary" onClick={() => alert('Upload document coming soon')}>
+        <Button variant="secondary" onClick={() => showAlert.warning(t('Coming Soon', 'قريباً'), t('Document upload is coming soon', 'Document upload is coming soon'))}>
           <Plus size={16} />
           <span>{t('Upload', 'رفع')}</span>
         </Button>
@@ -30,7 +31,7 @@ export function DocumentsTab({ partyId, orgId }: { partyId: string, orgId: strin
         <div className="soft-card p-12 text-center border-dashed">
           <h3 className="font-bold mb-2">{t('No documents', 'لا توجد مستندات')}</h3>
           <p className="text-sm text-muted-foreground mb-4">{t('Upload commercial registration, tax certificates, etc.', 'قم برفع السجل التجاري، الشهادات الضريبية، إلخ.')}</p>
-          <Button variant="secondary" onClick={() => alert('Upload document coming soon')}>
+          <Button variant="secondary" onClick={() => showAlert.warning(t('Coming Soon', 'قريباً'), t('Document upload is coming soon', 'Document upload is coming soon'))}>
             <Plus size={16} /> {t('Upload Document', 'رفع مستند')}
           </Button>
         </div>

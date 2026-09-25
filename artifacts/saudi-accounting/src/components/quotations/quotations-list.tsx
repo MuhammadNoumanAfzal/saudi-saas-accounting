@@ -9,11 +9,12 @@ import {
 } from '@workspace/api-client-react';
 import type { Quotation } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
-import { Search, Plus, Filter, FileText, Eye, CheckCircle2, XCircle, Clock, ArrowRight, ArrowLeft, Trash2, Pencil } from 'lucide-react';
+import { Search, Plus, Filter, FileText, CheckCircle2, XCircle, Clock, ArrowRight, ArrowLeft } from 'lucide-react';
 import { QuotationCreateSheet } from './quotation-create-sheet';
 import { SkeletonTable } from '@/components/ui/platform-loader';
 import { queryClient } from '@/lib/queryClient';
 import { showAlert } from '@/lib/alerts';
+import { RowActions } from '@/components/ui/row-actions';
 
 interface QuotationsListProps {
   onSelectQuotation?: (id: string) => void;
@@ -311,33 +312,14 @@ export function QuotationsList({ onSelectQuotation }: QuotationsListProps) {
                       {getStatusBadge(qt.status)}
                     </td>
                     <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Button
-                          variant="secondary"
-                          onClick={() => handleRowClick(qt.id)}
-                          className="gap-1 text-xs py-1 px-2.5"
-                        >
-                          <Eye size={14} />
-                          {t('View', 'عرض')}
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          onClick={() => setEditQuotation(qt)}
-                          className="gap-1 text-xs py-1 px-2.5"
-                          title={t('Edit', 'تعديل')}
-                        >
-                          <Pencil size={14} />
-                          {t('Edit', 'تعديل')}
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          onClick={() => handleDeleteQuotation(qt.id, qt.quotationNumber)}
-                          className="gap-1 text-xs py-1 px-2 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
-                          title={t('Delete', 'حذف')}
-                        >
-                          <Trash2 size={14} />
-                        </Button>
-                      </div>
+                      <RowActions
+                        onView={() => handleRowClick(qt.id)}
+                        onEdit={() => setEditQuotation(qt)}
+                        onDelete={() => handleDeleteQuotation(qt.id, qt.quotationNumber)}
+                        viewLabel={t('View', 'عرض')}
+                        editLabel={t('Edit', 'تعديل')}
+                        deleteLabel={t('Delete', 'حذف')}
+                      />
                     </td>
                   </tr>
                 ))}

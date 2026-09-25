@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation, Button } from '@/lib/utils';
+import { getErrorMessage } from '@/lib/form-errors';
 import { 
   useGetCurrentSession, 
   useListAccounts,
@@ -90,7 +91,7 @@ export function AccountsList() {
       setNameArabic('');
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || (isRtl ? 'فشل إنشاء الحساب' : 'Failed to create account'));
+      setErrorMsg(getErrorMessage(err, (isRtl ? 'فشل إنشاء الحساب' : 'Failed to create account')));
     }
   };
 

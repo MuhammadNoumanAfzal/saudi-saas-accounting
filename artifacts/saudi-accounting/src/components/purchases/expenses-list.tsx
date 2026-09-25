@@ -9,9 +9,12 @@ import {
 import type { Expense } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useDebounce } from '@/hooks/use-debounce';
-import { CreditCard, Plus, Search, Filter, Tag, Trash2 } from 'lucide-react';
+import { CreditCard, Plus, Search, Filter, Tag } from 'lucide-react';
 import { ExpenseCreateSheet } from './expense-create-sheet';
 import { SkeletonTable } from '@/components/ui/platform-loader';
+import { showAlert } from '@/lib/alerts';
+import { getErrorMessage } from '@/lib/form-errors';
+import { RowActions } from '@/components/ui/row-actions';
 
 export function ExpensesList() {
   const { t, isRtl } = useTranslation();
@@ -66,7 +69,13 @@ export function ExpensesList() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(isRtl ? 'هل أنت تأكد من حذف هذا المصروف؟' : 'Are you sure you want to delete this expense?')) return;
+    const confirmed = await showAlert.confirm(
+      isRtl ? 'Delete Expense?' : 'Delete Expense?',
+      isRtl ? 'Are you sure you want to delete this expense? This action cannot be undone.' : 'Are you sure you want to delete this expense? This action cannot be undone.',
+      isRtl ? 'Yes, Delete' : 'Yes, Delete',
+      isRtl ? 'Cancel' : 'Cancel'
+    );
+    if (!confirmed) return;
     try {
       await deleteMutation.mutateAsync({
         organizationId: orgId,
@@ -75,7 +84,7 @@ export function ExpensesList() {
       refetch();
     } catch (err: any) {
       console.error(err);
-      alert(err.message || 'Failed to delete expense');
+      showAlert.error(isRtl ? 'فشل الحذف' : 'Delete Failed', getErrorMessage(err, isRtl ? 'تعذر حذف المصروف.' : 'Failed to delete expense.'));
     }
   };
 
@@ -241,13 +250,10 @@ export function ExpensesList() {
                       {parseFloat(expense.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR
                     </td>
                     <td className="px-6 py-4 text-right rtl:text-left">
-                      <Button
-                        variant="ghost"
-                        onClick={() => handleDelete(expense.id)}
-                        className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <RowActions
+                        onDelete={() => handleDelete(expense.id)}
+                        deleteLabel={isRtl ? 'حذف' : 'Delete'}
+                      />
                     </td>
                   </tr>
                 ))}

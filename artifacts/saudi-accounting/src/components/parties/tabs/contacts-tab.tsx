@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation, Button } from '@/lib/utils';
+import { showAlert } from '@/lib/alerts';
 import type { PartyContact } from '@workspace/api-client-react';
 import { 
   useCreatePartyContact,
@@ -19,7 +20,7 @@ export function ContactsTab({ partyId, orgId, contacts }: { partyId: string, org
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-bold">{t('Contacts', 'جهات الاتصال')}</h3>
-        <Button variant="secondary" onClick={() => alert('Add contact coming soon')}>
+        <Button variant="secondary" onClick={() => showAlert.warning(t('Coming Soon', 'قريباً'), t('Contacts editing is coming soon', 'Contacts editing is coming soon'))}>
           <UserPlus size={16} />
           <span>{t('Add Contact', 'إضافة جهة اتصال')}</span>
         </Button>
@@ -29,7 +30,7 @@ export function ContactsTab({ partyId, orgId, contacts }: { partyId: string, org
         <div className="soft-card p-12 text-center border-dashed">
           <h3 className="font-bold mb-2">{t('No contacts yet', 'لا توجد جهات اتصال بعد')}</h3>
           <p className="text-sm text-muted-foreground mb-4">{t('Add people associated with this business.', 'أضف الأشخاص المرتبطين بهذه المنشأة.')}</p>
-          <Button variant="secondary" onClick={() => alert('Add contact coming soon')}>
+          <Button variant="secondary" onClick={() => showAlert.warning(t('Coming Soon', 'قريباً'), t('Contacts editing is coming soon', 'Contacts editing is coming soon'))}>
             <UserPlus size={16} /> {t('Add Contact', 'إضافة جهة اتصال')}
           </Button>
         </div>

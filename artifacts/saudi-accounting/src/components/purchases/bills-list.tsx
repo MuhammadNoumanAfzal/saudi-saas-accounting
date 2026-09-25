@@ -8,11 +8,12 @@ import {
 } from '@workspace/api-client-react';
 import type { PurchaseBill } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
-import { FileText, Plus, Search, Filter, Building2, Eye, ArrowRight, ArrowLeft, Clock, CheckCircle2 } from 'lucide-react';
+import { FileText, Plus, Search, Filter, Building2, ArrowRight, ArrowLeft, Clock, CheckCircle2 } from 'lucide-react';
 import { BillCreateSheet } from './bill-create-sheet';
 import { SkeletonTable } from '@/components/ui/platform-loader';
 import { PurchasesKpiSummaryCards } from './purchases-kpi-summary-cards';
 import { PurchasesFilterBar } from './purchases-filter-bar';
+import { RowActions } from '@/components/ui/row-actions';
 
 interface BillsListProps {
   onSelectBill?: (id: string) => void;
@@ -225,18 +226,13 @@ export function BillsList({ onSelectBill }: BillsListProps) {
                       {getStatusBadge(bill.status)}
                     </td>
                     <td className="px-6 py-4 text-right rtl:text-left">
-                      <Button
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
+                      <RowActions
+                        onView={() => {
                           if (onSelectBill) onSelectBill(bill.id);
                           else setLocation(`/finance/bills/${bill.id}`);
                         }}
-                        className="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
-                      >
-                        <Eye className="w-4 h-4 mr-1 rtl:ml-1 rtl:mr-0" />
-                        {isRtl ? 'عرض' : 'View'}
-                      </Button>
+                        viewLabel={isRtl ? 'عرض' : 'View'}
+                      />
                     </td>
                   </tr>
                 ))}

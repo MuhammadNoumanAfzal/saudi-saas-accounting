@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useTranslation, Button } from '@/lib/utils';
 import { showAlert } from '@/lib/alerts';
+import { getErrorMessage } from '@/lib/form-errors';
 import { 
   useGetCurrentSession, 
   useGetCustomer, 
@@ -166,7 +167,7 @@ export function PartyProfile({ role, id }: { role: 'customer' | 'supplier'; id: 
     } catch (err: any) {
       showAlert.error(
         t('Delete Failed', 'فشل الحذف'),
-        err?.message || t('Could not delete record.', 'تعذر حذف السجل.')
+        getErrorMessage(err, t('Could not delete record.', 'تعذر حذف السجل.'))
       );
     }
   };

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useTranslation, Button } from '@/lib/utils';
 import { showAlert } from '@/lib/alerts';
+import { getErrorMessage } from '@/lib/form-errors';
 import { 
   useGetCurrentSession, 
   useGetCatalogItem,
@@ -78,7 +79,7 @@ export function CatalogProfile({ id }: { id: string }) {
         );
       },
       onError: (err: any) => {
-        showAlert.error(t('Status Update Failed', 'فشل تحديث الحالة'), err?.message || t('Could not update item status.', 'تعذر تحديث حالة الصنف.'));
+        showAlert.error(t('Status Update Failed', 'فشل تحديث الحالة'), getErrorMessage(err, t('Could not update item status.', 'تعذر تحديث حالة الصنف.')));
       }
     });
   };

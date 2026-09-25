@@ -11,6 +11,7 @@ import {
   getGetSuppliersQueryKey
 } from '@workspace/api-client-react';
 import { queryClient } from '@/lib/queryClient';
+import { getErrorMessage } from '@/lib/form-errors';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 export function PartyEditSheet({ 
@@ -217,7 +218,7 @@ export function PartyEditSheet({
         onOpenChange(false);
       },
       onError: (err: any) => {
-        setErrors({ submit: err?.message || t('Something went wrong', 'حدث خطأ ما') });
+        setErrors({ submit: getErrorMessage(err, t('Something went wrong', 'حدث خطأ ما')) });
         const container = document.getElementById('edit-party-form-container');
         if (container) container.scrollTop = 0;
       }

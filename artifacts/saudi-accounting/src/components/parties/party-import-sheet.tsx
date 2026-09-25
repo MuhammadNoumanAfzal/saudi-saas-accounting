@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation, Button } from '@/lib/utils';
 import { showAlert } from '@/lib/alerts';
+import { getErrorMessage } from '@/lib/form-errors';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { 
   usePreviewPartyImport,
@@ -87,7 +88,7 @@ individual,,,Ahmed,Al-Otaibi,,false,,Dammam,ahmed@example.com,+966501234567
         setStep('preview');
       },
       onError: (err: any) => {
-        showAlert.error(t('Preview Failed', 'فشل المعاينة'), err?.message || t('Could not parse CSV file', 'تعذر تحليل ملف CSV'));
+        showAlert.error(t('Preview Failed', 'فشل المعاينة'), getErrorMessage(err, t('Could not parse CSV file', 'تعذر تحليل ملف CSV')));
       }
     });
   };
@@ -110,7 +111,7 @@ individual,,,Ahmed,Al-Otaibi,,false,,Dammam,ahmed@example.com,+966501234567
         );
       },
       onError: (err: any) => {
-        showAlert.error(t('Import Failed', 'فشل الاستيراد'), err?.message || t('Something went wrong during import', 'حدث خطأ ما أثناء الاستيراد'));
+        showAlert.error(t('Import Failed', 'فشل الاستيراد'), getErrorMessage(err, t('Something went wrong during import', 'حدث خطأ ما أثناء الاستيراد')));
       }
     });
   };
