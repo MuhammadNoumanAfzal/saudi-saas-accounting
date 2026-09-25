@@ -186,22 +186,22 @@ export function PublicHome() {
     <PublicLayout>
       
       {/* HERO SECTION */}
-      <section className="relative overflow-hidden mx-auto grid max-w-[1280px] items-center gap-12 px-6 py-12 lg:grid-cols-[1fr_1fr] lg:px-10 lg:py-20">
+      <section className="relative overflow-hidden mx-auto grid max-w-[1280px] items-center gap-8 lg:gap-12 px-4 sm:px-6 py-8 sm:py-12 lg:grid-cols-[1fr_1fr] lg:px-10 lg:py-20">
         <div className="fade-up z-10">
-          <div className="inline-flex items-center gap-2.5 rounded-full border border-[#176752]/25 bg-white/90 backdrop-blur-md px-4 py-1.5 text-xs font-bold text-[#176752] shadow-sm badge-glow mb-6">
-            <span className="flex h-2 w-2 rounded-full bg-[#10b981] animate-ping" />
-            <Sparkles size={14} className="text-[#d4af37]" />
-            <span>{t('KHANBAS NEXUS | Saudi Enterprise Accounting Platform', 'KHANBAS NEXUS | منصة نكسس المالية المحاسبية بالسعودية')}</span>
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#176752]/25 bg-white/90 backdrop-blur-md px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs font-bold text-[#176752] shadow-sm badge-glow mb-4 sm:mb-6 max-w-full">
+            <span className="flex h-2 w-2 rounded-full bg-[#10b981] animate-ping shrink-0" />
+            <Sparkles size={14} className="text-[#d4af37] shrink-0" />
+            <span className="truncate">{t('KHANBAS NEXUS | Saudi Enterprise Accounting Platform', 'KHANBAS NEXUS | منصة نكسس المحاسبية بالسعودية')}</span>
           </div>
 
-          <h1 className={isRtl ? "text-[clamp(1.65rem,2.7vw,2.7rem)] font-extrabold leading-[1.25] text-[#071f19]" : "text-[clamp(2rem,3.4vw,3.5rem)] font-black leading-[1.1] tracking-tight text-[#071f19]"}>
+          <h1 className={isRtl ? "text-[clamp(1.5rem,2.7vw,2.7rem)] font-extrabold leading-[1.25] text-[#071f19]" : "text-[clamp(1.85rem,3.4vw,3.5rem)] font-black leading-[1.1] tracking-tight text-[#071f19]"}>
             {t('Saudi Enterprise Accounting.', 'المحاسبة والفوترة الإلكترونية للمنشآت السعودية.')} <br />
             <span className="animated-gradient-text">
               {t('Smarter, Faster & ZATCA Compliant.', 'أسهل، أسرع، ومعتمدة من هيئة الزكاة (ZATCA).')}
             </span>
           </h1>
 
-          <p className="mt-4 text-sm leading-relaxed text-[#485d56] max-w-[540px]">
+          <p className="mt-3 sm:mt-4 text-xs sm:text-sm leading-relaxed text-[#485d56] max-w-[540px]">
             {t(
               'Unified double-entry financial ledger, instant Base64 TLV e-invoicing, automatic 15% VAT Form 21 reporting, and multi-branch operations designed strictly to SOCPA & ZATCA FATOORA standards.',
               'دفتر أستاذ محاسبي موحد، فوترة إلكترونية فورية بمعيار Base64 TLV، إقرار ضريبة القيمة المضافة 15% تلقائي (نموذج 21)، وتكامل الفروع وفق معايير SOCPA وZATCA.'
@@ -209,22 +209,22 @@ export function PublicHome() {
           </p>
 
           {/* CTAs */}
-          <div className="mt-8 flex flex-wrap items-center gap-4">
-            <Link href={isSignedIn ? "/home" : "/sign-up"} className="btn-primary flex items-center gap-2 px-7 py-3.5 text-sm font-bold shadow-xl shadow-[#176752]/25 hover:scale-[1.04] transition-all cursor-pointer" data-testid="link-hero-start">
+          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-start gap-3 sm:gap-4 w-full">
+            <Link href={isSignedIn ? "/home" : "/sign-up"} className="btn-primary flex items-center justify-center gap-2 px-6 sm:px-7 py-3 sm:py-3.5 text-xs sm:text-sm font-bold shadow-xl shadow-[#176752]/25 hover:scale-[1.03] transition-all cursor-pointer w-full sm:w-auto text-center" data-testid="link-hero-start">
               <span>{isSignedIn ? t("Go to Workspace", "الانتقال إلى مساحة العمل") : t("Start Free Account", "ابدأ حسابك المجاني")}</span>
               {isRtl ? <ArrowLeft size={16} /> : <ArrowRight size={16} />}
             </Link>
-            <a href="#packages" className="flex items-center gap-2 rounded-xl border border-[#d6cfbe] bg-white px-6 py-3.5 text-sm font-bold text-[#0a2620] hover:bg-[#ede7d8] hover:scale-[1.02] transition-all cursor-pointer">
+            <a href="#packages" className="flex items-center justify-center gap-2 rounded-xl border border-[#d6cfbe] bg-white px-5 sm:px-6 py-3 sm:py-3.5 text-xs sm:text-sm font-bold text-[#0a2620] hover:bg-[#ede7d8] hover:scale-[1.02] transition-all cursor-pointer w-full sm:w-auto text-center">
               <Receipt size={16} className="text-[#176752]" />
               <span>{t('View Packages', 'مشاهدة باقات الأسعار')}</span>
             </a>
           </div>
 
           {/* Trust Pills */}
-          <div className="mt-10 flex flex-wrap items-center gap-5 text-xs font-bold text-[#3e524b]">
-            <span className="flex items-center gap-1.5 hover:text-[#176752] transition-colors"><CheckCircle2 size={16} className="text-[#176752]" /> {t('ZATCA Phase 1 & 2', 'الفوترة الإلكترونية المرحلة 1 و 2')}</span>
-            <span className="flex items-center gap-1.5 hover:text-[#176752] transition-colors"><CheckCircle2 size={16} className="text-[#176752]" /> {t('SOCPA GAAP Compliant', 'معتمد وفق معايير SOCPA')}</span>
-            <span className="flex items-center gap-1.5 hover:text-[#176752] transition-colors"><CheckCircle2 size={16} className="text-[#176752]" /> {t('Instant TLV QR Code', 'رمز QR المعتمد TLV')}</span>
+          <div className="mt-8 sm:mt-10 flex flex-wrap items-center gap-3 sm:gap-5 text-[11px] sm:text-xs font-bold text-[#3e524b]">
+            <span className="flex items-center gap-1.5 hover:text-[#176752] transition-colors"><CheckCircle2 size={15} className="text-[#176752] shrink-0" /> {t('ZATCA Phase 1 & 2', 'الفوترة الإلكترونية المرحلة 1 و 2')}</span>
+            <span className="flex items-center gap-1.5 hover:text-[#176752] transition-colors"><CheckCircle2 size={15} className="text-[#176752] shrink-0" /> {t('SOCPA GAAP Compliant', 'معتمد وفق معايير SOCPA')}</span>
+            <span className="flex items-center gap-1.5 hover:text-[#176752] transition-colors"><CheckCircle2 size={15} className="text-[#176752] shrink-0" /> {t('Instant TLV QR Code', 'رمز QR المعتمد TLV')}</span>
           </div>
         </div>
 
@@ -233,12 +233,12 @@ export function PublicHome() {
           <div className="absolute -right-6 -top-6 h-44 w-44 rounded-full bg-gradient-to-br from-[#d4af37] via-[#10b981] to-[#176752] opacity-40 blur-2xl animate-pulse" />
           <div className="absolute -left-6 -bottom-6 h-48 w-48 rounded-full bg-[#176752]/30 blur-2xl animate-pulse" />
 
-          <div className="relative overflow-hidden rounded-3xl border border-[#d8d2c2] bg-white/90 p-2.5 shadow-2xl backdrop-blur-xl">
-            <div className="rounded-2xl bg-[#071f19] text-white p-6 shadow-2xl">
+          <div className="relative overflow-hidden rounded-3xl border border-[#d8d2c2] bg-white/90 p-2 sm:p-2.5 shadow-2xl backdrop-blur-xl">
+            <div className="rounded-2xl bg-[#071f19] text-white p-4 sm:p-6 shadow-2xl">
               
               {/* Header Navigation Tabs */}
-              <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
-                <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-xl border border-white/10">
+              <div className="flex flex-col xs:flex-row items-stretch xs:items-center justify-between gap-2 border-b border-white/10 pb-3 sm:pb-4 mb-4">
+                <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10 overflow-x-auto no-scrollbar">
                   <button
                     onClick={() => setActiveTab('invoice')}
                     className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
