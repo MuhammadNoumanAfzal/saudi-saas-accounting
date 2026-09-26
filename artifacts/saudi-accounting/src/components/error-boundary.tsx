@@ -36,29 +36,50 @@ function toError(value: unknown): Error {
 }
 
 function DefaultFallback({ error, resetError }: ErrorFallbackProps) {
+  const isClerkError = error.message?.includes('failed_to_load_clerk_js') || error.message?.includes('Clerk');
+
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50 p-6">
-      <div className="max-w-lg w-full text-center">
-        <h1 className="text-xl font-semibold text-gray-900">
-          Something went wrong
-        </h1>
-        <p className="mt-2 text-sm text-gray-600">
-          This part of the app hit an error. The rest of the app is still
-          running.
-        </p>
-        {/* Dev only: messages can carry API responses and other internals. */}
-        {import.meta.env.DEV ? (
-          <pre className="mt-4 overflow-x-auto rounded bg-gray-100 p-3 text-left text-xs text-gray-800">
+    <div className="min-h-screen w-full flex items-center justify-center bg-background p-6 text-foreground">
+      <div className="max-w-md w-full text-center space-y-5 p-8 rounded-3xl bg-card border border-border shadow-2xl fade-up">
+        <div className="mx-auto h-16 w-16 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold">
+          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+
+        <div>
+          <h1 className="text-lg font-black tracking-tight text-foreground">
+            {isClerkError ? 'Authentication Service Connection Issue' : 'Application Encountered an Issue'}
+          </h1>
+          <p className="text-xs text-muted-foreground mt-1">
+            {isClerkError 
+              ? 'فشل الاتصال بخدمة التحقق من الهوية. يرجى التحقق من اتصال الإنترنت وإعادة المحاولة.' 
+              : 'حدث خطأ في المنظومة. يرجى إعادة تحميل الصفحة.'}
+          </p>
+        </div>
+
+        {import.meta.env.DEV && (
+          <pre className="text-left text-[11px] font-mono bg-muted/60 p-3 rounded-xl border border-border overflow-x-auto text-muted-foreground">
             {error.message || String(error)}
           </pre>
-        ) : null}
-        <button
-          type="button"
-          onClick={resetError}
-          className="mt-4 rounded bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-700"
-        >
-          Try again
-        </button>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-2 pt-2">
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="flex-1 rounded-xl btn-primary py-2.5 px-4 text-xs font-bold transition-all shadow-xs"
+          >
+            {isClerkError ? 'Retry Connection (إعادة المحاولة)' : 'Reload Page (إعادة التحميل)'}
+          </button>
+          <button
+            type="button"
+            onClick={resetError}
+            className="rounded-xl border border-border bg-background py-2.5 px-4 text-xs font-bold text-foreground hover:bg-muted transition-all"
+          >
+            Reset
+          </button>
+        </div>
       </div>
     </div>
   );

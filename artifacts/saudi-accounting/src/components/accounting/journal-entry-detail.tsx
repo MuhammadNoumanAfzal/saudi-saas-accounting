@@ -29,16 +29,7 @@ export function JournalEntryDetail({ entryId }: JournalEntryDetailProps) {
     }
   });
 
-  const entry = (fetchedEntry && (fetchedEntry as any).id) ? fetchedEntry : (() => {
-    try {
-      const stored = localStorage.getItem(`nexus_journal_entries_${orgId}`);
-      if (stored) {
-        const list = JSON.parse(stored);
-        const match = list.find((x: any) => String(x.id) === String(effectiveId) || String(x.entryNumber) === String(effectiveId));
-        if (match) return match;
-      }
-    } catch (e) {}
-    return {
+  const entry = (fetchedEntry && (fetchedEntry as any).id) ? fetchedEntry : {
       id: effectiveId || 'jv_101',
       entryNumber: effectiveId && effectiveId.length > 3 ? effectiveId : 'JV-2026-0001',
       entryDate: '2026-09-24',
@@ -53,7 +44,6 @@ export function JournalEntryDetail({ entryId }: JournalEntryDetailProps) {
         { id: '3', accountCode: '21050', accountName: 'Output VAT Payable (15%)', debit: '0.00', credit: '225.00', memo: 'ZATCA 15% Output Tax' }
       ]
     };
-  })();
 
   if (isLoading) {
     return (

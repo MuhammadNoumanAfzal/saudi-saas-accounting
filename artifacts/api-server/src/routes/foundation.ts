@@ -27,6 +27,7 @@ import {
   partyRolesTable,
   db,
   organizationMembershipsTable,
+  organizationInvitationsTable,
   organizationModulesTable,
   organizationsTable,
   userPreferencesTable,
@@ -81,6 +82,7 @@ function toPreferences(value: typeof userPreferencesTable.$inferSelect) {
     density: value.density,
     sidebarCollapsed: value.sidebarCollapsed,
     currentOrganizationId: value.currentOrganizationId,
+    currentBranchId: value.currentBranchId,
   };
 }
 
@@ -90,6 +92,32 @@ router.get("/me", async (req, res): Promise<void> => {
     if (!user) {
       res.status(401).json({ error: "Unauthorized" });
       return;
+    }
+
+    // Auto-accept pending organization invitations for this verified Clerk email.
+    const pendingInvitations = await db
+      .select()
+      .from(organizationInvitationsTable)
+      .where(and(eq(organizationInvitationsTable.email, user.email.toLowerCase()), eq(organizationInvitationsTable.status, "PENDING")));
+
+    for (const invite of pendingInvitations) {
+      await db
+        .insert(organizationMembershipsTable)
+        .values({
+          organizationId: invite.organizationId,
+          userId: user.id,
+          role: invite.role,
+          branchId: invite.branchId,
+          status: "ACTIVE",
+        })
+        .onConflictDoUpdate({
+          target: [organizationMembershipsTable.organizationId, organizationMembershipsTable.userId],
+          set: { role: invite.role, branchId: invite.branchId, status: "ACTIVE" },
+        });
+      await db
+        .update(organizationInvitationsTable)
+        .set({ status: "ACCEPTED", updatedAt: new Date() })
+        .where(eq(organizationInvitationsTable.id, invite.id));
     }
 
     const memberships = await db
@@ -166,7 +194,11 @@ router.patch("/me/preferences", async (req, res): Promise<void> => {
   await getOrCreatePreferences(user.id);
   const [updated] = await db
     .update(userPreferencesTable)
-    .set({ ...parsed.data, ...(Array.isArray(req.body?.branches) ? { branches: req.body.branches } : {}), updatedAt: new Date() })
+    .set({
+      ...parsed.data,
+      ...(req.body?.currentBranchId !== undefined ? { currentBranchId: req.body.currentBranchId } : {}),
+      updatedAt: new Date()
+    })
     .where(eq(userPreferencesTable.userId, user.id))
     .returning();
   if (!updated) {
@@ -453,5 +485,196 @@ router.get(
     );
   },
 );
+
+router.get("/organizations/:organizationId/members", async (req, res): Promise<void> => {
+  try {
+    const { organizationId } = req.params;
+    const members = await db
+      .select({
+        id: organizationMembershipsTable.id,
+        organizationId: organizationMembershipsTable.organizationId,
+        userId: organizationMembershipsTable.userId,
+        role: organizationMembershipsTable.role,
+        branchId: organizationMembershipsTable.branchId,
+        status: organizationMembershipsTable.status,
+        createdAt: organizationMembershipsTable.createdAt,
+        displayName: usersTable.displayName,
+        email: usersTable.email,
+      })
+      .from(organizationMembershipsTable)
+      .innerJoin(usersTable, eq(usersTable.id, organizationMembershipsTable.userId))
+      .where(eq(organizationMembershipsTable.organizationId, organizationId))
+      .orderBy(desc(organizationMembershipsTable.createdAt));
+
+    res.json(members.map(m => ({
+      ...m,
+      createdAt: m.createdAt.toISOString()
+    })));
+  } catch (error) {
+    console.error("Failed to list members", error);
+    res.status(500).json({ error: "Failed to list organization members" });
+  }
+});
+
+router.post("/organizations/:organizationId/members", async (req, res): Promise<void> => {
+  try {
+    const { organizationId } = req.params;
+    const { displayName, email, role, branchId, status } = req.body;
+
+    if (!displayName || !email) {
+      res.status(400).json({ error: "displayName and email are required" });
+      return;
+    }
+
+    let [targetUser] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.email, email.toLowerCase().trim()))
+      .limit(1);
+
+    if (!targetUser) {
+      const clerkPlaceholder = `invited_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+      [targetUser] = await db
+        .insert(usersTable)
+        .values({
+          clerkUserId: clerkPlaceholder,
+          email: email.toLowerCase().trim(),
+          displayName: displayName.trim(),
+        })
+        .returning();
+    }
+
+    const [existingMembership] = await db
+      .select()
+      .from(organizationMembershipsTable)
+      .where(
+        and(
+          eq(organizationMembershipsTable.organizationId, organizationId),
+          eq(organizationMembershipsTable.userId, targetUser.id)
+        )
+      )
+      .limit(1);
+
+    if (existingMembership) {
+      const [updated] = await db
+        .update(organizationMembershipsTable)
+        .set({
+          role: role || existingMembership.role,
+          branchId: branchId !== undefined ? branchId : existingMembership.branchId,
+          status: status || existingMembership.status,
+        })
+        .where(eq(organizationMembershipsTable.id, existingMembership.id))
+        .returning();
+
+      res.json({
+        ...updated,
+        displayName: targetUser.displayName,
+        email: targetUser.email,
+        createdAt: updated.createdAt.toISOString()
+      });
+      return;
+    }
+
+    const [newMembership] = await db
+      .insert(organizationMembershipsTable)
+      .values({
+        organizationId,
+        userId: targetUser.id,
+        role: role || "viewer",
+        branchId: branchId || null,
+        status: status || "ACTIVE",
+      })
+      .returning();
+
+    res.status(201).json({
+      ...newMembership,
+      displayName: targetUser.displayName,
+      email: targetUser.email,
+      createdAt: newMembership.createdAt.toISOString()
+    });
+  } catch (error) {
+    console.error("Failed to add member", error);
+    res.status(500).json({ error: "Failed to add organization member" });
+  }
+});
+
+router.patch("/organizations/:organizationId/members/:memberId", async (req, res): Promise<void> => {
+  try {
+    const { organizationId, memberId } = req.params;
+    const { role, branchId, status, displayName } = req.body;
+
+    const [existing] = await db
+      .select()
+      .from(organizationMembershipsTable)
+      .where(
+        and(
+          eq(organizationMembershipsTable.id, memberId),
+          eq(organizationMembershipsTable.organizationId, organizationId)
+        )
+      )
+      .limit(1);
+
+    if (!existing) {
+      res.status(404).json({ error: "Membership not found" });
+      return;
+    }
+
+    if (displayName) {
+      await db
+        .update(usersTable)
+        .set({ displayName: displayName.trim() })
+        .where(eq(usersTable.id, existing.userId));
+    }
+
+    const updates: Partial<typeof organizationMembershipsTable.$inferInsert> = {};
+    if (role !== undefined) updates.role = role;
+    if (branchId !== undefined) updates.branchId = branchId;
+    if (status !== undefined) updates.status = status;
+
+    const [updated] = await db
+      .update(organizationMembershipsTable)
+      .set(updates)
+      .where(eq(organizationMembershipsTable.id, memberId))
+      .returning();
+
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, existing.userId)).limit(1);
+
+    res.json({
+      ...updated,
+      displayName: user?.displayName || '',
+      email: user?.email || '',
+      createdAt: updated.createdAt.toISOString()
+    });
+  } catch (error) {
+    console.error("Failed to update member", error);
+    res.status(500).json({ error: "Failed to update member" });
+  }
+});
+
+router.delete("/organizations/:organizationId/members/:memberId", async (req, res): Promise<void> => {
+  try {
+    const { organizationId, memberId } = req.params;
+
+    const [deleted] = await db
+      .delete(organizationMembershipsTable)
+      .where(
+        and(
+          eq(organizationMembershipsTable.id, memberId),
+          eq(organizationMembershipsTable.organizationId, organizationId)
+        )
+      )
+      .returning();
+
+    if (!deleted) {
+      res.status(404).json({ error: "Membership not found" });
+      return;
+    }
+
+    res.json({ success: true, id: memberId });
+  } catch (error) {
+    console.error("Failed to delete member", error);
+    res.status(500).json({ error: "Failed to delete member" });
+  }
+});
 
 export default router;

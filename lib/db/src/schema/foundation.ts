@@ -42,6 +42,8 @@ export const appearanceEnum = pgEnum("appearance", [
   "system",
 ]);
 export const densityEnum = pgEnum("density", ["compact", "comfortable"]);
+export const branchStatusEnum = pgEnum("branch_status", ["ACTIVE", "INACTIVE"]);
+export const invitationStatusEnum = pgEnum("invitation_status", ["PENDING", "ACCEPTED", "REVOKED", "EXPIRED"]);
 
 export const usersTable = pgTable(
   "users",
@@ -97,7 +99,6 @@ export const organizationsTable = pgTable(
     onboardingCurrentStep: integer("onboarding_current_step")
       .notNull()
       .default(1),
-    branches: jsonb("branches"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -108,6 +109,62 @@ export const organizationsTable = pgTable(
   (table) => [
     index("organizations_country_idx").on(table.country),
     index("organizations_created_at_idx").on(table.createdAt),
+  ],
+);
+
+export const organizationBranchesTable = pgTable(
+  "organization_branches",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizationsTable.id, { onDelete: "cascade" }),
+    code: text("code").notNull(),
+    nameEnglish: text("name_english").notNull(),
+    nameArabic: text("name_arabic"),
+    vatNumber: text("vat_number"),
+    commercialRegistrationNumber: text("commercial_registration_number"),
+    buildingNumber: text("building_number"),
+    street: text("street"),
+    district: text("district"),
+    city: text("city"),
+    province: text("province"),
+    postalCode: text("postal_code"),
+    additionalNumber: text("additional_number"),
+    country: text("country").notNull().default("Saudi Arabia"),
+    phone: text("phone"),
+    email: text("email"),
+    status: branchStatusEnum("status").notNull().default("ACTIVE"),
+    isMain: boolean("is_main").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("organization_branches_org_code_idx").on(table.organizationId, table.code),
+    index("organization_branches_org_status_idx").on(table.organizationId, table.status),
+  ],
+);
+
+export const organizationInvitationsTable = pgTable(
+  "organization_invitations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizationsTable.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    displayName: text("display_name"),
+    role: membershipRoleEnum("role").notNull().default("viewer"),
+    branchId: text("branch_id"),
+    status: invitationStatusEnum("status").notNull().default("PENDING"),
+    clerkInvitationId: text("clerk_invitation_id"),
+    invitedByUserId: uuid("invited_by_user_id").references(() => usersTable.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("organization_invitations_org_email_idx").on(table.organizationId, table.email),
+    index("organization_invitations_org_status_idx").on(table.organizationId, table.status),
   ],
 );
 
@@ -126,6 +183,7 @@ export const userPreferencesTable = pgTable(
       () => organizationsTable.id,
       { onDelete: "set null" },
     ),
+    currentBranchId: text("current_branch_id"),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -147,6 +205,8 @@ export const organizationMembershipsTable = pgTable(
       .notNull()
       .references(() => usersTable.id, { onDelete: "cascade" }),
     role: membershipRoleEnum("role").notNull().default("viewer"),
+    branchId: text("branch_id"),
+    status: text("status").notNull().default("ACTIVE"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -202,6 +262,36 @@ export const organizationsRelations = relations(
   ({ many }) => ({
     memberships: many(organizationMembershipsTable),
     auditLogs: many(auditLogsTable),
+  }),
+);
+
+export const organizationBranchesRelations = relations(
+  organizationBranchesTable,
+  ({ one, many }) => ({
+    organization: one(organizationsTable, {
+      fields: [organizationBranchesTable.organizationId],
+      references: [organizationsTable.id],
+    }),
+    memberships: many(organizationMembershipsTable),
+    invitations: many(organizationInvitationsTable),
+  }),
+);
+
+export const organizationInvitationsRelations = relations(
+  organizationInvitationsTable,
+  ({ one }) => ({
+    organization: one(organizationsTable, {
+      fields: [organizationInvitationsTable.organizationId],
+      references: [organizationsTable.id],
+    }),
+    branch: one(organizationBranchesTable, {
+      fields: [organizationInvitationsTable.branchId],
+      references: [organizationBranchesTable.id],
+    }),
+    invitedBy: one(usersTable, {
+      fields: [organizationInvitationsTable.invitedByUserId],
+      references: [usersTable.id],
+    }),
   }),
 );
 

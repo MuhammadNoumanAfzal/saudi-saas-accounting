@@ -13,10 +13,9 @@ export function AppearanceSettings() {
   const update = useUpdateUserPreferences();
 
   const prefs = session?.preferences;
-  const currentTheme = localStorage.getItem('nexus_theme') || prefs?.appearance || 'light';
+  const currentTheme = prefs?.appearance || 'light';
 
   const setAppearance = (appearance: 'light' | 'dark' | 'system') => {
-    localStorage.setItem('nexus_theme', appearance);
 
     let isDark = false;
     if (appearance === 'dark') {

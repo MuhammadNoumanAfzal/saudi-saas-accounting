@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Redirect, Route, Switch, useLocation } from 'wouter';
 import { ClerkProvider, SignIn, SignUp, useAuth, useClerk, useUser } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
@@ -17,10 +17,9 @@ function AuthAlertNotifier() {
 
   useEffect(() => {
     if (isLoaded && isSignedIn && user?.id) {
-      // Set long-lived client trust cookie & local storage so Clerk remembers this device
+      // Set long-lived client trust cookie so Clerk remembers this device
       const nowSecs = Math.floor(Date.now() / 1000);
       document.cookie = `__client_uat=${nowSecs}; path=/; max-age=31536000; SameSite=Lax`;
-      localStorage.setItem('nexus_trusted_device_user', user.id);
 
       const storageKey = `nexus_auth_alert_${user.id}`;
       const hasAlerted = sessionStorage.getItem(storageKey);
@@ -142,8 +141,41 @@ function PublicHomeRoute() {
 }
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useAuth();
-  
+  const [timedOut, setTimedOut] = useState(false);
+
+  useEffect(() => {
+    if (!isLoaded) {
+      const timer = setTimeout(() => {
+        setTimedOut(true);
+      }, 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoaded]);
+
   if (!isLoaded) {
+    if (timedOut) {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-6 bg-background text-foreground">
+          <div className="max-w-md text-center p-8 rounded-3xl bg-card border border-border shadow-2xl space-y-4 fade-up">
+            <div className="mx-auto h-14 w-14 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold">
+              <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-black text-foreground">Authentication Response Delayed</h2>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              استجابة خدمة الهوية تستغرق وقتاً أطول من المتوقع. يرجى التثبت من الاتصال بشبكة الإنترنت وإعادة المحاولة.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full py-2.5 px-4 rounded-xl btn-primary text-xs font-bold shadow-xs cursor-pointer"
+            >
+              Refresh Page (إعادة تحميل الصفحة)
+            </button>
+          </div>
+        </div>
+      );
+    }
     return (
       <PlatformLoader fullScreen message="Authenticating User Session..." messageAr="جاري التحقق من الهوية والصلوحية..." />
     );

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useLocation, Link } from 'wouter';
 import { useClerk, useUser } from '@clerk/react';
-import { getGetCurrentSessionQueryKey, getListOrganizationModulesQueryKey, getFindPartiesQueryKey, useGetCurrentSession, useUpdateUserPreferences, useListOrganizationModules, useFindParties, useListCatalogItems, getListCatalogItemsQueryKey } from '@workspace/api-client-react';
+import { customFetch, getGetCurrentSessionQueryKey, getListOrganizationModulesQueryKey, getFindPartiesQueryKey, useGetCurrentSession, useUpdateUserPreferences, useListOrganizationModules, useFindParties, useListCatalogItems, getListCatalogItemsQueryKey } from '@workspace/api-client-react';
+import { useQuery } from '@tanstack/react-query';
 import { MODULE_REGISTRY } from '@workspace/platform-core';
 import { useDebounce } from '@/hooks/use-debounce';
 import {
@@ -25,7 +26,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { t, isRtl } = useTranslation();
   const [location, setLocation] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [overlay, setOverlay] = useState<'search' | 'create' | 'notifications' | 'help' | 'user' | 'modules' | 'org' | null>(null);
+  const [overlay, setOverlay] = useState<'search' | 'create' | 'notifications' | 'help' | 'user' | 'modules' | 'org' | 'branch' | null>(null);
   const [search, setSearch] = useState('');
   
   const updatePrefs = useUpdateUserPreferences();
@@ -34,6 +35,42 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization?.id || '';
   const activeMembership = session?.organizations?.find(item => item.organization.id === orgId) ?? session?.organizations?.[0];
   const canWriteFinance = activeMembership?.role !== 'viewer';
+
+  const activeBranchId = (session?.preferences as any)?.currentBranchId || '';
+  const { data: branchRows = [] } = useQuery({
+    queryKey: ['organization-branches', orgId],
+    queryFn: () => customFetch<any[]>(`/api/organizations/${orgId}/branches`, { responseType: 'json' }),
+    enabled: Boolean(orgId),
+  });
+  const availableBranches = useMemo(() => branchRows.map((branch: any) => ({
+    id: branch.id,
+    code: branch.code,
+    nameEn: branch.nameEnglish,
+    nameAr: branch.nameArabic,
+    isHQ: branch.isMain,
+    status: branch.status,
+  })), [branchRows]);
+
+  const activeBranch = useMemo(() => {
+    return availableBranches.find((b: any) => b.id === activeBranchId || b.code === activeBranchId) || availableBranches[0] || null;
+  }, [availableBranches, activeBranchId]);
+
+  const switchBranch = (branchId: string) => {
+    updatePrefs.mutate(
+      { data: { currentBranchId: branchId } as any },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetCurrentSessionQueryKey() });
+          window.dispatchEvent(new CustomEvent('branchChanged', { detail: { branchId } }));
+          setOverlay(null);
+          showAlert.toast(t('Active branch updated in DB!', 'تم تحديث الفرع النشط في قاعدة البيانات!'), 'info');
+        },
+        onError: (err: any) => {
+          showAlert.toast(err?.message || t('Failed to update active branch', 'فشل في تحديث الفرع النشط'), 'error');
+        }
+      }
+    );
+  };
   const { data: orgModules } = useListOrganizationModules(orgId, {
     query: { enabled: !!orgId, queryKey: getListOrganizationModulesQueryKey(orgId) }
   });
@@ -44,18 +81,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [session?.preferences?.sidebarCollapsed]);
 
   useEffect(() => {
-    if (session?.preferences?.language) {
-      const stored = localStorage.getItem('nexus_lang');
-      if (session.preferences.language !== stored && (session.preferences.language === 'ar' || session.preferences.language === 'en')) {
-        setGlobalLanguage(session.preferences.language as 'ar' | 'en');
-      }
+    if (session?.preferences?.language && (session.preferences.language === 'ar' || session.preferences.language === 'en')) {
+      setGlobalLanguage(session.preferences.language as 'ar' | 'en');
     }
   }, [session?.preferences?.language]);
 
   useEffect(() => {
     document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
-    const localTheme = localStorage.getItem('nexus_theme');
-    const appearance = localTheme || session?.preferences?.appearance || 'light';
+    // Theme driven by DB session preferences
+    const appearance = session?.preferences?.appearance || 'light';
 
     let isDark = false;
     if (appearance === 'dark') {
@@ -315,7 +349,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     {!collapsed && (
                       <>
                         <span className="flex-1 truncate" style={{ color: '#ffffff', fontWeight: active ? 700 : 500 }}>{item.label}</span>
-                        {item.soon && <span className="rounded bg-white/20 px-1.5 py-0.5 text-[9px] uppercase tracking-wide" style={{ color: '#ffffff' }}>{t('Soon', 'قريباً')}</span>}
+                        {(item as any).soon && <span className="rounded bg-white/20 px-1.5 py-0.5 text-[9px] uppercase tracking-wide" style={{ color: '#ffffff' }}>{t('Soon', 'قريباً')}</span>}
                       </>
                     )}
                   </Link>
@@ -425,6 +459,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </span>
                   <ChevronDown size={14} className="text-muted-foreground shrink-0" />
                 </button>
+
+                <span className="hidden md:inline-block text-muted-foreground/40">/</span>
+                <button
+                  type="button"
+                  onClick={() => setOverlay('branch')}
+                  className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all text-start"
+                  title={t('Switch active branch', 'تبديل الفرع النشط')}
+                >
+                  <Store size={14} className="shrink-0" />
+                  <span className="max-w-[150px] truncate text-xs font-bold">
+                    {activeBranch ? `${activeBranch.code} · ${isRtl ? (activeBranch.nameAr || activeBranch.nameEn) : activeBranch.nameEn}` : t('No branch selected', 'لم يتم اختيار فرع')}
+                  </span>
+                  <ChevronDown size={13} className="shrink-0 opacity-70" />
+                </button>
               </>
             )}
           </div>
@@ -526,6 +574,55 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <Plus size={16} />
                   <span>{t('Create New Organization', 'إنشاء منشأة جديدة')}</span>
                 </button>
+              </div>
+            )}
+
+            {overlay === 'branch' && (
+              <div className="p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-border pb-2">
+                  <div className="flex items-center gap-2">
+                    <Store className="w-4 h-4 text-emerald-600" />
+                    <span className="text-sm font-black text-foreground">{t('Switch Active Branch', 'تبديل الفرع النشط')}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground font-mono font-bold">{availableBranches.length} {t('branches', 'فروع')}</span>
+                </div>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {availableBranches.map((b: any) => {
+                    const isSelected = (b.id === activeBranchId || b.code === activeBranchId);
+                    return (
+                      <button
+                        key={b.id || b.code}
+                        onClick={() => switchBranch(b.id || b.code)}
+                        className={`w-full flex items-center justify-between p-3 rounded-xl border text-start transition-all ${
+                          isSelected
+                            ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 font-extrabold'
+                            : 'border-border/60 hover:bg-muted text-foreground'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-primary/10 text-primary font-mono text-xs font-bold">
+                            {b.code}
+                          </div>
+                          <div>
+                            <div className="text-xs font-extrabold">{isRtl ? b.nameAr : b.nameEn}</div>
+                            <div className="text-[10px] text-muted-foreground">{b.city || 'Saudi Arabia'} {b.isHQ ? '(Main HQ)' : ''}</div>
+                          </div>
+                        </div>
+                        {isSelected && <Check size={16} className="text-emerald-600 shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="pt-2 border-t border-border flex justify-end">
+                  <Link
+                    href="/settings/branches"
+                    onClick={() => setOverlay(null)}
+                    className="text-xs text-primary font-bold hover:underline flex items-center gap-1"
+                  >
+                    <Plus size={13} />
+                    <span>{t('Manage Branches', 'إدارة الفروع')}</span>
+                  </Link>
+                </div>
               </div>
             )}
 

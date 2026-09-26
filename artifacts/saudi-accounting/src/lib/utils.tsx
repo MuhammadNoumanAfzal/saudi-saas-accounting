@@ -7,28 +7,21 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 const LISTENERS = new Set<() => void>();
+let currentMemoryLang: 'ar' | 'en' = 'en';
 
 export function setGlobalLanguage(lang: 'ar' | 'en') {
-  localStorage.setItem('nexus_lang', lang);
+  currentMemoryLang = lang;
   document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   document.documentElement.lang = lang;
   LISTENERS.forEach(fn => fn());
 }
 
 export function useTranslation() {
-  const [localLang, setLocalLang] = useState<'ar' | 'en'>(() => {
-    const stored = localStorage.getItem('nexus_lang') as 'ar' | 'en';
-    if (!stored) {
-      localStorage.setItem('nexus_lang', 'en');
-      return 'en';
-    }
-    return stored === 'ar' ? 'ar' : 'en';
-  });
+  const [localLang, setLocalLang] = useState<'ar' | 'en'>(currentMemoryLang);
 
   useEffect(() => {
     const onChange = () => {
-      const stored = (localStorage.getItem('nexus_lang') as 'ar' | 'en') || 'en';
-      setLocalLang(stored);
+      setLocalLang(currentMemoryLang);
     };
     LISTENERS.add(onChange);
     return () => { LISTENERS.delete(onChange); };
