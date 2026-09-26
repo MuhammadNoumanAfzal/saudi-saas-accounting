@@ -75,7 +75,12 @@ router.get("/organizations/:organizationId/permissions", async (req, res) => {
 router.get("/organizations/:organizationId/branches", async (req, res) => {
   const actor = await getActor(req, req.params.organizationId);
   if ("error" in actor) return res.status(actor.error[0]).json({ error: actor.error[1] });
-  const rows = await db.select().from(organizationBranchesTable).where(eq(organizationBranchesTable.organizationId, req.params.organizationId)).orderBy(desc(organizationBranchesTable.isMain), organizationBranchesTable.code);
+  const role = actor.membership.role as Role;
+  const branchScope = actor.membership.branchId;
+  const whereClause = branchScope && !["owner", "admin"].includes(role)
+    ? and(eq(organizationBranchesTable.organizationId, req.params.organizationId), eq(organizationBranchesTable.id, branchScope), eq(organizationBranchesTable.status, "ACTIVE"))
+    : eq(organizationBranchesTable.organizationId, req.params.organizationId);
+  const rows = await db.select().from(organizationBranchesTable).where(whereClause).orderBy(desc(organizationBranchesTable.isMain), organizationBranchesTable.code);
   res.json(rows.map(serializeBranch));
 });
 
@@ -158,13 +163,16 @@ router.post("/organizations/:organizationId/members", async (req, res) => {
   }
   const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
   if (targetUser) {
-    const [member] = await db.insert(organizationMembershipsTable).values({ organizationId: req.params.organizationId, userId: targetUser.id, role, branchId, status: req.body.status || "ACTIVE" }).onConflictDoUpdate({ target: [organizationMembershipsTable.organizationId, organizationMembershipsTable.userId], set: { role, branchId, status: req.body.status || "ACTIVE" } }).returning();
-    await audit(req.params.organizationId, actor.user.id, "member.upserted", "organization_membership", member.id, null, { role, branchId, email });
-    return res.status(201).json(serializeMember({ ...member, displayName: targetUser.displayName, email: targetUser.email }));
+    const [existingMember] = await db
+      .select()
+      .from(organizationMembershipsTable)
+      .where(and(eq(organizationMembershipsTable.organizationId, req.params.organizationId), eq(organizationMembershipsTable.userId, targetUser.id)))
+      .limit(1);
+    if (existingMember) return res.status(409).json({ error: "User is already a member of this organization" });
   }
   const [invite] = await db.insert(organizationInvitationsTable).values({ organizationId: req.params.organizationId, email, displayName: displayName || null, role, branchId, status: "PENDING", invitedByUserId: actor.user.id }).onConflictDoUpdate({ target: [organizationInvitationsTable.organizationId, organizationInvitationsTable.email], set: { displayName: displayName || null, role, branchId, status: "PENDING", invitedByUserId: actor.user.id, updatedAt: new Date() } }).returning();
   await audit(req.params.organizationId, actor.user.id, "invitation.created", "organization_invitation", invite.id, null, invite);
-  res.status(202).json({ ...serializeInvite(invite), message: "Invitation saved. Configure Clerk invitations/webhooks to email and auto-accept invited users." });
+  res.status(202).json({ ...serializeInvite(invite), message: "Invitation saved. The organization owner must approve it after the invited email signs up." });
 });
 
 router.patch("/organizations/:organizationId/members/:memberId", async (req, res) => {
@@ -192,6 +200,21 @@ router.patch("/organizations/:organizationId/members/:memberId", async (req, res
   }
   const [invite] = await db.select().from(organizationInvitationsTable).where(and(eq(organizationInvitationsTable.id, req.params.memberId), eq(organizationInvitationsTable.organizationId, req.params.organizationId))).limit(1);
   if (!invite) return res.status(404).json({ error: "Member or invitation not found" });
+  if (req.body.status === "ACTIVE") {
+    if (actor.membership.role !== "owner") return res.status(403).json({ error: "Only the organization owner can approve invitations" });
+    const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.email, invite.email)).limit(1);
+    if (!targetUser) return res.status(409).json({ error: "The invited user must sign up with this email before approval" });
+    const approvalRole = role || invite.role;
+    const approvalBranchId = branchId === undefined ? invite.branchId : branchId;
+    const [member] = await db
+      .insert(organizationMembershipsTable)
+      .values({ organizationId: req.params.organizationId, userId: targetUser.id, role: approvalRole, branchId: approvalBranchId, status: "ACTIVE" })
+      .onConflictDoUpdate({ target: [organizationMembershipsTable.organizationId, organizationMembershipsTable.userId], set: { role: approvalRole, branchId: approvalBranchId, status: "ACTIVE" } })
+      .returning();
+    const [acceptedInvite] = await db.update(organizationInvitationsTable).set({ status: "ACCEPTED", updatedAt: new Date() }).where(eq(organizationInvitationsTable.id, invite.id)).returning();
+    await audit(req.params.organizationId, actor.user.id, "invitation.approved", "organization_invitation", invite.id, invite, acceptedInvite);
+    return res.json(serializeMember({ ...member, displayName: targetUser.displayName, email: targetUser.email }));
+  }
   const [updatedInvite] = await db.update(organizationInvitationsTable).set({ role: role || invite.role, branchId: branchId === undefined ? invite.branchId : branchId, displayName: req.body.displayName ?? invite.displayName, status: req.body.status === "REVOKED" ? "REVOKED" : invite.status, updatedAt: new Date() }).where(eq(organizationInvitationsTable.id, invite.id)).returning();
   await audit(req.params.organizationId, actor.user.id, "invitation.updated", "organization_invitation", invite.id, invite, updatedInvite);
   res.json(serializeInvite(updatedInvite));

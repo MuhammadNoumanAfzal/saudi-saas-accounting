@@ -94,31 +94,6 @@ router.get("/me", async (req, res): Promise<void> => {
       return;
     }
 
-    // Auto-accept pending organization invitations for this verified Clerk email.
-    const pendingInvitations = await db
-      .select()
-      .from(organizationInvitationsTable)
-      .where(and(eq(organizationInvitationsTable.email, user.email.toLowerCase()), eq(organizationInvitationsTable.status, "PENDING")));
-
-    for (const invite of pendingInvitations) {
-      await db
-        .insert(organizationMembershipsTable)
-        .values({
-          organizationId: invite.organizationId,
-          userId: user.id,
-          role: invite.role,
-          branchId: invite.branchId,
-          status: "ACTIVE",
-        })
-        .onConflictDoUpdate({
-          target: [organizationMembershipsTable.organizationId, organizationMembershipsTable.userId],
-          set: { role: invite.role, branchId: invite.branchId, status: "ACTIVE" },
-        });
-      await db
-        .update(organizationInvitationsTable)
-        .set({ status: "ACCEPTED", updatedAt: new Date() })
-        .where(eq(organizationInvitationsTable.id, invite.id));
-    }
 
     const memberships = await db
       .select({
@@ -130,7 +105,7 @@ router.get("/me", async (req, res): Promise<void> => {
         organizationsTable,
         eq(organizationsTable.id, organizationMembershipsTable.organizationId),
       )
-      .where(eq(organizationMembershipsTable.userId, user.id))
+      .where(and(eq(organizationMembershipsTable.userId, user.id), eq(organizationMembershipsTable.status, "ACTIVE")))
       .orderBy(desc(organizationsTable.createdAt));
 
     const preferences = await getOrCreatePreferences(user.id);
