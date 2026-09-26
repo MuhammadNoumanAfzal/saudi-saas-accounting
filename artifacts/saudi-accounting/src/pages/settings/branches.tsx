@@ -2,28 +2,44 @@ import { useState } from 'react';
 import { useTranslation, Button } from '@/lib/utils';
 import { showAlert } from '@/lib/alerts';
 import { useGetCurrentSession } from '@workspace/api-client-react';
-import { 
-  Store, 
-  Building2, 
-  MapPin, 
-  Phone, 
-  ShieldCheck, 
-  Sparkles, 
-  Plus, 
-  RefreshCw, 
-  Download, 
-  CheckCircle2, 
-  Search 
+import {
+  Store,
+  Building2,
+  MapPin,
+  Phone,
+  ShieldCheck,
+  Sparkles,
+  Plus,
+  RefreshCw,
+  Download,
+  CheckCircle2,
+  Search,
+  X
 } from 'lucide-react';
 import { BranchKpiCards } from '@/components/settings/branch-kpi-cards';
+
+interface BranchItem {
+  id: string;
+  code: string;
+  nameEn: string;
+  nameAr: string;
+  city: string;
+  district: string;
+  phone: string;
+  isHQ: boolean;
+  status: 'ACTIVE' | 'INACTIVE';
+}
 
 export function BranchesSettings() {
   const { t } = useTranslation();
   const { data: session } = useGetCurrentSession();
   const org = session?.organizations?.find(o => o.organization.id === session?.preferences?.currentOrganizationId)?.organization || session?.organizations?.[0]?.organization;
-  const [searchTerm, setSearchTerm] = useState('');
 
-  const branches = [
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Dynamic state for branches
+  const [branchesList, setBranchesList] = useState<BranchItem[]>(() => [
     {
       id: 'br_hq',
       code: 'HQ-001',
@@ -35,9 +51,17 @@ export function BranchesSettings() {
       isHQ: true,
       status: 'ACTIVE'
     }
-  ];
+  ]);
 
-  const filteredBranches = branches.filter(b => {
+  // Modal Form State - initialized empty for clean user entry
+  const [newCode, setNewCode] = useState('');
+  const [newNameEn, setNewNameEn] = useState('');
+  const [newNameAr, setNewNameAr] = useState('');
+  const [newCity, setNewCity] = useState('');
+  const [newDistrict, setNewDistrict] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+
+  const filteredBranches = branchesList.filter(b => {
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     return b.nameEn.toLowerCase().includes(term) || b.nameAr.toLowerCase().includes(term) || b.city.toLowerCase().includes(term) || b.code.toLowerCase().includes(term);
@@ -66,11 +90,36 @@ export function BranchesSettings() {
     showAlert.toast(t('Branches list exported to CSV!', 'تم تصدير قائمة الفروع إلى CSV!'), 'success');
   };
 
-  const handleAddBranch = () => {
-    showAlert.info(
-      t('Multi-Branch Expansion', 'إضافة فرع جديد'),
-      t('Your workspace operates HQ primary branch. Sub-branch inventory sync will be enabled in the upcoming enterprise release.', 'تعمل مساحة عملك حالياً كفرع رئيسي معتمد. تتيح التحديثات القادمة إضافة فروع إضافية ومزامنة المخزون.')
-    );
+  const handleSaveBranch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNameEn.trim()) {
+      showAlert.error(t('Branch name required', 'اسم الفرع مطلوب'), t('Please enter English branch name.', 'يرجى إدخال اسم الفرع بالإنجليزي.'));
+      return;
+    }
+
+    const created: BranchItem = {
+      id: `br_${Date.now()}`,
+      code: newCode.trim() || `BR-00${branchesList.length + 1}`,
+      nameEn: newNameEn.trim(),
+      nameAr: newNameAr.trim() || newNameEn.trim(),
+      city: newCity.trim() || 'Jeddah',
+      district: newDistrict.trim() || 'Commercial Area',
+      phone: newPhone.trim() || '+966 12 000 0000',
+      isHQ: false,
+      status: 'ACTIVE'
+    };
+
+    setBranchesList(prev => [...prev, created]);
+    setIsModalOpen(false);
+    showAlert.toast(t(`Branch "${created.nameEn}" created successfully!`, `تم إضافة الفرع "${created.nameAr}" بنجاح!`), 'success');
+
+    // Reset Form
+    setNewCode('');
+    setNewNameEn('');
+    setNewNameAr('');
+    setNewCity('');
+    setNewDistrict('');
+    setNewPhone('');
   };
 
   return (
@@ -120,9 +169,9 @@ export function BranchesSettings() {
             <span className="text-xs">CSV</span>
           </Button>
 
-          <Button 
+          <Button
             type="button"
-            onClick={handleAddBranch} 
+            onClick={() => setIsModalOpen(true)}
             className="h-9 px-3.5 rounded-xl btn-primary shadow-xs hover:shadow-md hover:scale-[1.02] transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 flex items-center gap-1.5"
           >
             <Plus className="w-4 h-4" />
@@ -133,8 +182,8 @@ export function BranchesSettings() {
 
       {/* KPI Overview Cards Component */}
       <BranchKpiCards
-        totalBranches={branches.length}
-        activeBranches={branches.length}
+        totalBranches={branchesList.length}
+        activeBranches={branchesList.length}
         hqCity={org?.city || 'Riyadh HQ'}
       />
 
@@ -263,6 +312,147 @@ export function BranchesSettings() {
           ))}
         </div>
       </div>
+
+      {/* Add New Branch Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50  flex items-center justify-center p-4 fade-up">
+          <div className="bg-card border border-border/80 rounded-3xl max-w-xl w-full overflow-hidden shadow-2xl space-y-0 relative">
+            {/* Modal Header */}
+            <div className="p-6 bg-muted/30 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-xs border border-primary/20">
+                  <Store size={22} />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-lg text-foreground tracking-tight">
+                    {t('Register New Commercial Branch', 'تسجيل فرع تجاري جديد')}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {t('Expand your company footprint with ZATCA compliant branch codes.', 'إضافة فرع تجاري جديد متوافق مع هيئة الزكاة والضريبة.')}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="w-9 h-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center transition-colors cursor-pointer shrink-0"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleSaveBranch} className="p-6 space-y-5">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-extrabold text-foreground flex items-center justify-between">
+                    <span>{t('Branch Code', 'كود الفرع')}</span>
+                    <span className="text-[10px] text-destructive">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    className="field h-10 rounded-xl bg-background border border-border font-mono text-xs font-bold focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    value={newCode}
+                    onChange={e => setNewCode(e.target.value)}
+                    placeholder="e.g. JED-002"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-extrabold text-foreground flex items-center justify-between">
+                    <span>{t('City / Region', 'المدينة / المنطقة')}</span>
+                    <span className="text-[10px] text-destructive">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    className="field h-10 rounded-xl bg-background border border-border text-xs font-bold focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    value={newCity}
+                    onChange={e => setNewCity(e.target.value)}
+                    placeholder="e.g. Jeddah (جدة)"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-extrabold text-foreground flex items-center justify-between">
+                    <span>{t('Branch Name (English)', 'اسم الفرع (إنجليزي)')}</span>
+                    <span className="text-[10px] text-destructive">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    className="field h-10 rounded-xl bg-background border border-border text-xs font-bold focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    value={newNameEn}
+                    onChange={e => setNewNameEn(e.target.value)}
+                    placeholder="e.g. Jeddah Commercial Hub Branch"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-extrabold text-foreground">
+                    {t('Branch Name (Arabic)', 'اسم الفرع (عربي)')}
+                  </label>
+                  <input
+                    type="text"
+                    className="field h-10 rounded-xl bg-background border border-border text-xs font-bold arabic focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-right"
+                    dir="rtl"
+                    value={newNameAr}
+                    onChange={e => setNewNameAr(e.target.value)}
+                    placeholder="مثال: فرع جدة التجاري"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-extrabold text-foreground">
+                    {t('District / Neighborhood', 'الحي / المنطقة')}
+                  </label>
+                  <input
+                    type="text"
+                    className="field h-10 rounded-xl bg-background border border-border text-xs font-bold focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    value={newDistrict}
+                    onChange={e => setNewDistrict(e.target.value)}
+                    placeholder="e.g. Al-Corniche District"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-extrabold text-foreground">
+                    {t('Contact Phone', 'هاتف الفرع')}
+                  </label>
+                  <input
+                    type="tel"
+                    className="field h-10 rounded-xl bg-background border border-border font-mono text-xs font-bold focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    value={newPhone}
+                    onChange={e => setNewPhone(e.target.value)}
+                    placeholder="e.g. +966 12 600 7744"
+                  />
+                </div>
+              </div>
+
+              {/* Modal Footer Actions */}
+              <div className="pt-4 border-t border-border flex items-center justify-end gap-2.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsModalOpen(false)}
+                  className="h-10 px-4 rounded-xl border border-border text-xs font-extrabold cursor-pointer hover:bg-muted"
+                >
+                  {t('Cancel', 'إلغاء')}
+                </Button>
+                <Button
+                  type="submit"
+                  className="h-10 px-5 rounded-xl btn-primary text-xs font-extrabold cursor-pointer shadow-md hover:shadow-lg hover:scale-[1.02] transition-all flex items-center gap-1.5"
+                >
+                  <CheckCircle2 size={16} />
+                  <span>{t('Save Branch', 'إضافة الفرع')}</span>
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
