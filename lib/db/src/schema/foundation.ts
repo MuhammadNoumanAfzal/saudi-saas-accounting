@@ -97,6 +97,7 @@ export const organizationsTable = pgTable(
     onboardingCurrentStep: integer("onboarding_current_step")
       .notNull()
       .default(1),
+    branches: jsonb("branches"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

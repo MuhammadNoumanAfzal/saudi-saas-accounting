@@ -1,20 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation, Button } from '@/lib/utils';
 import { showAlert } from '@/lib/alerts';
-import { useGetCurrentSession } from '@workspace/api-client-react';
-import {
-  Store,
-  Building2,
-  MapPin,
-  Phone,
-  ShieldCheck,
-  Sparkles,
-  Plus,
-  RefreshCw,
-  Download,
-  CheckCircle2,
+import { useGetCurrentSession, useUpdateOrganization } from '@workspace/api-client-react';
+import { 
+  Store, 
+  Building2, 
+  MapPin, 
+  Phone, 
+  ShieldCheck, 
+  Sparkles, 
+  Plus, 
+  RefreshCw, 
+  Download, 
+  CheckCircle2, 
   Search,
-  X
+  X,
+  Eye,
+  Edit3,
+  Trash2
 } from 'lucide-react';
 import { BranchKpiCards } from '@/components/settings/branch-kpi-cards';
 
@@ -30,30 +33,79 @@ interface BranchItem {
   status: 'ACTIVE' | 'INACTIVE';
 }
 
+const LOCAL_STORAGE_KEY = 'saudi_erp_workspace_branches';
+
 export function BranchesSettings() {
   const { t } = useTranslation();
   const { data: session } = useGetCurrentSession();
+  const updateOrg = useUpdateOrganization();
   const org = session?.organizations?.find(o => o.organization.id === session?.preferences?.currentOrganizationId)?.organization || session?.organizations?.[0]?.organization;
-
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingBranch, setEditingBranch] = useState<BranchItem | null>(null);
+  const [viewingBranch, setViewingBranch] = useState<BranchItem | null>(null);
 
-  // Dynamic state for branches
-  const [branchesList, setBranchesList] = useState<BranchItem[]>(() => [
-    {
-      id: 'br_hq',
-      code: 'HQ-001',
-      nameEn: org?.tradingNameEnglish || org?.legalNameEnglish || 'Main Headquarters Branch',
-      nameAr: org?.tradingNameArabic || org?.legalNameArabic || 'الفرع الرئيسي للمنشأة',
-      city: org?.city || 'Riyadh (الرياض)',
-      district: org?.district || 'Olaya District (حي العليا)',
-      phone: org?.phone || '+966 11 400 9988',
-      isHQ: true,
-      status: 'ACTIVE'
+  // Initial HQ Branch definition
+  const defaultHqBranch: BranchItem = {
+    id: 'br_hq',
+    code: 'HQ-001',
+    nameEn: org?.tradingNameEnglish || org?.legalNameEnglish || 'Main Headquarters Branch',
+    nameAr: org?.tradingNameArabic || org?.legalNameArabic || 'الفرع الرئيسي للمنشأة',
+    city: org?.city || 'Riyadh (الرياض)',
+    district: org?.district || 'Olaya District (حي العليا)',
+    phone: org?.phone || '+966 11 400 9988',
+    isHQ: true,
+    status: 'ACTIVE'
+  };
+
+  // Dynamic state for branches initialized from Database org.branches (with localStorage fallback)
+  const [branchesList, setBranchesList] = useState<BranchItem[]>(() => {
+    if (org && Array.isArray((org as any).branches) && (org as any).branches.length > 0) {
+      return (org as any).branches;
     }
-  ]);
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        } catch (e) {
+          console.error('Failed to parse saved branches:', e);
+        }
+      }
+    }
+    return [defaultHqBranch];
+  });
 
-  // Modal Form State - initialized empty for clean user entry
+  // Sync branches list to Database (PostgreSQL) and localStorage on any change
+  const saveBranchesToDbAndStorage = (updatedList: BranchItem[]) => {
+    setBranchesList(updatedList);
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedList));
+    } catch (err) {
+      console.error('Failed to persist branches to localStorage:', err);
+    }
+    if (org?.id) {
+      updateOrg.mutate({
+        organizationId: org.id,
+        data: {
+          legalNameEnglish: org.legalNameEnglish || 'Organization',
+          branches: updatedList as any,
+        }
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (org && Array.isArray((org as any).branches) && (org as any).branches.length > 0) {
+      setBranchesList((org as any).branches);
+    }
+  }, [org]);
+
+  // Modal Form State
   const [newCode, setNewCode] = useState('');
   const [newNameEn, setNewNameEn] = useState('');
   const [newNameAr, setNewNameAr] = useState('');
@@ -90,6 +142,42 @@ export function BranchesSettings() {
     showAlert.toast(t('Branches list exported to CSV!', 'تم تصدير قائمة الفروع إلى CSV!'), 'success');
   };
 
+  const handleOpenAddModal = () => {
+    setEditingBranch(null);
+    setNewCode('');
+    setNewNameEn('');
+    setNewNameAr('');
+    setNewCity('');
+    setNewDistrict('');
+    setNewPhone('');
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (branch: BranchItem) => {
+    setEditingBranch(branch);
+    setNewCode(branch.code);
+    setNewNameEn(branch.nameEn);
+    setNewNameAr(branch.nameAr);
+    setNewCity(branch.city);
+    setNewDistrict(branch.district);
+    setNewPhone(branch.phone);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteBranch = (branch: BranchItem) => {
+    if (branch.isHQ) {
+      showAlert.error(
+        t('Cannot Delete HQ Branch', 'لا يمكن حذف الفرع الرئيسي'),
+        t('The Main Headquarters branch is protected and cannot be deleted.', 'الفرع الرئيسي محمي ولا يمكن حذفه.')
+      );
+      return;
+    }
+
+    const newList = branchesList.filter(b => b.id !== branch.id);
+    saveBranchesToDbAndStorage(newList);
+    showAlert.toast(t(`Branch "${branch.nameEn}" deleted.`, `تم حذف الفرع "${branch.nameAr}".`), 'info');
+  };
+
   const handleSaveBranch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newNameEn.trim()) {
@@ -97,29 +185,43 @@ export function BranchesSettings() {
       return;
     }
 
-    const created: BranchItem = {
-      id: `br_${Date.now()}`,
-      code: newCode.trim() || `BR-00${branchesList.length + 1}`,
-      nameEn: newNameEn.trim(),
-      nameAr: newNameAr.trim() || newNameEn.trim(),
-      city: newCity.trim() || 'Jeddah',
-      district: newDistrict.trim() || 'Commercial Area',
-      phone: newPhone.trim() || '+966 12 000 0000',
-      isHQ: false,
-      status: 'ACTIVE'
-    };
+    let newList: BranchItem[] = [];
+    if (editingBranch) {
+      newList = branchesList.map(b => {
+        if (b.id === editingBranch.id) {
+          return {
+            ...b,
+            code: newCode.trim() || b.code,
+            nameEn: newNameEn.trim(),
+            nameAr: newNameAr.trim() || newNameEn.trim(),
+            city: newCity.trim() || b.city,
+            district: newDistrict.trim() || b.district,
+            phone: newPhone.trim() || b.phone,
+          };
+        }
+        return b;
+      });
+      showAlert.toast(t(`Branch "${newNameEn}" updated successfully!`, `تم تحديث الفرع "${newNameAr || newNameEn}" بنجاح!`), 'success');
+    } else {
+      const created: BranchItem = {
+        id: `br_${Date.now()}`,
+        code: newCode.trim() || `BR-00${branchesList.length + 1}`,
+        nameEn: newNameEn.trim(),
+        nameAr: newNameAr.trim() || newNameEn.trim(),
+        city: newCity.trim() || 'Jeddah',
+        district: newDistrict.trim() || 'Commercial Area',
+        phone: newPhone.trim() || '+966 12 000 0000',
+        isHQ: false,
+        status: 'ACTIVE'
+      };
 
-    setBranchesList(prev => [...prev, created]);
+      newList = [...branchesList, created];
+      showAlert.toast(t(`Branch "${created.nameEn}" created successfully!`, `تم إضافة الفرع "${created.nameAr}" بنجاح!`), 'success');
+    }
+
+    saveBranchesToDbAndStorage(newList);
     setIsModalOpen(false);
-    showAlert.toast(t(`Branch "${created.nameEn}" created successfully!`, `تم إضافة الفرع "${created.nameAr}" بنجاح!`), 'success');
-
-    // Reset Form
-    setNewCode('');
-    setNewNameEn('');
-    setNewNameAr('');
-    setNewCity('');
-    setNewDistrict('');
-    setNewPhone('');
+    setEditingBranch(null);
   };
 
   return (
@@ -169,9 +271,9 @@ export function BranchesSettings() {
             <span className="text-xs">CSV</span>
           </Button>
 
-          <Button
+          <Button 
             type="button"
-            onClick={() => setIsModalOpen(true)}
+            onClick={handleOpenAddModal} 
             className="h-9 px-3.5 rounded-xl btn-primary shadow-xs hover:shadow-md hover:scale-[1.02] transition-all duration-200 text-xs font-bold cursor-pointer shrink-0 flex items-center gap-1.5"
           >
             <Plus className="w-4 h-4" />
@@ -213,61 +315,92 @@ export function BranchesSettings() {
           </span>
         </div>
 
-        {/* Desktop Table View */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-xs text-left rtl:text-right border-collapse">
+        {/* Desktop Table View - Fits nicely without horizontal scrollbar */}
+        <div className="hidden md:block w-full">
+          <table className="w-full text-xs text-left rtl:text-right border-collapse table-auto">
             <thead className="bg-muted/40 text-[11px] uppercase text-muted-foreground border-b border-border font-bold tracking-wider">
               <tr>
-                <th className="px-5 py-3.5 whitespace-nowrap">{t('Branch Code', 'كود الفرع')}</th>
-                <th className="px-5 py-3.5 whitespace-nowrap">{t('Branch Name', 'اسم الفرع')}</th>
-                <th className="px-5 py-3.5 whitespace-nowrap">{t('City & Region', 'المدينة والمنطقة')}</th>
-                <th className="px-5 py-3.5 whitespace-nowrap">{t('Contact Phone', 'هاتف التواصل')}</th>
-                <th className="px-5 py-3.5 text-right rtl:text-left whitespace-nowrap">{t('Status & HQ Flag', 'الحالة والنوع')}</th>
+                <th className="px-3.5 py-3">{t('Code', 'الكود')}</th>
+                <th className="px-3.5 py-3">{t('Branch Name', 'اسم الفرع')}</th>
+                <th className="px-3.5 py-3">{t('City & District', 'المدينة والحي')}</th>
+                <th className="px-3.5 py-3">{t('Contact Phone', 'الهاتف')}</th>
+                <th className="px-3.5 py-3">{t('Status', 'الحالة')}</th>
+                <th className="px-3.5 py-3 text-right rtl:text-left">{t('Actions', 'الإجراءات')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border font-medium">
               {filteredBranches.map((branch) => (
                 <tr key={branch.id} className="hover:bg-primary/5 transition-colors group">
-                  <td className="px-5 py-4 whitespace-nowrap font-mono font-extrabold text-primary text-xs">
-                    <span className="px-2.5 py-1 rounded-lg bg-muted border border-border">
+                  <td className="px-3.5 py-3 font-mono font-extrabold text-primary text-xs whitespace-nowrap">
+                    <span className="px-2 py-0.5 rounded-lg bg-muted border border-border">
                       {branch.code}
                     </span>
                   </td>
-                  <td className="px-5 py-4 whitespace-nowrap font-extrabold text-foreground text-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                        <Store size={18} />
+                  <td className="px-3.5 py-3 font-extrabold text-foreground text-xs">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <Store size={16} />
                       </div>
-                      <div>
-                        <div className="font-extrabold text-foreground text-sm flex items-center gap-1.5">
+                      <div className="min-w-0">
+                        <div className="font-extrabold text-foreground text-xs flex items-center gap-1.5 truncate">
                           <span>{branch.nameEn}</span>
                           {branch.isHQ && (
-                            <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold px-1.5 py-0.5 rounded border border-emerald-500/20">
+                            <span className="text-[9px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold px-1.5 py-0.2 rounded border border-emerald-500/20 shrink-0">
                               {t('Main HQ', 'الفرع الرئيسي')}
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-muted-foreground">{branch.nameAr}</div>
+                        <div className="text-[10px] text-muted-foreground truncate">{branch.nameAr}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-4 whitespace-nowrap font-semibold text-foreground text-xs">
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-primary" />
-                      <span>{branch.city} — {branch.district}</span>
+                  <td className="px-3.5 py-3 font-semibold text-foreground text-xs">
+                    <div className="flex items-center gap-1 text-xs">
+                      <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span className="truncate">{branch.city} — {branch.district}</span>
                     </div>
                   </td>
-                  <td className="px-5 py-4 whitespace-nowrap font-mono text-muted-foreground text-xs">
-                    <div className="flex items-center gap-1.5">
-                      <Phone className="w-3.5 h-3.5 text-muted-foreground" />
+                  <td className="px-3.5 py-3 font-mono text-muted-foreground text-xs whitespace-nowrap">
+                    <div className="flex items-center gap-1">
+                      <Phone className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                       <span>{branch.phone}</span>
                     </div>
                   </td>
-                  <td className="px-5 py-4 text-right rtl:text-left whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
-                      <CheckCircle2 size={14} />
-                      {t('Active Branch', 'نشط ومستقر')}
+                  <td className="px-3.5 py-3 whitespace-nowrap">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
+                      <CheckCircle2 size={12} />
+                      {t('Active', 'نشط')}
                     </span>
+                  </td>
+                  <td className="px-3.5 py-3 text-right rtl:text-left whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setViewingBranch(branch)}
+                        title={t('View Details', 'عرض التفاصيل')}
+                        className="w-7 h-7 rounded-lg border border-border bg-card hover:bg-primary/10 hover:text-primary text-muted-foreground flex items-center justify-center transition-colors cursor-pointer"
+                      >
+                        <Eye size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditModal(branch)}
+                        title={t('Edit Branch', 'تعديل الفرع')}
+                        className="w-7 h-7 rounded-lg border border-border bg-card hover:bg-amber-500/10 hover:text-amber-600 text-muted-foreground flex items-center justify-center transition-colors cursor-pointer"
+                      >
+                        <Edit3 size={14} />
+                      </button>
+                      {!branch.isHQ && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteBranch(branch)}
+                          title={t('Delete Branch', 'حذف الفرع')}
+                          className="w-7 h-7 rounded-lg border border-border bg-card hover:bg-destructive/10 hover:text-destructive text-muted-foreground flex items-center justify-center transition-colors cursor-pointer"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -293,16 +426,31 @@ export function BranchesSettings() {
                     </span>
                   </div>
                 </div>
-                {branch.isHQ ? (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-600 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 shrink-0">
-                    <Building2 size={12} />
-                    {t('Main HQ', 'الفرع الرئيسي')}
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-muted-foreground bg-muted px-2.5 py-1 rounded-full border border-border shrink-0">
-                    {t('Sub-branch', 'فرع تفرعي')}
-                  </span>
-                )}
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setViewingBranch(branch)}
+                    className="p-1.5 rounded-lg border border-border bg-card text-muted-foreground hover:text-primary cursor-pointer"
+                  >
+                    <Eye size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditModal(branch)}
+                    className="p-1.5 rounded-lg border border-border bg-card text-muted-foreground hover:text-amber-600 cursor-pointer"
+                  >
+                    <Edit3 size={14} />
+                  </button>
+                  {!branch.isHQ && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteBranch(branch)}
+                      className="p-1.5 rounded-lg border border-border bg-card text-muted-foreground hover:text-destructive cursor-pointer"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground">
                 <span>{branch.city}</span>
@@ -313,9 +461,9 @@ export function BranchesSettings() {
         </div>
       </div>
 
-      {/* Add New Branch Modal */}
+      {/* Add / Edit Branch Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50  flex items-center justify-center p-4 fade-up">
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 fade-up">
           <div className="bg-card border border-border/80 rounded-3xl max-w-xl w-full overflow-hidden shadow-2xl space-y-0 relative">
             {/* Modal Header */}
             <div className="p-6 bg-muted/30 border-b border-border flex items-center justify-between">
@@ -325,10 +473,12 @@ export function BranchesSettings() {
                 </div>
                 <div>
                   <h3 className="font-extrabold text-lg text-foreground tracking-tight">
-                    {t('Register New Commercial Branch', 'تسجيل فرع تجاري جديد')}
+                    {editingBranch
+                      ? t('Edit Commercial Branch', 'تعديل بيانات الفرع التجاري')
+                      : t('Register New Commercial Branch', 'تسجيل فرع تجاري جديد')}
                   </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {t('Expand your company footprint with ZATCA compliant branch codes.', 'إضافة فرع تجاري جديد متوافق مع هيئة الزكاة والضريبة.')}
+                    {t('Expand your company footprint with ZATCA compliant branch codes.', 'إضافة أو تعديل فرع تجاري متوافق مع هيئة الزكاة والضريبة.')}
                   </p>
                 </div>
               </div>
@@ -446,10 +596,74 @@ export function BranchesSettings() {
                   className="h-10 px-5 rounded-xl btn-primary text-xs font-extrabold cursor-pointer shadow-md hover:shadow-lg hover:scale-[1.02] transition-all flex items-center gap-1.5"
                 >
                   <CheckCircle2 size={16} />
-                  <span>{t('Save Branch', 'إضافة الفرع')}</span>
+                  <span>{editingBranch ? t('Update Branch', 'حفظ التعديلات') : t('Save Branch', 'إضافة الفرع')}</span>
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Branch Details Modal */}
+      {viewingBranch && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 fade-up">
+          <div className="bg-card border border-border rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 relative">
+            <button
+              onClick={() => setViewingBranch(null)}
+              className="absolute top-4 right-4 rtl:left-4 rtl:right-auto text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex items-center gap-3 border-b border-border pb-4">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <Store size={20} />
+              </div>
+              <div>
+                <h3 className="font-bold text-base text-foreground">
+                  {viewingBranch.nameEn}
+                </h3>
+                <p className="text-xs text-muted-foreground font-mono">
+                  {viewingBranch.code} • {viewingBranch.nameAr}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="flex justify-between py-1 border-b border-border/50">
+                <span className="text-muted-foreground">{t('Branch Type', 'نوع الفرع')}</span>
+                <span className="font-bold text-foreground">
+                  {viewingBranch.isHQ ? t('Main Headquarters', 'الفرع الرئيسي') : t('Sub-branch', 'فرع تفرعي')}
+                </span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-border/50">
+                <span className="text-muted-foreground">{t('City', 'المدينة')}</span>
+                <span className="font-bold text-foreground">{viewingBranch.city}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-border/50">
+                <span className="text-muted-foreground">{t('District', 'الحي')}</span>
+                <span className="font-bold text-foreground">{viewingBranch.district}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-border/50">
+                <span className="text-muted-foreground">{t('Phone', 'الهاتف')}</span>
+                <span className="font-bold font-mono text-foreground">{viewingBranch.phone}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-muted-foreground">{t('Status', 'الحالة')}</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">{t('Active & ZATCA Compliant', 'نشط ومستقر')}</span>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setViewingBranch(null)}
+                className="rounded-xl text-xs font-bold cursor-pointer"
+              >
+                {t('Close', 'إغلاق')}
+              </Button>
+            </div>
           </div>
         </div>
       )}

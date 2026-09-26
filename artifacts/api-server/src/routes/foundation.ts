@@ -166,7 +166,7 @@ router.patch("/me/preferences", async (req, res): Promise<void> => {
   await getOrCreatePreferences(user.id);
   const [updated] = await db
     .update(userPreferencesTable)
-    .set({ ...parsed.data, updatedAt: new Date() })
+    .set({ ...parsed.data, ...(Array.isArray(req.body?.branches) ? { branches: req.body.branches } : {}), updatedAt: new Date() })
     .where(eq(userPreferencesTable.userId, user.id))
     .returning();
   if (!updated) {
