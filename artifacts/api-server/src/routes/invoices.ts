@@ -19,6 +19,7 @@ import { requireModule } from "../middlewares/moduleEntitlement";
 import { writeAuditLog } from "../lib/audit";
 import { generateZatcaTlvQrCode } from "../lib/zatca";
 import { getPostedAmount, postJournalEntry } from "../lib/accountingPost";
+import { getActiveBranchId } from "../lib/branchScope";
 
 const router: IRouter = Router();
 router.use(requireAuthentication);
@@ -27,6 +28,11 @@ router.use("/organizations/:organizationId", requireModule("finance"));
 const getOrgId = (req: any) => String(req.params.organizationId);
 const getInvoiceId = (req: any) => String(req.params.invoiceId);
 const getQuotationId = (req: any) => String(req.params.quotationId);
+const invoiceWhere = (organizationId: string, invoiceId: string, branchId?: string | null) => [
+  eq(invoicesTable.organizationId, organizationId),
+  eq(invoicesTable.id, invoiceId),
+  ...(branchId ? [eq(invoicesTable.branchId, branchId)] : []),
+];
 
 // Sequence generator: INV-00001
 async function getNextInvoiceNumber(organizationId: string): Promise<string> {
@@ -102,16 +108,11 @@ function calculateInvoiceTotals(items: Array<any>) {
   };
 }
 
-async function getFullInvoice(organizationId: string, invoiceId: string) {
+async function getFullInvoice(organizationId: string, invoiceId: string, branchId?: string | null) {
   const found = await db
     .select()
     .from(invoicesTable)
-    .where(
-      and(
-        eq(invoicesTable.organizationId, organizationId),
-        eq(invoicesTable.id, invoiceId)
-      )
-    )
+    .where(and(...invoiceWhere(organizationId, invoiceId, branchId)))
     .limit(1);
 
   if (found.length === 0) return null;
@@ -139,7 +140,9 @@ router.get("/organizations/:organizationId/invoices", async (req, res): Promise<
   const page = Math.max(1, Number(req.query.page) || 1);
   const pageSize = Math.min(100, Math.max(1, Number(req.query.pageSize) || 25));
 
+  const branchId = await getActiveBranchId(req, res, organizationId);
   const conditions = [eq(invoicesTable.organizationId, organizationId)];
+  if (branchId) conditions.push(eq(invoicesTable.branchId, branchId));
 
   if (status) conditions.push(eq(invoicesTable.status, status));
   if (invoiceType) conditions.push(eq(invoicesTable.invoiceType, invoiceType));
@@ -189,6 +192,7 @@ router.post("/organizations/:organizationId/invoices", async (req, res): Promise
   }
 
   const data = parsed.data;
+  const branchId = await getActiveBranchId(req, res, organizationId);
 
   // Validate customer
   const customerRes = await db
@@ -197,6 +201,7 @@ router.post("/organizations/:organizationId/invoices", async (req, res): Promise
     .where(
       and(
         eq(businessPartiesTable.organizationId, organizationId),
+        ...(branchId ? [eq(businessPartiesTable.branchId, branchId)] : []),
         eq(businessPartiesTable.id, data.customerId)
       )
     )
@@ -228,6 +233,7 @@ router.post("/organizations/:organizationId/invoices", async (req, res): Promise
     .insert(invoicesTable)
     .values({
       organizationId,
+      branchId,
       invoiceNumber,
       invoiceType: data.invoiceType || "STANDARD",
       customerId: data.customerId,
@@ -264,7 +270,7 @@ router.post("/organizations/:organizationId/invoices", async (req, res): Promise
     req,
   });
 
-  const result = await getFullInvoice(organizationId, created.id);
+  const result = await getFullInvoice(organizationId, created.id, branchId);
   res.status(201).json(result);
 });
 
@@ -273,7 +279,8 @@ router.get("/organizations/:organizationId/invoices/:invoiceId", async (req, res
   const organizationId = getOrgId(req);
   const invoiceId = getInvoiceId(req);
 
-  const invoice = await getFullInvoice(organizationId, invoiceId);
+  const branchId = await getActiveBranchId(req, res, organizationId);
+  const invoice = await getFullInvoice(organizationId, invoiceId, branchId);
   if (!invoice) {
     res.status(404).json({ error: "Invoice not found" });
     return;
@@ -287,7 +294,8 @@ router.patch("/organizations/:organizationId/invoices/:invoiceId", async (req, r
   const organizationId = getOrgId(req);
   const invoiceId = getInvoiceId(req);
 
-  const existing = await getFullInvoice(organizationId, invoiceId);
+  const branchId = await getActiveBranchId(req, res, organizationId);
+  const existing = await getFullInvoice(organizationId, invoiceId, branchId);
   if (!existing) {
     res.status(404).json({ error: "Invoice not found" });
     return;
@@ -333,12 +341,7 @@ router.patch("/organizations/:organizationId/invoices/:invoiceId", async (req, r
   await db
     .update(invoicesTable)
     .set(updateData)
-    .where(
-      and(
-        eq(invoicesTable.organizationId, organizationId),
-        eq(invoicesTable.id, invoiceId)
-      )
-    );
+    .where(and(...invoiceWhere(organizationId, invoiceId, branchId)));
 
   await writeAuditLog({
     organizationId,
@@ -351,7 +354,7 @@ router.patch("/organizations/:organizationId/invoices/:invoiceId", async (req, r
     req,
   });
 
-  const updated = await getFullInvoice(organizationId, invoiceId);
+  const updated = await getFullInvoice(organizationId, invoiceId, branchId);
   res.json(updated);
 });
 
@@ -360,7 +363,8 @@ router.post("/organizations/:organizationId/invoices/:invoiceId/status", async (
   const organizationId = getOrgId(req);
   const invoiceId = getInvoiceId(req);
 
-  const existing = await getFullInvoice(organizationId, invoiceId);
+  const branchId = await getActiveBranchId(req, res, organizationId);
+  const existing = await getFullInvoice(organizationId, invoiceId, branchId);
   if (!existing) {
     res.status(404).json({ error: "Invoice not found" });
     return;
@@ -377,6 +381,7 @@ router.post("/organizations/:organizationId/invoices/:invoiceId/status", async (
   if (status === "ISSUED" || status === "PAID") {
     await postJournalEntry({
       organizationId,
+      branchId,
       sourceDocumentType: "INVOICE",
       sourceDocumentId: invoiceId,
       referenceNumber: existing.invoiceNumber,
@@ -397,6 +402,7 @@ router.post("/organizations/:organizationId/invoices/:invoiceId/status", async (
     if (remaining > 0) {
       await postJournalEntry({
         organizationId,
+        branchId,
         sourceDocumentType: "CUSTOMER_PAYMENT",
         sourceDocumentId: invoiceId,
         referenceNumber: existing.invoiceNumber,
@@ -413,12 +419,7 @@ router.post("/organizations/:organizationId/invoices/:invoiceId/status", async (
   await db
     .update(invoicesTable)
     .set({ status, updatedAt: new Date() })
-    .where(
-      and(
-        eq(invoicesTable.organizationId, organizationId),
-        eq(invoicesTable.id, invoiceId)
-      )
-    );
+    .where(and(...invoiceWhere(organizationId, invoiceId, branchId)));
 
   await writeAuditLog({
     organizationId,
@@ -431,7 +432,7 @@ router.post("/organizations/:organizationId/invoices/:invoiceId/status", async (
     req,
   });
 
-  const updated = await getFullInvoice(organizationId, invoiceId);
+  const updated = await getFullInvoice(organizationId, invoiceId, branchId);
   res.json(updated);
 });
 
@@ -440,7 +441,8 @@ router.post("/organizations/:organizationId/invoices/:invoiceId/status", async (
 router.post("/organizations/:organizationId/invoices/:invoiceId/payments", async (req, res): Promise<void> => {
   const organizationId = getOrgId(req);
   const invoiceId = getInvoiceId(req);
-  const invoice = await getFullInvoice(organizationId, invoiceId);
+  const branchId = await getActiveBranchId(req, res, organizationId);
+  const invoice = await getFullInvoice(organizationId, invoiceId, branchId);
   if (!invoice) {
     res.status(404).json({ error: "Invoice not found" });
     return;
@@ -459,6 +461,7 @@ router.post("/organizations/:organizationId/invoices/:invoiceId/payments", async
 
   await postJournalEntry({
     organizationId,
+    branchId,
     sourceDocumentType: "CUSTOMER_PAYMENT",
     sourceDocumentId: invoiceId,
     referenceNumber: req.body?.referenceNumber || invoice.invoiceNumber,
@@ -472,9 +475,9 @@ router.post("/organizations/:organizationId/invoices/:invoiceId/payments", async
 
   const paidTotal = await getPostedAmount(organizationId, "CUSTOMER_PAYMENT", invoiceId, "10200", "debit");
   const nextStatus = paidTotal + 0.005 >= Number(invoice.totalAmount) ? "PAID" : "PARTIALLY_PAID";
-  await db.update(invoicesTable).set({ status: nextStatus, updatedAt: new Date() }).where(and(eq(invoicesTable.organizationId, organizationId), eq(invoicesTable.id, invoiceId)));
+  await db.update(invoicesTable).set({ status: nextStatus, updatedAt: new Date() }).where(and(...invoiceWhere(organizationId, invoiceId, branchId)));
   await writeAuditLog({ organizationId, userId: res.locals?.partyUser?.id, action: "invoice.payment_recorded", entityType: "invoice", entityId: invoiceId, newValues: { amount, paidTotal, status: nextStatus }, req });
-  const updated = await getFullInvoice(organizationId, invoiceId);
+  const updated = await getFullInvoice(organizationId, invoiceId, branchId);
   res.status(201).json(updated);
 });
 // POST /api/organizations/:organizationId/quotations/:quotationId/convert
@@ -482,12 +485,14 @@ router.post("/organizations/:organizationId/quotations/:quotationId/convert", as
   const organizationId = getOrgId(req);
   const quotationId = getQuotationId(req);
 
+  const branchId = await getActiveBranchId(req, res, organizationId);
   const quotationRes = await db
     .select()
     .from(quotationsTable)
     .where(
       and(
         eq(quotationsTable.organizationId, organizationId),
+        ...(branchId ? [eq(quotationsTable.branchId, branchId)] : []),
         eq(quotationsTable.id, quotationId)
       )
     )
@@ -508,7 +513,7 @@ router.post("/organizations/:organizationId/quotations/:quotationId/convert", as
   const customerRes = await db
     .select()
     .from(businessPartiesTable)
-    .where(eq(businessPartiesTable.id, quotation.customerId))
+    .where(and(eq(businessPartiesTable.id, quotation.customerId), eq(businessPartiesTable.organizationId, organizationId), ...(branchId ? [eq(businessPartiesTable.branchId, branchId)] : [])))
     .limit(1);
 
   const customer = customerRes[0];
@@ -532,6 +537,7 @@ router.post("/organizations/:organizationId/quotations/:quotationId/convert", as
     .insert(invoicesTable)
     .values({
       organizationId,
+      branchId,
       invoiceNumber,
       invoiceType: "STANDARD",
       quotationId: quotation.id,
@@ -578,7 +584,7 @@ router.post("/organizations/:organizationId/quotations/:quotationId/convert", as
       convertedInvoiceId: createdInvoice.id,
       updatedAt: new Date(),
     })
-    .where(eq(quotationsTable.id, quotationId));
+    .where(and(eq(quotationsTable.organizationId, organizationId), eq(quotationsTable.id, quotationId), ...(branchId ? [eq(quotationsTable.branchId, branchId)] : [])));
 
   await writeAuditLog({
     organizationId,
@@ -590,7 +596,7 @@ router.post("/organizations/:organizationId/quotations/:quotationId/convert", as
     req,
   });
 
-  const result = await getFullInvoice(organizationId, createdInvoice.id);
+  const result = await getFullInvoice(organizationId, createdInvoice.id, branchId);
   res.status(201).json(result);
 });
 

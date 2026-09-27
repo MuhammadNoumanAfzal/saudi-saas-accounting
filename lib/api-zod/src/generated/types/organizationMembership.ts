@@ -11,4 +11,7 @@ import type { OrganizationMembershipRole } from './organizationMembershipRole';
 export interface OrganizationMembership {
   organization: Organization;
   role: OrganizationMembershipRole;
+  /** @nullable */
+  branchId?: string | null;
+  status?: string;
 }

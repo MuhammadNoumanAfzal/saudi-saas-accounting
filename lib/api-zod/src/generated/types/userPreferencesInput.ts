@@ -16,4 +16,6 @@ export interface UserPreferencesInput {
   sidebarCollapsed?: boolean;
   /** @nullable */
   currentOrganizationId?: string | null;
+  /** @nullable */
+  currentBranchId?: string | null;
 }

@@ -1,11 +1,12 @@
 import {
   boolean, index, integer, numeric, pgTable, text, timestamp, uniqueIndex, uuid,
 } from "drizzle-orm/pg-core";
-import { organizationsTable } from "./foundation";
+import { organizationsTable, organizationBranchesTable } from "./foundation";
 
 export const organizationUnitsTable = pgTable("organization_units", {
   id: uuid("id").defaultRandom().primaryKey(),
   organizationId: uuid("organization_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
+  branchId: uuid("branch_id").references(() => organizationBranchesTable.id, { onDelete: "set null" }),
   code: text("code").notNull(),
   name: text("name").notNull(),
   nameAr: text("name_ar").notNull(),
@@ -18,6 +19,7 @@ export const organizationUnitsTable = pgTable("organization_units", {
 export const catalogItemsTable = pgTable("catalog_items", {
   id: uuid("id").defaultRandom().primaryKey(),
   organizationId: uuid("organization_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
+  branchId: uuid("branch_id").references(() => organizationBranchesTable.id, { onDelete: "set null" }),
   type: text("type").notNull().default("PRODUCT"),
   code: text("code").notNull(),
   name: text("name").notNull(),
@@ -38,6 +40,7 @@ export const catalogItemsTable = pgTable("catalog_items", {
 }, (table) => [
   uniqueIndex("catalog_items_org_code_idx").on(table.organizationId, table.code),
   index("catalog_items_org_type_idx").on(table.organizationId, table.type),
+  index("catalog_items_org_branch_idx").on(table.organizationId, table.branchId),
   index("catalog_items_org_status_idx").on(table.organizationId, table.status),
   index("catalog_items_org_tax_idx").on(table.organizationId, table.taxCategory),
   index("catalog_items_org_sku_idx").on(table.organizationId, table.sku),

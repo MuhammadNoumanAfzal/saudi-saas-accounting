@@ -10,13 +10,14 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { organizationsTable, usersTable } from "./foundation";
+import { organizationBranchesTable, organizationsTable, usersTable } from "./foundation";
 
 export const businessPartiesTable = pgTable(
   "business_parties",
   {
     id: uuid("id").defaultRandom().primaryKey(),
     organizationId: uuid("organization_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
+    branchId: uuid("branch_id").references(() => organizationBranchesTable.id, { onDelete: "set null" }),
     partyType: text("party_type").notNull().default("organization"),
     businessNameEnglish: text("business_name_english"),
     businessNameArabic: text("business_name_arabic"),
@@ -42,6 +43,7 @@ export const businessPartiesTable = pgTable(
   },
   (table) => [
     index("business_parties_org_idx").on(table.organizationId),
+    index("business_parties_org_branch_idx").on(table.organizationId, table.branchId),
     index("business_parties_org_display_idx").on(table.organizationId, table.displayName),
     index("business_parties_org_vat_idx").on(table.organizationId, table.vatNumber),
     index("business_parties_org_cr_idx").on(table.organizationId, table.commercialRegistrationNumber),

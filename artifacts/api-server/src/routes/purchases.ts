@@ -14,6 +14,7 @@ import { requireModule } from "../middlewares/moduleEntitlement";
 import { writeAuditLog } from "../lib/audit";
 import { UpdatePurchaseBillBody } from "@workspace/api-zod";
 import { getPostedAmount, postJournalEntry } from "../lib/accountingPost";
+import { getActiveBranchId } from "../lib/branchScope";
 
 const router: IRouter = Router();
 router.use(requireAuthentication);
@@ -22,6 +23,8 @@ router.use("/organizations/:organizationId", requireModule("finance"));
 const getOrgId = (req: any) => String(req.params.organizationId);
 const getBillId = (req: any) => String(req.params.billId);
 const getExpenseId = (req: any) => String(req.params.expenseId);
+const billWhere = (orgId: string, billId: string, branchId?: string | null) => [eq(purchaseBillsTable.organizationId, orgId), eq(purchaseBillsTable.id, billId), ...(branchId ? [eq(purchaseBillsTable.branchId, branchId)] : [])];
+const expenseWhere = (orgId: string, expenseId: string, branchId?: string | null) => [eq(expensesTable.organizationId, orgId), eq(expensesTable.id, expenseId), ...(branchId ? [eq(expensesTable.branchId, branchId)] : [])];
 
 // Sequence generator: BILL-00001
 async function getNextBillNumber(organizationId: string): Promise<string> {
@@ -122,6 +125,30 @@ function calculateBillTotals(items: Array<any>) {
   };
 }
 
+function formatBill(bill: any, items: any[] = []) {
+  return {
+    id: bill.id,
+    organizationId: bill.organizationId,
+    branchId: bill.branchId,
+    billNumber: bill.billNumber,
+    supplierId: bill.supplierId,
+    supplierName: bill.supplierName,
+    supplierVatNumber: bill.supplierVatNumber,
+    supplierBillNumber: bill.supplierInvoiceNumber,
+    issueDate: bill.billDate.toISOString(),
+    dueDate: bill.dueDate ? bill.dueDate.toISOString() : null,
+    currency: bill.currency,
+    subtotal: bill.subtotal,
+    discountAmount: bill.discountAmount,
+    taxAmount: bill.taxAmount,
+    totalAmount: bill.totalAmount,
+    status: bill.status,
+    notes: bill.notes,
+    items,
+    createdAt: bill.createdAt.toISOString(),
+    updatedAt: bill.updatedAt.toISOString(),
+  };
+}
 // ==========================================
 // PURCHASE BILLS ROUTES
 // ==========================================
@@ -136,7 +163,9 @@ router.get("/organizations/:organizationId/purchase-bills", async (req, res) => 
     const pageSize = Math.min(100, Math.max(1, parseInt(String(req.query.pageSize || "25"), 10)));
     const offset = (page - 1) * pageSize;
 
+    const branchId = await getActiveBranchId(req, res, orgId);
     const conditions = [eq(purchaseBillsTable.organizationId, orgId)];
+    if (branchId) conditions.push(eq(purchaseBillsTable.branchId, branchId));
 
     if (search) {
       conditions.push(
@@ -210,97 +239,62 @@ router.get("/organizations/:organizationId/purchase-bills", async (req, res) => 
 router.post("/organizations/:organizationId/purchase-bills", async (req, res) => {
   try {
     const orgId = getOrgId(req);
+    const branchId = await getActiveBranchId(req, res, orgId);
     const body = req.body;
 
-    if (!body.supplierId) {
-      res.status(400).json({ error: "supplierId is required" });
-      return;
-    }
-    if (!body.items || !Array.isArray(body.items) || body.items.length === 0) {
-      res.status(400).json({ error: "At least one item is required" });
-      return;
-    }
+    if (!body.supplierId) return res.status(400).json({ error: "supplierId is required" });
+    if (!body.items || !Array.isArray(body.items) || body.items.length === 0) return res.status(400).json({ error: "At least one item is required" });
 
-    // Lookup supplier
-    const supplierList = await db
-      .select()
-      .from(businessPartiesTable)
-      .where(
-        and(
-          eq(businessPartiesTable.id, body.supplierId),
-          eq(businessPartiesTable.organizationId, orgId)
-        )
-      )
-      .limit(1);
+    const supplierConditions: any[] = [eq(businessPartiesTable.id, body.supplierId), eq(businessPartiesTable.organizationId, orgId)];
+    if (branchId) supplierConditions.push(eq(businessPartiesTable.branchId, branchId));
+    const [supplier] = await db.select().from(businessPartiesTable).where(and(...supplierConditions)).limit(1);
+    if (!supplier) return res.status(404).json({ error: "Supplier not found in this branch" });
 
-    if (supplierList.length === 0) {
-      res.status(404).json({ error: "Supplier not found" });
-      return;
-    }
-
-    const supplier = supplierList[0];
     const billNumber = await getNextBillNumber(orgId);
     const totals = calculateBillTotals(body.items);
     const billDate = body.issueDate ? new Date(body.issueDate) : new Date();
     const dueDate = body.dueDate ? new Date(body.dueDate) : null;
 
-    const [newBill] = await db
-      .insert(purchaseBillsTable)
-      .values({
-        organizationId: orgId,
-        billNumber,
-        supplierInvoiceNumber: body.supplierBillNumber || null,
-        supplierId: supplier.id,
-        supplierName: supplier.legalNameEnglish || supplier.legalNameArabic || "Unknown Supplier",
-        supplierVatNumber: supplier.vatNumber || null,
-        billDate,
-        dueDate,
-        currency: body.currency || "SAR",
-        subtotal: totals.subtotal,
-        discountAmount: totals.discountAmount,
-        taxAmount: totals.taxAmount,
-        totalAmount: totals.totalAmount,
-        status: "RECEIVED",
-        notes: body.notes || null,
-      })
-      .returning();
-
-    // Insert bill items
-    const insertedItems = await Promise.all(
-      totals.items.map((it) =>
-        db
-          .insert(purchaseBillItemsTable)
-          .values({
-            billId: newBill.id,
-            catalogItemId: it.catalogItemId,
-            itemCode: it.itemCode,
-            description: it.description,
-            descriptionAr: it.descriptionAr,
-            unitId: it.unitId,
-            quantity: it.quantity,
-            unitPrice: it.unitPrice,
-            discountAmount: it.discountAmount,
-            taxCategory: it.taxCategory,
-            taxRate: it.taxRate,
-            taxAmount: it.taxAmount,
-            lineTotal: it.lineTotal,
-            sortOrder: it.sortOrder,
-          })
-          .returning()
-      )
-    );
-
-    await writeAuditLog({
+    const [newBill] = await db.insert(purchaseBillsTable).values({
       organizationId: orgId,
-      userId: (req as any).user?.id || null,
-      action: "purchase_bill.created",
-      entityType: "purchase_bill",
-      entityId: newBill.id,
-      newValues: { billNumber: newBill.billNumber, totalAmount: newBill.totalAmount },
-    });
+      branchId,
+      billNumber,
+      supplierInvoiceNumber: body.supplierBillNumber || null,
+      supplierId: supplier.id,
+      supplierName: supplier.legalNameEnglish || supplier.legalNameArabic || supplier.displayName || "Unknown Supplier",
+      supplierVatNumber: supplier.vatNumber || null,
+      billDate,
+      dueDate,
+      currency: body.currency || "SAR",
+      subtotal: totals.subtotal,
+      discountAmount: totals.discountAmount,
+      taxAmount: totals.taxAmount,
+      totalAmount: totals.totalAmount,
+      status: "RECEIVED",
+      notes: body.notes || null,
+    }).returning();
 
+    const insertedItems = await Promise.all(totals.items.map((it) => db.insert(purchaseBillItemsTable).values({
+      billId: newBill.id,
+      catalogItemId: it.catalogItemId,
+      itemCode: it.itemCode,
+      description: it.description,
+      descriptionAr: it.descriptionAr,
+      unitId: it.unitId,
+      quantity: it.quantity,
+      unitPrice: it.unitPrice,
+      discountAmount: it.discountAmount,
+      taxCategory: it.taxCategory,
+      taxRate: it.taxRate,
+      taxAmount: it.taxAmount,
+      lineTotal: it.lineTotal,
+      sortOrder: it.sortOrder,
+    }).returning()));
+
+    await writeAuditLog({ organizationId: orgId, userId: res.locals?.partyUser?.id || null, action: "purchase_bill.created", entityType: "purchase_bill", entityId: newBill.id, newValues: { billNumber: newBill.billNumber, totalAmount: newBill.totalAmount }, req });
     await postJournalEntry({
       organizationId: orgId,
+      branchId,
       sourceDocumentType: "PURCHASE_BILL",
       sourceDocumentId: newBill.id,
       referenceNumber: newBill.billNumber,
@@ -313,34 +307,11 @@ router.post("/organizations/:organizationId/purchase-bills", async (req, res) =>
         { accountCode: "20100", credit: newBill.totalAmount, description: "Accounts payable" },
       ],
     });
-    const responseObj = {
-      id: newBill.id,
-      organizationId: newBill.organizationId,
-      billNumber: newBill.billNumber,
-      supplierId: newBill.supplierId,
-      supplierName: newBill.supplierName,
-      supplierVatNumber: newBill.supplierVatNumber,
-      supplierBillNumber: newBill.supplierInvoiceNumber,
-      issueDate: newBill.billDate.toISOString(),
-      dueDate: newBill.dueDate ? newBill.dueDate.toISOString() : null,
-      currency: newBill.currency,
-      subtotal: newBill.subtotal,
-      discountAmount: newBill.discountAmount,
-      taxAmount: newBill.taxAmount,
-      totalAmount: newBill.totalAmount,
-      status: newBill.status,
-      notes: newBill.notes,
-      items: insertedItems.map((itemArr) => itemArr[0]),
-      createdAt: newBill.createdAt.toISOString(),
-      updatedAt: newBill.updatedAt.toISOString(),
-    };
 
-    res.status(201).json(responseObj);
-    return;
+    return res.status(201).json(formatBill(newBill, insertedItems.map((itemArr) => itemArr[0])));
   } catch (error: any) {
     console.error("Error creating purchase bill:", error);
-    res.status(500).json({ error: error.message || "Failed to create purchase bill" });
-    return;
+    return res.status(500).json({ error: error.message || "Failed to create purchase bill" });
   }
 });
 
@@ -349,67 +320,14 @@ router.get("/organizations/:organizationId/purchase-bills/:billId", async (req, 
   try {
     const orgId = getOrgId(req);
     const billId = getBillId(req);
-
-    const bills = await db
-      .select()
-      .from(purchaseBillsTable)
-      .where(and(eq(purchaseBillsTable.id, billId), eq(purchaseBillsTable.organizationId, orgId)))
-      .limit(1);
-
-    if (bills.length === 0) {
-      res.status(404).json({ error: "Purchase bill not found" });
-      return;
-    }
-
-    const bill = bills[0];
-    const items = await db
-      .select()
-      .from(purchaseBillItemsTable)
-      .where(eq(purchaseBillItemsTable.billId, bill.id))
-      .orderBy(purchaseBillItemsTable.sortOrder);
-
-    await postJournalEntry({
-      organizationId: orgId,
-      sourceDocumentType: "PURCHASE_BILL",
-      sourceDocumentId: newBill.id,
-      referenceNumber: newBill.billNumber,
-      description: `Purchase bill ${newBill.billNumber}`,
-      entryDate: newBill.billDate,
-      replaceExisting: true,
-      lines: [
-        { accountCode: "50500", debit: newBill.subtotal, description: "Purchases / expense" },
-        { accountCode: "10400", debit: newBill.taxAmount, description: "Input VAT" },
-        { accountCode: "20100", credit: newBill.totalAmount, description: "Accounts payable" },
-      ],
-    });
-    const responseObj = {
-      id: bill.id,
-      organizationId: bill.organizationId,
-      billNumber: bill.billNumber,
-      supplierId: bill.supplierId,
-      supplierName: bill.supplierName,
-      supplierVatNumber: bill.supplierVatNumber,
-      supplierBillNumber: bill.supplierInvoiceNumber,
-      issueDate: bill.billDate.toISOString(),
-      dueDate: bill.dueDate ? bill.dueDate.toISOString() : null,
-      currency: bill.currency,
-      subtotal: bill.subtotal,
-      discountAmount: bill.discountAmount,
-      taxAmount: bill.taxAmount,
-      totalAmount: bill.totalAmount,
-      status: bill.status,
-      notes: bill.notes,
-      items,
-      createdAt: bill.createdAt.toISOString(),
-      updatedAt: bill.updatedAt.toISOString(),
-    };
-
-    res.json(responseObj);
-    return;
+    const branchId = await getActiveBranchId(req, res, orgId);
+    const [bill] = await db.select().from(purchaseBillsTable).where(and(...billWhere(orgId, billId, branchId))).limit(1);
+    if (!bill) return res.status(404).json({ error: "Purchase bill not found" });
+    const items = await db.select().from(purchaseBillItemsTable).where(eq(purchaseBillItemsTable.billId, bill.id)).orderBy(purchaseBillItemsTable.sortOrder);
+    return res.json(formatBill(bill, items));
   } catch (error: any) {
     console.error("Error getting purchase bill:", error);
-    res.status(500).json({ error: error.message || "Failed to get purchase bill" });
-    return;
+    return res.status(500).json({ error: error.message || "Failed to get purchase bill" });
   }
 });
 
@@ -418,87 +336,18 @@ router.patch("/organizations/:organizationId/purchase-bills/:billId/status", asy
   try {
     const orgId = getOrgId(req);
     const billId = getBillId(req);
+    const branchId = await getActiveBranchId(req, res, orgId);
     const { status } = req.body;
-
-    if (!status) {
-      res.status(400).json({ error: "status is required" });
-      return;
-    }
-
-    const bills = await db
-      .select()
-      .from(purchaseBillsTable)
-      .where(and(eq(purchaseBillsTable.id, billId), eq(purchaseBillsTable.organizationId, orgId)))
-      .limit(1);
-
-    if (bills.length === 0) {
-      res.status(404).json({ error: "Purchase bill not found" });
-      return;
-    }
-
-    const [updatedBill] = await db
-      .update(purchaseBillsTable)
-      .set({ status, updatedAt: new Date() })
-      .where(eq(purchaseBillsTable.id, billId))
-      .returning();
-
-    const items = await db
-      .select()
-      .from(purchaseBillItemsTable)
-      .where(eq(purchaseBillItemsTable.billId, billId))
-      .orderBy(purchaseBillItemsTable.sortOrder);
-
-    await writeAuditLog({
-      organizationId: orgId,
-      userId: (req as any).user?.id || "system",
-      action: "purchase_bill.status_updated",
-      entityType: "purchase_bill",
-      entityId: billId,
-      newValues: { newStatus: status },
-    });
-
-    await postJournalEntry({
-      organizationId: orgId,
-      sourceDocumentType: "PURCHASE_BILL",
-      sourceDocumentId: newBill.id,
-      referenceNumber: newBill.billNumber,
-      description: `Purchase bill ${newBill.billNumber}`,
-      entryDate: newBill.billDate,
-      replaceExisting: true,
-      lines: [
-        { accountCode: "50500", debit: newBill.subtotal, description: "Purchases / expense" },
-        { accountCode: "10400", debit: newBill.taxAmount, description: "Input VAT" },
-        { accountCode: "20100", credit: newBill.totalAmount, description: "Accounts payable" },
-      ],
-    });
-    const responseObj = {
-      id: updatedBill.id,
-      organizationId: updatedBill.organizationId,
-      billNumber: updatedBill.billNumber,
-      supplierId: updatedBill.supplierId,
-      supplierName: updatedBill.supplierName,
-      supplierVatNumber: updatedBill.supplierVatNumber,
-      supplierBillNumber: updatedBill.supplierInvoiceNumber,
-      issueDate: updatedBill.billDate.toISOString(),
-      dueDate: updatedBill.dueDate ? updatedBill.dueDate.toISOString() : null,
-      currency: updatedBill.currency,
-      subtotal: updatedBill.subtotal,
-      discountAmount: updatedBill.discountAmount,
-      taxAmount: updatedBill.taxAmount,
-      totalAmount: updatedBill.totalAmount,
-      status: updatedBill.status,
-      notes: updatedBill.notes,
-      items,
-      createdAt: updatedBill.createdAt.toISOString(),
-      updatedAt: updatedBill.updatedAt.toISOString(),
-    };
-
-    res.json(responseObj);
-    return;
+    if (!status) return res.status(400).json({ error: "status is required" });
+    const [existing] = await db.select().from(purchaseBillsTable).where(and(...billWhere(orgId, billId, branchId))).limit(1);
+    if (!existing) return res.status(404).json({ error: "Purchase bill not found" });
+    const [updatedBill] = await db.update(purchaseBillsTable).set({ status, updatedAt: new Date() }).where(and(...billWhere(orgId, billId, branchId))).returning();
+    const items = await db.select().from(purchaseBillItemsTable).where(eq(purchaseBillItemsTable.billId, billId)).orderBy(purchaseBillItemsTable.sortOrder);
+    await writeAuditLog({ organizationId: orgId, userId: res.locals?.partyUser?.id || "system", action: "purchase_bill.status_updated", entityType: "purchase_bill", entityId: billId, previousValues: { status: existing.status }, newValues: { status }, req });
+    return res.json(formatBill(updatedBill, items));
   } catch (error: any) {
     console.error("Error updating bill status:", error);
-    res.status(500).json({ error: error.message || "Failed to update bill status" });
-    return;
+    return res.status(500).json({ error: error.message || "Failed to update bill status" });
   }
 });
 
@@ -507,35 +356,15 @@ router.delete("/organizations/:organizationId/purchase-bills/:billId", async (re
   try {
     const orgId = getOrgId(req);
     const billId = getBillId(req);
-
-    const bills = await db
-      .select()
-      .from(purchaseBillsTable)
-      .where(and(eq(purchaseBillsTable.id, billId), eq(purchaseBillsTable.organizationId, orgId)))
-      .limit(1);
-
-    if (bills.length === 0) {
-      res.status(404).json({ error: "Purchase bill not found" });
-      return;
-    }
-
-    await db.delete(purchaseBillsTable).where(eq(purchaseBillsTable.id, billId));
-
-    await writeAuditLog({
-      organizationId: orgId,
-      userId: (req as any).user?.id || "system",
-      action: "purchase_bill.deleted",
-      entityType: "purchase_bill",
-      entityId: billId,
-      newValues: {},
-    });
-
-    res.status(204).send();
-    return;
+    const branchId = await getActiveBranchId(req, res, orgId);
+    const [bill] = await db.select().from(purchaseBillsTable).where(and(...billWhere(orgId, billId, branchId))).limit(1);
+    if (!bill) return res.status(404).json({ error: "Purchase bill not found" });
+    await db.delete(purchaseBillsTable).where(and(...billWhere(orgId, billId, branchId)));
+    await writeAuditLog({ organizationId: orgId, userId: res.locals?.partyUser?.id || "system", action: "purchase_bill.deleted", entityType: "purchase_bill", entityId: billId, previousValues: bill, req });
+    return res.status(204).send();
   } catch (error: any) {
     console.error("Error deleting purchase bill:", error);
-    res.status(500).json({ error: error.message || "Failed to delete purchase bill" });
-    return;
+    return res.status(500).json({ error: error.message || "Failed to delete purchase bill" });
   }
 });
 
@@ -553,7 +382,9 @@ router.get("/organizations/:organizationId/expenses", async (req, res) => {
     const pageSize = Math.min(100, Math.max(1, parseInt(String(req.query.pageSize || "25"), 10)));
     const offset = (page - 1) * pageSize;
 
+    const branchId = await getActiveBranchId(req, res, orgId);
     const conditions = [eq(expensesTable.organizationId, orgId)];
+    if (branchId) conditions.push(eq(expensesTable.branchId, branchId));
 
     if (search) {
       conditions.push(
@@ -627,6 +458,7 @@ router.post("/organizations/:organizationId/expenses", async (req, res) => {
   try {
     const orgId = getOrgId(req);
     const body = req.body;
+    const branchId = await getActiveBranchId(req, res, orgId);
 
     if (!body.category || !body.description) {
       res.status(400).json({ error: "category and description are required" });
@@ -660,6 +492,7 @@ router.post("/organizations/:organizationId/expenses", async (req, res) => {
       .insert(expensesTable)
       .values({
         organizationId: orgId,
+        branchId,
         expenseNumber,
         category: body.category.toUpperCase(),
         supplierId: body.supplierId || null,
@@ -686,6 +519,7 @@ router.post("/organizations/:organizationId/expenses", async (req, res) => {
 
     await postJournalEntry({
       organizationId: orgId,
+      branchId,
       sourceDocumentType: "EXPENSE",
       sourceDocumentId: newExpense.id,
       referenceNumber: newExpense.expenseNumber,
@@ -732,11 +566,12 @@ router.get("/organizations/:organizationId/expenses/:expenseId", async (req, res
   try {
     const orgId = getOrgId(req);
     const expenseId = getExpenseId(req);
+    const branchId = await getActiveBranchId(req, res, orgId);
 
     const expenses = await db
       .select()
       .from(expensesTable)
-      .where(and(eq(expensesTable.id, expenseId), eq(expensesTable.organizationId, orgId)))
+      .where(and(...expenseWhere(orgId, expenseId, branchId)))
       .limit(1);
 
     if (expenses.length === 0) {
@@ -780,11 +615,12 @@ router.patch("/organizations/:organizationId/expenses/:expenseId", async (req, r
     const orgId = getOrgId(req);
     const expenseId = getExpenseId(req);
     const body = req.body;
+    const branchId = await getActiveBranchId(req, res, orgId);
 
     const existingList = await db
       .select()
       .from(expensesTable)
-      .where(and(eq(expensesTable.id, expenseId), eq(expensesTable.organizationId, orgId)))
+      .where(and(...expenseWhere(orgId, expenseId, branchId)))
       .limit(1);
 
     if (existingList.length === 0) {
@@ -831,11 +667,12 @@ router.patch("/organizations/:organizationId/expenses/:expenseId", async (req, r
         notes: body.notes !== undefined ? body.notes : existing.notes,
         updatedAt: new Date(),
       })
-      .where(eq(expensesTable.id, expenseId))
+      .where(and(...expenseWhere(orgId, expenseId, branchId)))
       .returning();
 
     await postJournalEntry({
       organizationId: orgId,
+      branchId,
       sourceDocumentType: "EXPENSE",
       sourceDocumentId: updated.id,
       referenceNumber: updated.expenseNumber,
@@ -883,11 +720,12 @@ router.delete("/organizations/:organizationId/expenses/:expenseId", async (req, 
   try {
     const orgId = getOrgId(req);
     const expenseId = getExpenseId(req);
+    const branchId = await getActiveBranchId(req, res, orgId);
 
     const expenses = await db
       .select()
       .from(expensesTable)
-      .where(and(eq(expensesTable.id, expenseId), eq(expensesTable.organizationId, orgId)))
+      .where(and(...expenseWhere(orgId, expenseId, branchId)))
       .limit(1);
 
     if (expenses.length === 0) {
@@ -895,7 +733,7 @@ router.delete("/organizations/:organizationId/expenses/:expenseId", async (req, 
       return;
     }
 
-    await db.delete(expensesTable).where(eq(expensesTable.id, expenseId));
+    await db.delete(expensesTable).where(and(...expenseWhere(orgId, expenseId, branchId)));
 
     await writeAuditLog({
       organizationId: orgId,

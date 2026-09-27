@@ -15,6 +15,7 @@ import { writeAuditLog } from "../lib/audit";
 import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
 import { Readable } from "node:stream";
 import { parseCsvRows } from "../lib/csv";
+import { getActiveBranchId } from "../lib/branchScope";
 
 const router = Router();
 const storage = new ObjectStorageService();
@@ -73,8 +74,10 @@ async function upsertBillingAddress(organizationId: string, partyId: string, add
 async function audit(req: any, action: string, entityType: string, entityId: string | undefined, previousValues?: any, newValues?: any) {
   await writeAuditLog({ organizationId: org(req), userId: req.res?.locals?.partyUser?.id, action, entityType, entityId, previousValues: safe(previousValues), newValues: safe(newValues), req });
 }
-async function getParty(organizationId: string, partyId: string) {
-  const [p] = await db.select().from(businessPartiesTable).where(and(eq(businessPartiesTable.organizationId, organizationId), eq(businessPartiesTable.id, partyId))).limit(1);
+async function getParty(organizationId: string, partyId: string, branchId?: string | null) {
+  const partyConditions: any[] = [eq(businessPartiesTable.organizationId, organizationId), eq(businessPartiesTable.id, partyId)];
+  if (branchId) partyConditions.push(eq(businessPartiesTable.branchId, branchId));
+  const [p] = await db.select().from(businessPartiesTable).where(and(...partyConditions)).limit(1);
   if (!p) return null;
   const [roles, contacts, addresses, tags, documents] = await Promise.all([
     db.select().from(partyRolesTable).where(and(eq(partyRolesTable.organizationId, organizationId), eq(partyRolesTable.partyId, partyId))),
@@ -107,9 +110,10 @@ async function create(req: any, res: any, role: string) {
   if (body.vatNumber) body.vatNumber = String(body.vatNumber).trim();
   if (!validVat(body)) return res.status(400).json({ error: "VAT number must contain 15 digits and start and end with 3" });
   const organizationId = org(req);
+  const branchId = await getActiveBranchId(req, res, organizationId);
   const partyNumber = await nextNumber(organizationId, role);
   const billingAddress = extractBillingAddress(body);
-  const values: any = { ...body, organizationId, displayName: name(body), updatedAt: now() };
+  const values: any = { ...body, organizationId, branchId, displayName: name(body), updatedAt: now() };
   for (const k of ["paymentTerms", "creditLimit", "taxTreatment", ...inlineAddressKeys]) delete values[k];
   const [p] = await db.insert(businessPartiesTable).values(values).returning();
   const [r] = await db.insert(partyRolesTable).values({ organizationId, partyId: p.id, role, partyNumber, paymentTerms: body.paymentTerms, creditLimit: body.creditLimit, taxTreatment: body.taxTreatment }).returning();
@@ -120,7 +124,9 @@ async function create(req: any, res: any, role: string) {
   res.status(201).json({ ...result.p, roles: [result.r], contacts: [], addresses: result.address ? [result.address] : [], tags: [], documents: [] });
 }
 async function list(req: any, res: any, role: string) {
+  const branchId = await getActiveBranchId(req, res, org(req));
   const q = String(req.query.search || ""); const conditions: any[] = [eq(businessPartiesTable.organizationId, org(req)), eq(partyRolesTable.role, role)];
+  if (branchId) conditions.push(eq(businessPartiesTable.branchId, branchId));
   if (q) { const s = `%${q}%`; conditions.push(or(...[businessPartiesTable.displayName, businessPartiesTable.businessNameEnglish, businessPartiesTable.businessNameArabic, businessPartiesTable.arabicName, businessPartiesTable.primaryEmail, businessPartiesTable.primaryPhone, businessPartiesTable.vatNumber, businessPartiesTable.commercialRegistrationNumber].map(c => ilike(c, s)), ilike(partyRolesTable.partyNumber, s))); }
   for (const [key, col] of [["status", businessPartiesTable.status], ["partyType", businessPartiesTable.partyType], ["vatRegistered", businessPartiesTable.vatRegistered]] as any[]) if (req.query[key] !== undefined) conditions.push(eq(col, key === "vatRegistered" ? String(req.query[key]) === "true" : String(req.query[key])));
   if (req.query.city) conditions.push(sql`exists (
@@ -154,13 +160,13 @@ function partyRoutes(role: string) {
   router.get(`/organizations/:organizationId/${role}s`, requireFinancePartyPermission(permission(role, "view")), (req, res) => list(req, res, role));
   router.post(`/organizations/:organizationId/${role}s`, requireFinancePartyPermission(permission(role, "create")), (req, res) => create(req, res, role));
   router.get(`/organizations/:organizationId/${role}s/:partyId`, requireFinancePartyPermission(permission(role, "view")), async (req, res) => {
-    const p = await getParty(org(req), party(req));
+    const p = await getParty(org(req), party(req), await getActiveBranchId(req, res, org(req)));
     p?.roles.some((item: any) => item.role === role) ? res.json(p) : res.status(404).json({ error: "Party not found" });
   });
   router.patch(`/organizations/:organizationId/${role}s/:partyId`, requireFinancePartyPermission(permission(role, "edit")), async (req: any, res) => {
     const body = parse(role === "customer" ? UpdateCustomerBody : UpdateSupplierBody, req.body, res); if (!body) return;
     if (!validVat(body)) return res.status(400).json({ error: "VAT number must contain 15 digits and start and end with 3" });
-    const old = await getParty(org(req), party(req)); if (!old) return res.status(404).json({ error: "Party not found" });
+    const old = await getParty(org(req), party(req), await getActiveBranchId(req, res, org(req))); if (!old) return res.status(404).json({ error: "Party not found" });
     const billingAddress = extractBillingAddress(body);
     const values: any = Object.fromEntries(Object.entries(body).filter(([, v]) => v !== undefined));
     const roleSettings = Object.fromEntries(
@@ -177,7 +183,7 @@ function partyRoutes(role: string) {
       eq(partyRolesTable.role, role),
     ));
     await upsertBillingAddress(org(req), party(req), billingAddress);
-    await audit(req, "updated", "business_party", updated.id, old, updated); return res.json(await getParty(org(req), party(req)));
+    await audit(req, "updated", "business_party", updated.id, old, updated); return res.json(await getParty(org(req), party(req), await getActiveBranchId(req, res, org(req))));
   });
   router.delete(`/organizations/:organizationId/${role}s/:partyId`, requireFinancePartyPermission(permission(role, "delete")), async (req: any, res) => {
     const orgId = org(req);
@@ -203,17 +209,17 @@ function partyRoutes(role: string) {
 }
 partyRoutes("customer"); partyRoutes("supplier");
 router.patch("/organizations/:organizationId/parties/:partyId/status", requireAnyFinancePartyPermission(["customers.deactivate", "suppliers.deactivate"]), async (req: any, res) => {
-  const body = parse(UpdatePartyStatusBody, req.body, res); if (!body) return; const old = await getParty(org(req), party(req)); if (!old) return res.status(404).json({ error: "Party not found" });
+  const body = parse(UpdatePartyStatusBody, req.body, res); if (!body) return; const old = await getParty(org(req), party(req), await getActiveBranchId(req, res, org(req))); if (!old) return res.status(404).json({ error: "Party not found" });
   const [p] = await db.update(businessPartiesTable).set({ status: body.status, updatedAt: now() }).where(and(eq(businessPartiesTable.organizationId, org(req)), eq(businessPartiesTable.id, party(req)))).returning();
-  await audit(req, "status_changed", "business_party", p.id, { status: old.status }, { status: p.status }); return res.json(await getParty(org(req), party(req)));
+  await audit(req, "status_changed", "business_party", p.id, { status: old.status }, { status: p.status }); return res.json(await getParty(org(req), party(req), await getActiveBranchId(req, res, org(req))));
 });
 router.post("/organizations/:organizationId/parties/:partyId/roles/:role", requireFinancePartyPermission("customers.create"), async (req: any, res) => {
-  const role = String(req.params.role); if (!["customer", "supplier"].includes(role)) return res.status(400).json({ error: "Invalid role" }); const p = await getParty(org(req), party(req)); if (!p) return res.status(404).json({ error: "Party not found" });
+  const role = String(req.params.role); if (!["customer", "supplier"].includes(role)) return res.status(400).json({ error: "Invalid role" }); const p = await getParty(org(req), party(req), await getActiveBranchId(req, res, org(req))); if (!p) return res.status(404).json({ error: "Party not found" });
   if (p.roles.some((r: any) => r.role === role)) return res.status(409).json({ error: "Role already exists" }); const [r] = await db.insert(partyRolesTable).values({ organizationId: org(req), partyId: party(req), role, partyNumber: await nextNumber(org(req), role), ...req.body }).returning(); await audit(req, "role_added", "party_role", r.id, null, r); return res.status(201).json(r);
 });
 async function child(req: any, res: any, kind: "contacts" | "addresses", action: string) {
   const table: any = kind === "contacts" ? partyContactsTable : partyAddressesTable; const base = { organizationId: org(req), partyId: party(req) };
-  if (!(await getParty(org(req), party(req)))) return res.status(404).json({ error: "Party not found" });
+  if (!(await getParty(org(req), party(req), await getActiveBranchId(req, res, org(req))))) return res.status(404).json({ error: "Party not found" });
   if (action === "list") return res.json(await db.select().from(table).where(and(eq(table.organizationId, base.organizationId), eq(table.partyId, base.partyId))));
   const childId = String(req.params[`${kind === "contacts" ? "contact" : "address"}Id`]);
   if (action === "create") {
@@ -244,7 +250,7 @@ for (const kind of ["contacts", "addresses"] as const) {
     );
   }
 }
-router.get("/organizations/:organizationId/party-search", requireFinancePartyPermission("customers.view"), async (req, res) => { const q = `%${String(req.query.q || "")}%`; const rows = await db.select({ p: businessPartiesTable, r: partyRolesTable }).from(businessPartiesTable).innerJoin(partyRolesTable, eq(partyRolesTable.partyId, businessPartiesTable.id)).where(and(eq(businessPartiesTable.organizationId, org(req)), or(...[businessPartiesTable.displayName, businessPartiesTable.businessNameEnglish, businessPartiesTable.businessNameArabic, businessPartiesTable.arabicName, businessPartiesTable.primaryEmail, businessPartiesTable.primaryPhone, businessPartiesTable.vatNumber, businessPartiesTable.commercialRegistrationNumber, partyRolesTable.partyNumber].map(c => ilike(c, q))))).limit(20); res.json(rows.map(x => ({ ...x.p, role: x.r.role, type: x.p.partyType, number: x.r.partyNumber }))); });
+router.get("/organizations/:organizationId/party-search", requireFinancePartyPermission("customers.view"), async (req, res) => { const branchId = await getActiveBranchId(req, res, org(req)); const q = `%${String(req.query.q || "")}%`; const conditions: any[] = [eq(businessPartiesTable.organizationId, org(req))]; if (branchId) conditions.push(eq(businessPartiesTable.branchId, branchId)); conditions.push(or(...[businessPartiesTable.displayName, businessPartiesTable.businessNameEnglish, businessPartiesTable.businessNameArabic, businessPartiesTable.arabicName, businessPartiesTable.primaryEmail, businessPartiesTable.primaryPhone, businessPartiesTable.vatNumber, businessPartiesTable.commercialRegistrationNumber, partyRolesTable.partyNumber].map(c => ilike(c, q)))!); const rows = await db.select({ p: businessPartiesTable, r: partyRolesTable }).from(businessPartiesTable).innerJoin(partyRolesTable, eq(partyRolesTable.partyId, businessPartiesTable.id)).where(and(...conditions)).limit(20); res.json(rows.map(x => ({ ...x.p, role: x.r.role, type: x.p.partyType, number: x.r.partyNumber }))); });
 router.get("/organizations/:organizationId/parties/:partyId/documents", requireFinancePartyPermission("party_documents.manage"), async (req, res) => res.json(await db.select().from(partyDocumentsTable).where(and(eq(partyDocumentsTable.organizationId, org(req)), eq(partyDocumentsTable.partyId, party(req))))));
 router.post("/organizations/:organizationId/parties/:partyId/documents", requireFinancePartyPermission("party_documents.manage"), async (req: any, res) => { if (!/^\/objects\/[^/]+(?:\/[^/]+)*$/.test(String(req.body.objectPath || ""))) return res.status(400).json({ error: "objectPath must be normalized" }); const inserted: any = await db.insert(partyDocumentsTable).values({ ...req.body, organizationId: org(req), partyId: party(req), uploadedBy: res.locals.partyUser?.id }).returning(); const d = inserted[0]; await audit(req, "created", "party_document", d.id, null, { fileName: d.fileName, documentType: d.documentType }); return res.status(201).json(d); });
 router.patch("/organizations/:organizationId/parties/:partyId/documents/:documentId", requireFinancePartyPermission("party_documents.manage"), async (req: any, res) => { const [d] = await db.update(partyDocumentsTable).set({ fileName: req.body.fileName, updatedAt: now() }).where(and(eq(partyDocumentsTable.id, String(req.params.documentId)), eq(partyDocumentsTable.organizationId, org(req)), eq(partyDocumentsTable.partyId, party(req)))).returning(); if (!d) return res.status(404).json({ error: "Document not found" }); await audit(req, "updated", "party_document", d.id, null, { fileName: d.fileName }); return res.json(d); });
@@ -267,11 +273,18 @@ router.post("/organizations/:organizationId/:role/import/preview", async (req: a
 router.post("/organizations/:organizationId/:role/import/confirm", async (req: any, res, next) => { const p = importPermission(req, "import"); if (!p) return res.status(400).json({ error: "Invalid role" }); return requireFinancePartyPermission(p)(req, res, next); }, async (req: any, res) => {
   const role = importRole(req)!; const rows = Array.isArray(req.body.rows) ? req.body.rows : parseCsvRows(String(req.body.csv || "")); const invalid = rows.filter((r: any) => !["organization", "individual"].includes(r.partyType) || (r.vatRegistered === "true" && !(/^\d{15}$/.test(r.vatNumber || "") && String(r.vatNumber).startsWith("3") && String(r.vatNumber).endsWith("3"))));
   if (invalid.length) return res.status(400).json({ error: "Import contains invalid rows", invalidRows: invalid.length });
-  for (const row of rows) { const body = { ...row, vatRegistered: row.vatRegistered === true || row.vatRegistered === "true" }; const [p] = await db.insert(businessPartiesTable).values({ ...body, organizationId: org(req), displayName: name(body) } as any).returning(); const r = await nextNumber(org(req), role); await db.insert(partyRolesTable).values({ organizationId: org(req), partyId: p.id, role, partyNumber: r }); await audit(req, "imported", "business_party", p.id, null, p); }
+  const branchId = await getActiveBranchId(req, res, org(req)); for (const row of rows) { const body = { ...row, vatRegistered: row.vatRegistered === true || row.vatRegistered === "true" }; const [p] = await db.insert(businessPartiesTable).values({ ...body, organizationId: org(req), branchId, displayName: name(body) } as any).returning(); const r = await nextNumber(org(req), role); await db.insert(partyRolesTable).values({ organizationId: org(req), partyId: p.id, role, partyNumber: r }); await audit(req, "imported", "business_party", p.id, null, p); }
   return res.status(201).json({ imported: rows.length, skipped: 0 });
 });
 async function exportParties(req: any, res: any) {
   const role = importRole(req)!;
+  const branchId = await getActiveBranchId(req, res, org(req));
+  const conditions: any[] = [
+    eq(businessPartiesTable.organizationId, org(req)),
+    eq(partyRolesTable.organizationId, org(req)),
+    eq(partyRolesTable.role, role),
+  ];
+  if (branchId) conditions.push(eq(businessPartiesTable.branchId, branchId));
   const rows = await db.select({
     partyNumber: partyRolesTable.partyNumber,
     partyType: businessPartiesTable.partyType,
@@ -289,11 +302,7 @@ async function exportParties(req: any, res: any) {
       eq(partyRolesTable.partyId, businessPartiesTable.id),
       eq(partyRolesTable.organizationId, businessPartiesTable.organizationId),
     ))
-    .where(and(
-      eq(businessPartiesTable.organizationId, org(req)),
-      eq(partyRolesTable.organizationId, org(req)),
-      eq(partyRolesTable.role, role),
-    ));
+    .where(and(...conditions));
   const headers = ["partyNumber", "partyType", "displayName", "businessNameEnglish", "businessNameArabic", "vatNumber", "commercialRegistrationNumber", "city", "primaryEmail", "primaryPhone", "status"] as const;
   const quote = (x: unknown) => `"${String(x ?? "").replace(/"/g, '""')}"`;
   return res.type("text/csv").send([

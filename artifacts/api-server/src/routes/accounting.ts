@@ -13,12 +13,14 @@ import {
 import { requireAuthentication } from "../middlewares/auth";
 import { requireModule } from "../middlewares/moduleEntitlement";
 import { writeAuditLog } from "../lib/audit";
+import { getActiveBranchId } from "../lib/branchScope";
 
 const router: IRouter = Router();
 router.use(requireAuthentication);
 router.use("/organizations/:organizationId", requireModule("finance"));
 
 const getOrgId = (req: any) => String(req.params.organizationId);
+const journalWhere = (orgId: string, entryId: string, branchId?: string | null) => [eq(journalEntriesTable.organizationId, orgId), eq(journalEntriesTable.id, entryId), ...(branchId ? [eq(journalEntriesTable.branchId, branchId)] : [])];
 const getEntryId = (req: any) => String(req.params.entryId);
 
 // Sequence generator: JV-00001
@@ -97,6 +99,7 @@ async function ensureDefaultAccounts(organizationId: string) {
 router.get("/organizations/:organizationId/accounting/accounts", async (req, res) => {
   try {
     const orgId = getOrgId(req);
+    const branchId = await getActiveBranchId(req, res, orgId);
     await ensureDefaultAccounts(orgId);
 
     const search = req.query.search ? String(req.query.search).trim() : "";
@@ -281,7 +284,9 @@ router.get("/organizations/:organizationId/accounting/journal-entries", async (r
     const pageSize = Math.min(100, Math.max(1, parseInt(String(req.query.pageSize || "25"), 10)));
     const offset = (page - 1) * pageSize;
 
+    const branchId = await getActiveBranchId(req, res, orgId);
     const conditions = [eq(journalEntriesTable.organizationId, orgId)];
+    if (branchId) conditions.push(eq(journalEntriesTable.branchId, branchId));
 
     if (search) {
       conditions.push(
@@ -381,6 +386,7 @@ router.post("/organizations/:organizationId/accounting/journal-entries", async (
   try {
     const orgId = getOrgId(req);
     const body = req.body;
+    const branchId = await getActiveBranchId(req, res, orgId);
 
     if (!body.description) {
       res.status(400).json({ error: "description is required" });
@@ -417,6 +423,7 @@ router.post("/organizations/:organizationId/accounting/journal-entries", async (
       .insert(journalEntriesTable)
       .values({
         organizationId: orgId,
+        branchId,
         entryNumber,
         entryDate,
         postingDate,
@@ -507,11 +514,12 @@ router.get("/organizations/:organizationId/accounting/journal-entries/:entryId",
   try {
     const orgId = getOrgId(req);
     const entryId = getEntryId(req);
+    const branchId = await getActiveBranchId(req, res, orgId);
 
     const entries = await db
       .select()
       .from(journalEntriesTable)
-      .where(and(eq(journalEntriesTable.id, entryId), eq(journalEntriesTable.organizationId, orgId)))
+      .where(and(...journalWhere(orgId, entryId, branchId)))
       .limit(1);
 
     if (entries.length === 0) {
@@ -573,6 +581,7 @@ router.get("/organizations/:organizationId/accounting/journal-entries/:entryId",
 router.get("/organizations/:organizationId/accounting/trial-balance", async (req, res) => {
   try {
     const orgId = getOrgId(req);
+    const branchId = await getActiveBranchId(req, res, orgId);
     await ensureDefaultAccounts(orgId);
 
     const accounts = await db
@@ -595,6 +604,7 @@ router.get("/organizations/:organizationId/accounting/trial-balance", async (req
       .where(
         and(
           eq(journalEntriesTable.organizationId, orgId),
+          ...(branchId ? [eq(journalEntriesTable.branchId, branchId)] : []),
           eq(journalEntriesTable.status, "POSTED")
         )
       )
@@ -623,7 +633,7 @@ router.get("/organizations/:organizationId/accounting/trial-balance", async (req
     const invoicesList = await db
       .select()
       .from(invoicesTable)
-      .where(eq(invoicesTable.organizationId, orgId));
+      .where(and(eq(invoicesTable.organizationId, orgId), ...(branchId ? [eq(invoicesTable.branchId, branchId)] : [])));
 
     for (const inv of invoicesList) {
       if (inv.status === 'CANCELLED') continue;
@@ -651,7 +661,7 @@ router.get("/organizations/:organizationId/accounting/trial-balance", async (req
     const billsList = await db
       .select()
       .from(purchaseBillsTable)
-      .where(eq(purchaseBillsTable.organizationId, orgId));
+      .where(and(eq(purchaseBillsTable.organizationId, orgId), ...(branchId ? [eq(purchaseBillsTable.branchId, branchId)] : [])));
 
     for (const bill of billsList) {
       if (bill.status === 'CANCELLED') continue;
@@ -679,7 +689,7 @@ router.get("/organizations/:organizationId/accounting/trial-balance", async (req
     const expensesList = await db
       .select()
       .from(expensesTable)
-      .where(eq(expensesTable.organizationId, orgId));
+      .where(and(eq(expensesTable.organizationId, orgId), ...(branchId ? [eq(expensesTable.branchId, branchId)] : [])));
 
     for (const exp of expensesList) {
       const subtotal = Number(exp.subtotal || 0);

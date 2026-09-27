@@ -1,6 +1,6 @@
 import { pgTable, uuid, varchar, numeric, text, timestamp, integer, boolean } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
-import { organizationsTable } from './foundation';
+import { organizationBranchesTable, organizationsTable } from './foundation';
 
 export const accountsTable = pgTable('accounts', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -25,6 +25,7 @@ export const journalEntriesTable = pgTable('journal_entries', {
   organizationId: uuid('organization_id')
     .notNull()
     .references(() => organizationsTable.id, { onDelete: 'cascade' }),
+  branchId: uuid('branch_id').references(() => organizationBranchesTable.id, { onDelete: 'set null' }),
   entryNumber: varchar('entry_number', { length: 50 }).notNull(),
   entryDate: timestamp('entry_date', { withTimezone: true }).notNull(),
   postingDate: timestamp('posting_date', { withTimezone: true }).notNull(),

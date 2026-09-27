@@ -59,14 +59,17 @@ export const GetCurrentSessionResponse = zod.object({
   "onboardingCurrentStep": zod.number().int().min(1).max(5).optional(),
   "createdAt": zod.coerce.date().optional()
 }),
-  "role": zod.enum(['owner', 'admin', 'accountant', 'sales', 'purchasing', 'viewer'])
+  "role": zod.enum(['owner', 'admin', 'accountant', 'sales', 'purchasing', 'viewer']),
+  "branchId": zod.string().nullish(),
+  "status": zod.string().optional()
 })),
   "preferences": zod.object({
   "language": zod.enum(['en', 'ar']),
   "appearance": zod.enum(['light', 'dark', 'system']),
   "density": zod.enum(['compact', 'comfortable']),
   "sidebarCollapsed": zod.boolean(),
-  "currentOrganizationId": zod.string().uuid().nullish()
+  "currentOrganizationId": zod.string().uuid().nullish(),
+  "currentBranchId": zod.string().nullish()
 })
 })
 
@@ -79,7 +82,8 @@ export const UpdateUserPreferencesBody = zod.object({
   "appearance": zod.enum(['light', 'dark', 'system']).optional(),
   "density": zod.enum(['compact', 'comfortable']).optional(),
   "sidebarCollapsed": zod.boolean().optional(),
-  "currentOrganizationId": zod.string().uuid().nullish()
+  "currentOrganizationId": zod.string().uuid().nullish(),
+  "currentBranchId": zod.string().nullish()
 })
 
 export const UpdateUserPreferencesResponse = zod.object({
@@ -87,7 +91,8 @@ export const UpdateUserPreferencesResponse = zod.object({
   "appearance": zod.enum(['light', 'dark', 'system']),
   "density": zod.enum(['compact', 'comfortable']),
   "sidebarCollapsed": zod.boolean(),
-  "currentOrganizationId": zod.string().uuid().nullish()
+  "currentOrganizationId": zod.string().uuid().nullish(),
+  "currentBranchId": zod.string().nullish()
 })
 
 

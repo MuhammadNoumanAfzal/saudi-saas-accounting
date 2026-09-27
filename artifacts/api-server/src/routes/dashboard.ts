@@ -10,6 +10,7 @@ import {
 import { requireAuthentication } from "../middlewares/auth";
 import { requireModule } from "../middlewares/moduleEntitlement";
 import { writeAuditLog } from "../lib/audit";
+import { getActiveBranchId } from "../lib/branchScope";
 
 const router: IRouter = Router();
 router.use(requireAuthentication);
@@ -22,6 +23,7 @@ router.get(
   async (req, res) => {
     try {
       const organizationId = getOrgId(req);
+      const branchId = await getActiveBranchId(req, res, organizationId);
       const now = new Date();
       const currentYear = now.getFullYear();
       const yearStart = new Date(currentYear, 0, 1);
@@ -37,7 +39,7 @@ router.get(
             issueDate: invoicesTable.issueDate,
           })
           .from(invoicesTable)
-          .where(eq(invoicesTable.organizationId, organizationId)),
+          .where(and(eq(invoicesTable.organizationId, organizationId), ...(branchId ? [eq(invoicesTable.branchId, branchId)] : []))),
 
         db
           .select({
@@ -48,7 +50,7 @@ router.get(
             billDate: purchaseBillsTable.billDate,
           })
           .from(purchaseBillsTable)
-          .where(eq(purchaseBillsTable.organizationId, organizationId)),
+          .where(and(eq(purchaseBillsTable.organizationId, organizationId), ...(branchId ? [eq(purchaseBillsTable.branchId, branchId)] : []))),
 
         db
           .select({
@@ -57,7 +59,7 @@ router.get(
             expenseDate: expensesTable.expenseDate,
           })
           .from(expensesTable)
-          .where(eq(expensesTable.organizationId, organizationId)),
+          .where(and(eq(expensesTable.organizationId, organizationId), ...(branchId ? [eq(expensesTable.branchId, branchId)] : []))),
       ]);
 
       // Calculate YTD totals

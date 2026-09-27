@@ -35,6 +35,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization?.id || '';
   const activeMembership = session?.organizations?.find(item => item.organization.id === orgId) ?? session?.organizations?.[0];
   const role = activeMembership?.role || 'viewer';
+  const assignedBranchId = activeMembership?.branchId || '';
+  const canSwitchBranches = !assignedBranchId || ['owner', 'admin'].includes(role);
   const canWriteFinance = role !== 'viewer';
   const canAccessPath = (href?: string) => {
     if (!href) return false;
@@ -48,7 +50,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return false;
   };
 
-  const activeBranchId = (session?.preferences as any)?.currentBranchId || '';
+  const activeBranchId = (session?.preferences as any)?.currentBranchId || assignedBranchId || '';
   const { data: branchRows = [] } = useQuery({
     queryKey: ['organization-branches', orgId],
     queryFn: () => customFetch<any[]>(`/api/organizations/${orgId}/branches`, { responseType: 'json' }),
@@ -68,11 +70,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [availableBranches, activeBranchId]);
 
   const switchBranch = (branchId: string) => {
+    if (!canSwitchBranches && branchId !== assignedBranchId) {
+      showAlert.toast(t('Your branch access is assigned by the owner.', 'Your branch access is assigned by the owner.'), 'info');
+      return;
+    }
     updatePrefs.mutate(
       { data: { currentBranchId: branchId } as any },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetCurrentSessionQueryKey() });
+          queryClient.invalidateQueries();
           window.dispatchEvent(new CustomEvent('branchChanged', { detail: { branchId } }));
           setOverlay(null);
           showAlert.toast(t('Active branch updated in DB!', 'تم تحديث الفرع النشط في قاعدة البيانات!'), 'info');
@@ -480,15 +487,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <span className="hidden md:inline-block text-muted-foreground/40">/</span>
                 <button
                   type="button"
-                  onClick={() => setOverlay('branch')}
+                  onClick={() => canSwitchBranches ? setOverlay('branch') : showAlert.toast(t('Your branch access is assigned by the owner.', 'Your branch access is assigned by the owner.'), 'info')}
                   className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all text-start"
-                  title={t('Switch active branch', 'تبديل الفرع النشط')}
+                  title={canSwitchBranches ? t('Switch active branch', 'Switch active branch') : t('Branch assigned by owner', 'Branch assigned by owner')}
                 >
                   <Store size={14} className="shrink-0" />
                   <span className="max-w-[150px] truncate text-xs font-bold">
                     {activeBranch ? `${activeBranch.code} · ${isRtl ? (activeBranch.nameAr || activeBranch.nameEn) : activeBranch.nameEn}` : t('No branch selected', 'لم يتم اختيار فرع')}
                   </span>
-                  <ChevronDown size={13} className="shrink-0 opacity-70" />
+                  {canSwitchBranches && <ChevronDown size={13} className="shrink-0 opacity-70" />}
                 </button>
               </>
             )}
@@ -537,6 +544,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {overlay === 'user' && t('Account & Workspace Settings', 'إعدادات الحساب ومساحة العمل')}
                 {overlay === 'modules' && t('NEXUS ERP Modules', 'وحدات نكسس')}
                 {overlay === 'org' && t('Switch Organization', 'تبديل المنشأة')}
+                {overlay === 'branch' && t('Switch Active Branch', 'Switch Active Branch')}
               </h2>
               <button onClick={() => setOverlay(null)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"><X size={18} /></button>
             </div>
@@ -601,7 +609,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <Store className="w-4 h-4 text-emerald-600" />
                     <span className="text-sm font-black text-foreground">{t('Switch Active Branch', 'تبديل الفرع النشط')}</span>
                   </div>
-                  <span className="text-xs text-muted-foreground font-mono font-bold">{availableBranches.length} {t('branches', 'فروع')}</span>
+                  <span className="text-xs text-muted-foreground font-mono font-bold">{canSwitchBranches ? availableBranches.length : 1} {t('branches', 'branches')}</span>
                 </div>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {availableBranches.map((b: any) => {
@@ -684,9 +692,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <div className="mt-3 max-h-72 overflow-auto space-y-1">
                   {searchResults?.map(party => {
                     const partyRoute = party.roles[0]?.role === 'customer' ? 'customers' : 'suppliers';
-                    if (!canAccessPath(/finance/)) return null;
+                    if (!canAccessPath(`/finance/${partyRoute}`)) return null;
                     return (
-                      <button key={party.id} onClick={() => { setLocation(`/finance/${role}/${party.id}`); setOverlay(null); }} className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-medium hover:bg-muted text-left">
+                      <button key={party.id} onClick={() => { setLocation(`/finance/${partyRoute}/${party.id}`); setOverlay(null); }} className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-medium hover:bg-muted text-left">
                         <div>
                           <div className="text-foreground font-bold">{party.displayName}</div>
                           <div className="text-[10px] text-muted-foreground">{party.partyNumber} · {party.partyType}</div>

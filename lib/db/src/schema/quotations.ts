@@ -10,7 +10,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { organizationsTable } from "./foundation";
+import { organizationBranchesTable, organizationsTable } from "./foundation";
 import { businessPartiesTable } from "./parties";
 import { catalogItemsTable, organizationUnitsTable } from "./catalog";
 
@@ -19,6 +19,7 @@ export const quotationsTable = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     organizationId: uuid("organization_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
+    branchId: uuid("branch_id").references(() => organizationBranchesTable.id, { onDelete: "set null" }),
     quotationNumber: text("quotation_number").notNull(),
     customerId: uuid("customer_id").notNull().references(() => businessPartiesTable.id, { onDelete: "restrict" }),
     issueDate: timestamp("issue_date", { withTimezone: true }).notNull().defaultNow(),
@@ -37,6 +38,7 @@ export const quotationsTable = pgTable(
   },
   (table) => [
     uniqueIndex("quotations_org_number_idx").on(table.organizationId, table.quotationNumber),
+    index("quotations_org_branch_idx").on(table.organizationId, table.branchId),
     index("quotations_org_customer_idx").on(table.organizationId, table.customerId),
     index("quotations_org_status_idx").on(table.organizationId, table.status),
     index("quotations_org_issue_date_idx").on(table.organizationId, table.issueDate),

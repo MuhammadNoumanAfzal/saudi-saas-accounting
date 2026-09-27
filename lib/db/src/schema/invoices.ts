@@ -1,6 +1,6 @@
 import { pgTable, uuid, varchar, numeric, text, timestamp, integer } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
-import { organizationsTable } from './foundation';
+import { organizationBranchesTable, organizationsTable } from './foundation';
 import { businessPartiesTable } from './parties';
 import { quotationsTable } from './quotations';
 
@@ -9,6 +9,7 @@ export const invoicesTable = pgTable('invoices', {
   organizationId: uuid('organization_id')
     .notNull()
     .references(() => organizationsTable.id, { onDelete: 'cascade' }),
+  branchId: uuid('branch_id').references(() => organizationBranchesTable.id, { onDelete: 'set null' }),
   invoiceNumber: varchar('invoice_number', { length: 50 }).notNull(),
   invoiceType: varchar('invoice_type', { length: 30 }).notNull().default('STANDARD'), // STANDARD (B2B), SIMPLIFIED (B2C)
   quotationId: uuid('quotation_id').references(() => quotationsTable.id, { onDelete: 'set null' }),

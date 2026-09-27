@@ -135,6 +135,8 @@ router.get("/me", async (req, res): Promise<void> => {
       .select({
         organization: organizationsTable,
         role: organizationMembershipsTable.role,
+        branchId: organizationMembershipsTable.branchId,
+        status: organizationMembershipsTable.status,
       })
       .from(organizationMembershipsTable)
       .innerJoin(
@@ -146,16 +148,38 @@ router.get("/me", async (req, res): Promise<void> => {
 
     const preferences = await getOrCreatePreferences(user.id);
 
+    const activeMembership =
+      memberships.find((m) => m.organization.id === preferences.currentOrganizationId) ?? memberships[0];
+    const preferencePatch: Partial<typeof userPreferencesTable.$inferInsert> = {};
+
+    if (activeMembership && preferences.currentOrganizationId !== activeMembership.organization.id) {
+      preferencePatch.currentOrganizationId = activeMembership.organization.id;
+      preferences.currentOrganizationId = activeMembership.organization.id;
+    }
+
     if (
-      memberships.length > 0 &&
-      (!preferences.currentOrganizationId ||
-        !memberships.some((m) => m.organization.id === preferences.currentOrganizationId))
+      activeMembership?.branchId &&
+      !["owner", "admin"].includes(activeMembership.role) &&
+      preferences.currentBranchId !== activeMembership.branchId
     ) {
+      preferencePatch.currentBranchId = activeMembership.branchId;
+      preferences.currentBranchId = activeMembership.branchId;
+    }
+
+    if (
+      !activeMembership?.branchId &&
+      preferences.currentBranchId &&
+      !memberships.some((m) => m.branchId === preferences.currentBranchId)
+    ) {
+      preferencePatch.currentBranchId = null;
+      preferences.currentBranchId = null;
+    }
+
+    if (Object.keys(preferencePatch).length > 0) {
       await db
         .update(userPreferencesTable)
-        .set({ currentOrganizationId: memberships[0].organization.id })
+        .set({ ...preferencePatch, updatedAt: new Date() })
         .where(eq(userPreferencesTable.userId, user.id));
-      preferences.currentOrganizationId = memberships[0].organization.id;
     }
 
     res.json(
@@ -168,6 +192,8 @@ router.get("/me", async (req, res): Promise<void> => {
         organizations: memberships.map((item) => ({
           organization: toOrganization(item.organization),
           role: item.role,
+          branchId: item.branchId,
+          status: item.status,
         })),
         preferences: toPreferences(preferences),
       }),

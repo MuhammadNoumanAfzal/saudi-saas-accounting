@@ -16,6 +16,7 @@ import {
 import { requireAuthentication } from "../middlewares/auth";
 import { requireModule } from "../middlewares/moduleEntitlement";
 import { writeAuditLog } from "../lib/audit";
+import { getActiveBranchId } from "../lib/branchScope";
 
 const router: IRouter = Router();
 router.use(requireAuthentication);
@@ -23,6 +24,11 @@ router.use("/organizations/:organizationId", requireModule("finance"));
 
 const getOrgId = (req: any) => String(req.params.organizationId);
 const getQuotationId = (req: any) => String(req.params.quotationId);
+const quotationWhere = (organizationId: string, quotationId: string, branchId?: string | null) => [
+  eq(quotationsTable.organizationId, organizationId),
+  eq(quotationsTable.id, quotationId),
+  ...(branchId ? [eq(quotationsTable.branchId, branchId)] : []),
+];
 
 // Helper to calculate line items & quotation totals deterministically
 function calculateQuotationTotals(items: Array<any>) {
@@ -107,7 +113,8 @@ async function generateNextQuotationNumber(organizationId: string): Promise<stri
 }
 
 // Fetch single quotation with items and customer details
-async function getFullQuotation(organizationId: string, quotationId: string) {
+async function getFullQuotation(organizationId: string, quotationId: string, branchId?: string | null) {
+  const quotationConditions = quotationWhere(organizationId, quotationId, branchId);
   const [q] = await db
     .select({
       quotation: quotationsTable,
@@ -115,12 +122,7 @@ async function getFullQuotation(organizationId: string, quotationId: string) {
     })
     .from(quotationsTable)
     .leftJoin(businessPartiesTable, eq(quotationsTable.customerId, businessPartiesTable.id))
-    .where(
-      and(
-        eq(quotationsTable.organizationId, organizationId),
-        eq(quotationsTable.id, quotationId),
-      ),
-    )
+    .where(and(...quotationConditions))
     .limit(1);
 
   if (!q) return null;
@@ -161,7 +163,9 @@ router.get("/organizations/:organizationId/quotations", async (req, res): Promis
   const pageSize = Math.min(100, Math.max(1, parseInt(String(req.query.pageSize || "25"), 10)));
   const offset = (page - 1) * pageSize;
 
+  const branchId = await getActiveBranchId(req, res, organizationId);
   const conditions = [eq(quotationsTable.organizationId, organizationId)];
+  if (branchId) conditions.push(eq(quotationsTable.branchId, branchId));
 
   if (search) {
     conditions.push(
@@ -241,6 +245,7 @@ router.post("/organizations/:organizationId/quotations", async (req, res): Promi
   }
 
   const body = parsed.data;
+  const branchId = await getActiveBranchId(req, res, organizationId);
 
   // Verify customer belongs to organization
   const [customer] = await db
@@ -249,6 +254,7 @@ router.post("/organizations/:organizationId/quotations", async (req, res): Promi
     .where(
       and(
         eq(businessPartiesTable.organizationId, organizationId),
+        ...(branchId ? [eq(businessPartiesTable.branchId, branchId)] : []),
         eq(businessPartiesTable.id, body.customerId),
       ),
     )
@@ -266,6 +272,7 @@ router.post("/organizations/:organizationId/quotations", async (req, res): Promi
     .insert(quotationsTable)
     .values({
       organizationId,
+      branchId,
       quotationNumber,
       customerId: body.customerId,
       issueDate: body.issueDate ? new Date(body.issueDate) : new Date(),
@@ -301,7 +308,7 @@ router.post("/organizations/:organizationId/quotations", async (req, res): Promi
     req,
   });
 
-  const result = await getFullQuotation(organizationId, createdQuotation.id);
+  const result = await getFullQuotation(organizationId, createdQuotation.id, branchId);
   res.status(201).json(result);
 });
 
@@ -310,7 +317,8 @@ router.get("/organizations/:organizationId/quotations/:quotationId", async (req,
   const organizationId = getOrgId(req);
   const quotationId = getQuotationId(req);
 
-  const quotation = await getFullQuotation(organizationId, quotationId);
+  const branchId = await getActiveBranchId(req, res, organizationId);
+  const quotation = await getFullQuotation(organizationId, quotationId, branchId);
 
   if (!quotation) {
     res.status(404).json({ error: "Quotation not found" });
@@ -331,7 +339,8 @@ router.patch("/organizations/:organizationId/quotations/:quotationId", async (re
     return;
   }
 
-  const existing = await getFullQuotation(organizationId, quotationId);
+  const branchId = await getActiveBranchId(req, res, organizationId);
+  const existing = await getFullQuotation(organizationId, quotationId, branchId);
   if (!existing) {
     res.status(404).json({ error: "Quotation not found" });
     return;
@@ -378,12 +387,7 @@ router.patch("/organizations/:organizationId/quotations/:quotationId", async (re
   await db
     .update(quotationsTable)
     .set(updateData)
-    .where(
-      and(
-        eq(quotationsTable.organizationId, organizationId),
-        eq(quotationsTable.id, quotationId),
-      ),
-    );
+    .where(and(...quotationWhere(organizationId, quotationId, branchId)));
 
   await writeAuditLog({
     organizationId,
@@ -396,7 +400,7 @@ router.patch("/organizations/:organizationId/quotations/:quotationId", async (re
     req,
   });
 
-  const updated = await getFullQuotation(organizationId, quotationId);
+  const updated = await getFullQuotation(organizationId, quotationId, branchId);
   res.json(updated);
 });
 
@@ -411,7 +415,8 @@ router.post("/organizations/:organizationId/quotations/:quotationId/status", asy
     return;
   }
 
-  const existing = await getFullQuotation(organizationId, quotationId);
+  const branchId = await getActiveBranchId(req, res, organizationId);
+  const existing = await getFullQuotation(organizationId, quotationId, branchId);
   if (!existing) {
     res.status(404).json({ error: "Quotation not found" });
     return;
@@ -422,12 +427,7 @@ router.post("/organizations/:organizationId/quotations/:quotationId/status", asy
   await db
     .update(quotationsTable)
     .set({ status, updatedAt: new Date() })
-    .where(
-      and(
-        eq(quotationsTable.organizationId, organizationId),
-        eq(quotationsTable.id, quotationId),
-      ),
-    );
+    .where(and(...quotationWhere(organizationId, quotationId, branchId)));
 
   await writeAuditLog({
     organizationId,
@@ -440,7 +440,7 @@ router.post("/organizations/:organizationId/quotations/:quotationId/status", asy
     req,
   });
 
-  const updated = await getFullQuotation(organizationId, quotationId);
+  const updated = await getFullQuotation(organizationId, quotationId, branchId);
   res.json(updated);
 });
 
@@ -449,7 +449,8 @@ router.delete("/organizations/:organizationId/quotations/:quotationId", async (r
   const organizationId = getOrgId(req);
   const quotationId = getQuotationId(req);
 
-  const existing = await getFullQuotation(organizationId, quotationId);
+  const branchId = await getActiveBranchId(req, res, organizationId);
+  const existing = await getFullQuotation(organizationId, quotationId, branchId);
   if (!existing) {
     res.status(404).json({ error: "Quotation not found" });
     return;
@@ -471,12 +472,7 @@ router.delete("/organizations/:organizationId/quotations/:quotationId", async (r
 
   await db
     .delete(quotationsTable)
-    .where(
-      and(
-        eq(quotationsTable.organizationId, organizationId),
-        eq(quotationsTable.id, quotationId),
-      ),
-    );
+    .where(and(...quotationWhere(organizationId, quotationId, branchId)));
 
   await writeAuditLog({
     organizationId,

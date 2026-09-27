@@ -13,6 +13,7 @@ import {
 import { requireAuthentication } from "../middlewares/auth";
 import { requireModule } from "../middlewares/moduleEntitlement";
 import { writeAuditLog } from "../lib/audit";
+import { getActiveBranchId } from "../lib/branchScope";
 
 const router: IRouter = Router();
 router.use(requireAuthentication);
@@ -53,6 +54,7 @@ router.get(
   async (req, res) => {
     try {
       const organizationId = getOrgId(req);
+      const branchId = await getActiveBranchId(req, res, organizationId);
       const startDateStr = req.query.startDate ? String(req.query.startDate) : undefined;
       const endDateStr = req.query.endDate ? String(req.query.endDate) : undefined;
 
@@ -73,6 +75,7 @@ router.get(
         .where(
           and(
             eq(invoicesTable.organizationId, organizationId),
+            ...(branchId ? [eq(invoicesTable.branchId, branchId)] : []),
             gte(invoicesTable.issueDate, startDate),
             lte(invoicesTable.issueDate, endDate)
           )
@@ -85,6 +88,7 @@ router.get(
         .where(
           and(
             eq(purchaseBillsTable.organizationId, organizationId),
+            ...(branchId ? [eq(purchaseBillsTable.branchId, branchId)] : []),
             gte(purchaseBillsTable.billDate, startDate),
             lte(purchaseBillsTable.billDate, endDate)
           )
@@ -97,6 +101,7 @@ router.get(
         .where(
           and(
             eq(expensesTable.organizationId, organizationId),
+            ...(branchId ? [eq(expensesTable.branchId, branchId)] : []),
             gte(expensesTable.expenseDate, startDate),
             lte(expensesTable.expenseDate, endDate)
           )
@@ -109,6 +114,7 @@ router.get(
         .where(
           and(
             eq(journalEntriesTable.organizationId, organizationId),
+            ...(branchId ? [eq(journalEntriesTable.branchId, branchId)] : []),
             eq(journalEntriesTable.status, "POSTED"),
             gte(journalEntriesTable.entryDate, startDate),
             lte(journalEntriesTable.entryDate, endDate)
@@ -253,6 +259,7 @@ router.get(
   async (req, res) => {
     try {
       const organizationId = getOrgId(req);
+      const branchId = await getActiveBranchId(req, res, organizationId);
       const asOfDateStr = req.query.asOfDate ? String(req.query.asOfDate) : undefined;
       const asOfDate = asOfDateStr ? new Date(asOfDateStr) : new Date();
 
@@ -264,17 +271,17 @@ router.get(
       const invoicesList = await db
         .select()
         .from(invoicesTable)
-        .where(eq(invoicesTable.organizationId, organizationId));
+        .where(and(eq(invoicesTable.organizationId, organizationId), ...(branchId ? [eq(invoicesTable.branchId, branchId)] : [])));
 
       const billsList = await db
         .select()
         .from(purchaseBillsTable)
-        .where(eq(purchaseBillsTable.organizationId, organizationId));
+        .where(and(eq(purchaseBillsTable.organizationId, organizationId), ...(branchId ? [eq(purchaseBillsTable.branchId, branchId)] : [])));
 
       const expensesList = await db
         .select()
         .from(expensesTable)
-        .where(eq(expensesTable.organizationId, organizationId));
+        .where(and(eq(expensesTable.organizationId, organizationId), ...(branchId ? [eq(expensesTable.branchId, branchId)] : [])));
 
       // Calculate totals for AR, AP, Cash/Bank, VAT
       let arBalance = 0;
@@ -422,6 +429,7 @@ router.get(
   async (req, res) => {
     try {
       const organizationId = getOrgId(req);
+      const branchId = await getActiveBranchId(req, res, organizationId);
       const startDateStr = req.query.startDate ? String(req.query.startDate) : undefined;
       const endDateStr = req.query.endDate ? String(req.query.endDate) : undefined;
 
@@ -435,6 +443,7 @@ router.get(
         .where(
           and(
             eq(invoicesTable.organizationId, organizationId),
+            ...(branchId ? [eq(invoicesTable.branchId, branchId)] : []),
             gte(invoicesTable.issueDate, startDate),
             lte(invoicesTable.issueDate, endDate)
           )
@@ -446,6 +455,7 @@ router.get(
         .where(
           and(
             eq(purchaseBillsTable.organizationId, organizationId),
+            ...(branchId ? [eq(purchaseBillsTable.branchId, branchId)] : []),
             gte(purchaseBillsTable.billDate, startDate),
             lte(purchaseBillsTable.billDate, endDate)
           )
@@ -457,6 +467,7 @@ router.get(
         .where(
           and(
             eq(expensesTable.organizationId, organizationId),
+            ...(branchId ? [eq(expensesTable.branchId, branchId)] : []),
             gte(expensesTable.expenseDate, startDate),
             lte(expensesTable.expenseDate, endDate)
           )
@@ -588,6 +599,7 @@ router.get(
   async (req, res) => {
     try {
       const organizationId = getOrgId(req);
+      const branchId = await getActiveBranchId(req, res, organizationId);
       const accountId = String(req.query.accountId || "");
       const startDateStr = req.query.startDate ? String(req.query.startDate) : undefined;
       const endDateStr = req.query.endDate ? String(req.query.endDate) : undefined;
@@ -644,6 +656,7 @@ router.get(
         .where(
           and(
             eq(journalEntriesTable.organizationId, organizationId),
+            ...(branchId ? [eq(journalEntriesTable.branchId, branchId)] : []),
             eq(journalEntryLinesTable.accountId, accountId),
             eq(journalEntriesTable.status, "POSTED"),
             gte(journalEntriesTable.entryDate, startDate),
@@ -670,6 +683,7 @@ router.get(
         .where(
           and(
             eq(invoicesTable.organizationId, organizationId),
+            ...(branchId ? [eq(invoicesTable.branchId, branchId)] : []),
             gte(invoicesTable.issueDate, startDate),
             lte(invoicesTable.issueDate, endDate)
           )
@@ -736,6 +750,7 @@ router.get(
         .where(
           and(
             eq(purchaseBillsTable.organizationId, organizationId),
+            ...(branchId ? [eq(purchaseBillsTable.branchId, branchId)] : []),
             gte(purchaseBillsTable.billDate, startDate),
             lte(purchaseBillsTable.billDate, endDate)
           )
@@ -802,6 +817,7 @@ router.get(
         .where(
           and(
             eq(expensesTable.organizationId, organizationId),
+            ...(branchId ? [eq(expensesTable.branchId, branchId)] : []),
             gte(expensesTable.expenseDate, startDate),
             lte(expensesTable.expenseDate, endDate)
           )
@@ -914,18 +930,21 @@ router.get(
 router.get("/organizations/:organizationId/reports/customer-statement", async (req, res) => {
   try {
     const organizationId = getOrgId(req);
+      const branchId = await getActiveBranchId(req, res, organizationId);
     const customerId = String(req.query.customerId || "");
     if (!customerId) return res.status(400).json({ error: "customerId is required" });
 
-    const [customer] = await db.select().from(businessPartiesTable).where(and(eq(businessPartiesTable.organizationId, organizationId), eq(businessPartiesTable.id, customerId))).limit(1);
+    const [customer] = await db.select().from(businessPartiesTable).where(and(eq(businessPartiesTable.organizationId, organizationId), ...(branchId ? [eq(businessPartiesTable.branchId, branchId)] : []), eq(businessPartiesTable.id, customerId))).limit(1);
     if (!customer) return res.status(404).json({ error: "Customer not found" });
 
-    const invoices = await db.select().from(invoicesTable).where(and(eq(invoicesTable.organizationId, organizationId), eq(invoicesTable.customerId, customerId)));
+    const invoices = await db.select().from(invoicesTable).where(and(eq(invoicesTable.organizationId, organizationId),
+            ...(branchId ? [eq(invoicesTable.branchId, branchId)] : []), eq(invoicesTable.customerId, customerId)));
     const rows: any[] = [];
     for (const inv of invoices) {
       if (inv.status === "CANCELLED") continue;
       rows.push({ date: inv.issueDate, type: "INVOICE", reference: inv.invoiceNumber, debit: Number(inv.totalAmount || 0), credit: 0 });
-      const payments = await db.select().from(journalEntriesTable).where(and(eq(journalEntriesTable.organizationId, organizationId), eq(journalEntriesTable.sourceDocumentType, "CUSTOMER_PAYMENT"), eq(journalEntriesTable.sourceDocumentId, inv.id)));
+      const payments = await db.select().from(journalEntriesTable).where(and(eq(journalEntriesTable.organizationId, organizationId),
+            ...(branchId ? [eq(journalEntriesTable.branchId, branchId)] : []), eq(journalEntriesTable.sourceDocumentType, "CUSTOMER_PAYMENT"), eq(journalEntriesTable.sourceDocumentId, inv.id)));
       for (const p of payments) rows.push({ date: p.entryDate, type: "PAYMENT", reference: p.referenceNumber || inv.invoiceNumber, debit: 0, credit: Number(p.totalDebit || 0) });
     }
     rows.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -944,18 +963,21 @@ router.get("/organizations/:organizationId/reports/customer-statement", async (r
 router.get("/organizations/:organizationId/reports/supplier-statement", async (req, res) => {
   try {
     const organizationId = getOrgId(req);
+      const branchId = await getActiveBranchId(req, res, organizationId);
     const supplierId = String(req.query.supplierId || "");
     if (!supplierId) return res.status(400).json({ error: "supplierId is required" });
 
-    const [supplier] = await db.select().from(businessPartiesTable).where(and(eq(businessPartiesTable.organizationId, organizationId), eq(businessPartiesTable.id, supplierId))).limit(1);
+    const [supplier] = await db.select().from(businessPartiesTable).where(and(eq(businessPartiesTable.organizationId, organizationId), ...(branchId ? [eq(businessPartiesTable.branchId, branchId)] : []), eq(businessPartiesTable.id, supplierId))).limit(1);
     if (!supplier) return res.status(404).json({ error: "Supplier not found" });
 
-    const bills = await db.select().from(purchaseBillsTable).where(and(eq(purchaseBillsTable.organizationId, organizationId), eq(purchaseBillsTable.supplierId, supplierId)));
+    const bills = await db.select().from(purchaseBillsTable).where(and(eq(purchaseBillsTable.organizationId, organizationId),
+            ...(branchId ? [eq(purchaseBillsTable.branchId, branchId)] : []), eq(purchaseBillsTable.supplierId, supplierId)));
     const rows: any[] = [];
     for (const bill of bills) {
       if (bill.status === "CANCELLED") continue;
       rows.push({ date: bill.billDate, type: "BILL", reference: bill.billNumber, debit: 0, credit: Number(bill.totalAmount || 0) });
-      const payments = await db.select().from(journalEntriesTable).where(and(eq(journalEntriesTable.organizationId, organizationId), eq(journalEntriesTable.sourceDocumentType, "SUPPLIER_PAYMENT"), eq(journalEntriesTable.sourceDocumentId, bill.id)));
+      const payments = await db.select().from(journalEntriesTable).where(and(eq(journalEntriesTable.organizationId, organizationId),
+            ...(branchId ? [eq(journalEntriesTable.branchId, branchId)] : []), eq(journalEntriesTable.sourceDocumentType, "SUPPLIER_PAYMENT"), eq(journalEntriesTable.sourceDocumentId, bill.id)));
       for (const p of payments) rows.push({ date: p.entryDate, type: "PAYMENT", reference: p.referenceNumber || bill.billNumber, debit: Number(p.totalCredit || 0), credit: 0 });
     }
     rows.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());

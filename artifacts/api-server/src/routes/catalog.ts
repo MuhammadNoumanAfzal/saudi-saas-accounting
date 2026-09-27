@@ -11,6 +11,7 @@ import {
 import { requireCatalogPermission } from "../middlewares/catalogAccess";
 import { writeAuditLog } from "../lib/audit";
 import { parseCsvRows } from "../lib/csv";
+import { getActiveBranchId } from "../lib/branchScope";
 
 const router = Router();
 const org = (req: any) => String(req.params.organizationId);
@@ -55,7 +56,9 @@ function validTax(category: string, rate: string) {
 router.get("/organizations/:organizationId/catalog/items", requireCatalogPermission("products.view"), async (req, res) => {
   const query = parse(ListCatalogItemsQueryParams, req.query, res); if (!query) return;
   await provisionUnits(org(req));
+  const branchId = await getActiveBranchId(req, res, org(req));
   const conditions: any[] = [eq(catalogItemsTable.organizationId, org(req))];
+  if (branchId) conditions.push(eq(catalogItemsTable.branchId, branchId));
   if (query.search) { const s = `%${query.search}%`; conditions.push(or(ilike(catalogItemsTable.code, s), ilike(catalogItemsTable.name, s), ilike(catalogItemsTable.nameAr, s), ilike(catalogItemsTable.sku, s), ilike(catalogItemsTable.barcode, s))); }
   if (query.type) conditions.push(eq(catalogItemsTable.type, query.type));
   if (query.status) conditions.push(eq(catalogItemsTable.status, query.status));
@@ -76,18 +79,20 @@ router.post("/organizations/:organizationId/catalog/items", requireCatalogPermis
   if (body.type === "SERVICE" && body.trackInventory) return res.status(400).json({ error: "Services cannot track inventory" });
   if (!validTax(body.taxCategory, body.taxRate)) return res.status(400).json({ error: "Invalid tax rate for category" });
   await provisionUnits(org(req)); if (!(await validUnit(org(req), body.unitId))) return res.status(400).json({ error: "Unit not found" });
-  const [item] = await db.insert(catalogItemsTable).values({ ...body, organizationId: org(req), code: await nextCode(org(req)), trackInventory: body.type === "SERVICE" ? false : (body.trackInventory ?? false), updatedAt: now() }).returning();
+  const [item] = await db.insert(catalogItemsTable).values({ ...body, organizationId: org(req), branchId: await getActiveBranchId(req, res, org(req)), code: await nextCode(org(req)), trackInventory: body.type === "SERVICE" ? false : (body.trackInventory ?? false), updatedAt: now() }).returning();
   await audit(req, "created", item.id, null, item); return res.status(201).json(item);
 });
 // Fixed catalog collection endpoints are declared before /:itemId routes.
 router.get("/organizations/:organizationId/catalog/search", requireCatalogPermission("products.view"), async (req, res) => {
   const q = `%${String(req.query.q || "")}%`;
-  const items = await db.select().from(catalogItemsTable).where(and(eq(catalogItemsTable.organizationId, org(req)), or(ilike(catalogItemsTable.code, q), ilike(catalogItemsTable.name, q), ilike(catalogItemsTable.nameAr, q), ilike(catalogItemsTable.sku, q), ilike(catalogItemsTable.barcode, q)))).limit(20);
+  const items = await db.select().from(catalogItemsTable).where(and(eq(catalogItemsTable.organizationId, org(req)), ...(await getActiveBranchId(req, res, org(req)) ? [eq(catalogItemsTable.branchId, await getActiveBranchId(req, res, org(req))!)] : []), or(ilike(catalogItemsTable.code, q), ilike(catalogItemsTable.name, q), ilike(catalogItemsTable.nameAr, q), ilike(catalogItemsTable.sku, q), ilike(catalogItemsTable.barcode, q)))).limit(20);
   return res.json(items);
 });
 router.get("/organizations/:organizationId/catalog/export", requireCatalogPermission("products.export"), async (req, res) => {
   const query = parse(ExportCatalogItemsQueryParams, req.query, res); if (!query) return;
+  const branchId = await getActiveBranchId(req, res, org(req));
   const conditions: any[] = [eq(catalogItemsTable.organizationId, org(req))];
+  if (branchId) conditions.push(eq(catalogItemsTable.branchId, branchId));
   if (query.search) { const s = `%${query.search}%`; conditions.push(or(ilike(catalogItemsTable.code, s), ilike(catalogItemsTable.name, s), ilike(catalogItemsTable.nameAr, s), ilike(catalogItemsTable.sku, s), ilike(catalogItemsTable.barcode, s))); }
   if (query.type) conditions.push(eq(catalogItemsTable.type, query.type));
   if (query.status) conditions.push(eq(catalogItemsTable.status, query.status));
@@ -98,7 +103,7 @@ router.get("/organizations/:organizationId/catalog/export", requireCatalogPermis
 });
 router.get("/organizations/:organizationId/catalog/items/:itemId", requireCatalogPermission("products.view"), async (req, res) => {
   const p = parse(GetCatalogItemParams, req.params, res); if (!p) return;
-  const [item] = await db.select().from(catalogItemsTable).where(and(eq(catalogItemsTable.organizationId, org(req)), eq(catalogItemsTable.id, p.itemId)));
+  const [item] = await db.select().from(catalogItemsTable).where(and(eq(catalogItemsTable.organizationId, org(req)), ...(await getActiveBranchId(req, res, org(req)) ? [eq(catalogItemsTable.branchId, await getActiveBranchId(req, res, org(req))!)] : []), eq(catalogItemsTable.id, p.itemId)));
   item ? res.json(item) : res.status(404).json({ error: "Item not found" });
 });
 router.patch("/organizations/:organizationId/catalog/items/:itemId", requireCatalogPermission("products.edit"), async (req, res) => {
@@ -106,16 +111,16 @@ router.patch("/organizations/:organizationId/catalog/items/:itemId", requireCata
   if (body.type === "SERVICE" && body.trackInventory) return res.status(400).json({ error: "Services cannot track inventory" });
   if (!validTax(body.taxCategory, body.taxRate)) return res.status(400).json({ error: "Invalid tax rate for category" });
   if (!(await validUnit(org(req), body.unitId))) return res.status(400).json({ error: "Unit not found" });
-  const [old] = await db.select().from(catalogItemsTable).where(and(eq(catalogItemsTable.organizationId, org(req)), eq(catalogItemsTable.id, params.itemId)));
+  const [old] = await db.select().from(catalogItemsTable).where(and(eq(catalogItemsTable.organizationId, org(req)), ...(await getActiveBranchId(req, res, org(req)) ? [eq(catalogItemsTable.branchId, await getActiveBranchId(req, res, org(req))!)] : []), eq(catalogItemsTable.id, params.itemId)));
   if (!old) return res.status(404).json({ error: "Item not found" });
-  const [item] = await db.update(catalogItemsTable).set({ ...body, trackInventory: body.type === "SERVICE" ? false : (body.trackInventory ?? false), updatedAt: now() }).where(and(eq(catalogItemsTable.organizationId, org(req)), eq(catalogItemsTable.id, params.itemId))).returning();
+  const [item] = await db.update(catalogItemsTable).set({ ...body, trackInventory: body.type === "SERVICE" ? false : (body.trackInventory ?? false), updatedAt: now() }).where(and(eq(catalogItemsTable.organizationId, org(req)), ...(await getActiveBranchId(req, res, org(req)) ? [eq(catalogItemsTable.branchId, await getActiveBranchId(req, res, org(req))!)] : []), eq(catalogItemsTable.id, params.itemId))).returning();
   await audit(req, "updated", item.id, old, item); return res.json(item);
 });
 router.patch("/organizations/:organizationId/catalog/items/:itemId/status", requireCatalogPermission("products.deactivate"), async (req, res) => {
   const params = parse(GetCatalogItemParams, req.params, res); const body = parse(UpdateCatalogItemStatusBody, req.body, res); if (!params || !body) return;
-  const [old] = await db.select().from(catalogItemsTable).where(and(eq(catalogItemsTable.organizationId, org(req)), eq(catalogItemsTable.id, params.itemId)));
+  const [old] = await db.select().from(catalogItemsTable).where(and(eq(catalogItemsTable.organizationId, org(req)), ...(await getActiveBranchId(req, res, org(req)) ? [eq(catalogItemsTable.branchId, await getActiveBranchId(req, res, org(req))!)] : []), eq(catalogItemsTable.id, params.itemId)));
   if (!old) return res.status(404).json({ error: "Item not found" });
-  const [item] = await db.update(catalogItemsTable).set({ status: body.status, updatedAt: now() }).where(and(eq(catalogItemsTable.organizationId, org(req)), eq(catalogItemsTable.id, params.itemId))).returning();
+  const [item] = await db.update(catalogItemsTable).set({ status: body.status, updatedAt: now() }).where(and(eq(catalogItemsTable.organizationId, org(req)), ...(await getActiveBranchId(req, res, org(req)) ? [eq(catalogItemsTable.branchId, await getActiveBranchId(req, res, org(req))!)] : []), eq(catalogItemsTable.id, params.itemId))).returning();
   await audit(req, body.status === "ACTIVE" ? "reactivated" : "deactivated", item.id, old, item); return res.json(item);
 });
 router.get("/organizations/:organizationId/catalog/units", requireCatalogPermission("products.view"), async (req, res) => { await provisionUnits(org(req)); res.json(await db.select().from(organizationUnitsTable).where(eq(organizationUnitsTable.organizationId, org(req))).orderBy(asc(organizationUnitsTable.name))); });
@@ -127,7 +132,7 @@ router.get("/organizations/:organizationId/catalog/tax-definitions", requireCata
 ]));
 router.get("/organizations/:organizationId/catalog/search", requireCatalogPermission("products.view"), async (req, res) => {
   const q = `%${String(req.query.q || "")}%`;
-  const items = await db.select().from(catalogItemsTable).where(and(eq(catalogItemsTable.organizationId, org(req)), or(ilike(catalogItemsTable.code, q), ilike(catalogItemsTable.name, q), ilike(catalogItemsTable.nameAr, q), ilike(catalogItemsTable.sku, q), ilike(catalogItemsTable.barcode, q)))).limit(20);
+  const items = await db.select().from(catalogItemsTable).where(and(eq(catalogItemsTable.organizationId, org(req)), ...(await getActiveBranchId(req, res, org(req)) ? [eq(catalogItemsTable.branchId, await getActiveBranchId(req, res, org(req))!)] : []), or(ilike(catalogItemsTable.code, q), ilike(catalogItemsTable.name, q), ilike(catalogItemsTable.nameAr, q), ilike(catalogItemsTable.sku, q), ilike(catalogItemsTable.barcode, q)))).limit(20);
   return res.json(items);
 });
 const csvHeader = "type,name,nameAr,unitId,salesPrice,purchasePrice,taxCategory,taxRate,sku,barcode,trackInventory";

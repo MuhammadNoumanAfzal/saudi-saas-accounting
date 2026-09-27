@@ -209,6 +209,9 @@ export const OrganizationMembershipRole = {
 export interface OrganizationMembership {
   organization: Organization;
   role: OrganizationMembershipRole;
+  /** @nullable */
+  branchId?: string | null;
+  status?: string;
 }
 
 export type UserPreferencesLanguage = typeof UserPreferencesLanguage[keyof typeof UserPreferencesLanguage];
@@ -243,6 +246,8 @@ export interface UserPreferences {
   sidebarCollapsed: boolean;
   /** @nullable */
   currentOrganizationId?: string | null;
+  /** @nullable */
+  currentBranchId?: string | null;
 }
 
 export interface CurrentSession {
@@ -283,6 +288,8 @@ export interface UserPreferencesInput {
   sidebarCollapsed?: boolean;
   /** @nullable */
   currentOrganizationId?: string | null;
+  /** @nullable */
+  currentBranchId?: string | null;
 }
 
 export type DashboardSummaryRecentTransactionsItem = {

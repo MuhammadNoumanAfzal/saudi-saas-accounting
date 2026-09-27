@@ -1,6 +1,6 @@
 import { pgTable, uuid, varchar, numeric, text, timestamp, integer } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
-import { organizationsTable } from './foundation';
+import { organizationBranchesTable, organizationsTable } from './foundation';
 import { businessPartiesTable } from './parties';
 
 export const purchaseBillsTable = pgTable('purchase_bills', {
@@ -8,6 +8,7 @@ export const purchaseBillsTable = pgTable('purchase_bills', {
   organizationId: uuid('organization_id')
     .notNull()
     .references(() => organizationsTable.id, { onDelete: 'cascade' }),
+  branchId: uuid('branch_id').references(() => organizationBranchesTable.id, { onDelete: 'set null' }),
   billNumber: varchar('bill_number', { length: 50 }).notNull(),
   supplierInvoiceNumber: varchar('supplier_invoice_number', { length: 100 }),
   supplierId: uuid('supplier_id')
@@ -54,6 +55,7 @@ export const expensesTable = pgTable('expenses', {
   organizationId: uuid('organization_id')
     .notNull()
     .references(() => organizationsTable.id, { onDelete: 'cascade' }),
+  branchId: uuid('branch_id').references(() => organizationBranchesTable.id, { onDelete: 'set null' }),
   expenseNumber: varchar('expense_number', { length: 50 }).notNull(),
   category: varchar('category', { length: 100 }).notNull().default('OTHER'), // RENT, UTILITIES, SALARIES, OFFICE_SUPPLIES, TRAVEL, MARKETING, OTHER
   supplierId: uuid('supplier_id').references(() => businessPartiesTable.id, { onDelete: 'set null' }),
