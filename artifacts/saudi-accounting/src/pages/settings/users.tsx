@@ -125,15 +125,32 @@ export function UsersSettings() {
     onError: (err) => showAlert.error(t('Remove failed', 'Remove failed'), getErrorMessage(err)),
   });
 
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const validateUserForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!form.displayName.trim() || form.displayName.trim().length < 2) {
+      errors.displayName = isRtl ? 'الاسم الكامل مطلوب (حرفين على الأقل)' : 'Full name is required (at least 2 characters)';
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!form.email.trim() || !emailRegex.test(form.email.trim())) {
+      errors.email = isRtl ? 'يرجى إدخال عنوان بريد إلكتروني صحيح' : 'Please enter a valid email address';
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const openCreate = () => {
     setEditing(null);
     setForm(emptyForm);
+    setFormErrors({});
     setOpen(true);
   };
 
   const openEdit = (member: Member) => {
     setEditing(member);
     setForm({ displayName: member.displayName, email: member.email, role: member.role, branchId: member.branchId || '', status: member.status === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE' });
+    setFormErrors({});
     setOpen(true);
   };
 
@@ -254,10 +271,28 @@ export function UsersSettings() {
               {editing ? t('Update role, status, and branch scope.', 'Update role, status, and branch scope.') : t('New invitations require owner approval before workspace access.', 'New invitations require owner approval before workspace access.')}
             </SheetDescription>
           </SheetHeader>
-          <form onSubmit={(event) => { event.preventDefault(); saveMutation.mutate(); }} className="flex-1 overflow-y-auto p-6 flex flex-col justify-between space-y-6">
+          <form onSubmit={(event) => { event.preventDefault(); if (validateUserForm()) saveMutation.mutate(); }} className="flex-1 overflow-y-auto p-6 flex flex-col justify-between space-y-6">
             <div className="grid gap-4">
-              <label className="space-y-1"><span className="text-xs font-bold">{t('Full name', 'Full name')}</span><input required value={form.displayName} onChange={(event) => setForm({ ...form, displayName: event.target.value })} className="field h-10 w-full bg-background" /></label>
-              <label className="space-y-1"><span className="text-xs font-bold">{t('Email', 'Email')}</span><input required type="email" disabled={Boolean(editing)} value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} className="field h-10 w-full bg-background disabled:opacity-70" /></label>
+              {Object.keys(formErrors).length > 0 && (
+                <div className="p-3 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded-xl text-xs font-semibold space-y-1">
+                  <div className="font-bold">⚠️ {isRtl ? 'يرجى تصحيح الأخطاء التالية:' : 'Please fix highlighted errors:'}</div>
+                  <ul className="list-disc list-inside font-normal">
+                    {Object.values(formErrors).map((err, i) => (
+                      <li key={i}>{err}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <label className="space-y-1">
+                <span className="text-xs font-bold">{t('Full name', 'Full name')} <span className="text-red-500">*</span></span>
+                <input required value={form.displayName} onChange={(event) => { setForm({ ...form, displayName: event.target.value }); if (formErrors.displayName) setFormErrors(prev => ({ ...prev, displayName: '' })); }} className={`field h-10 w-full bg-background ${formErrors.displayName ? 'border-red-500' : ''}`} />
+                {formErrors.displayName && <p className="text-[11px] font-medium text-red-500">{formErrors.displayName}</p>}
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs font-bold">{t('Email', 'Email')} <span className="text-red-500">*</span></span>
+                <input required type="email" disabled={Boolean(editing)} value={form.email} onChange={(event) => { setForm({ ...form, email: event.target.value }); if (formErrors.email) setFormErrors(prev => ({ ...prev, email: '' })); }} className={`field h-10 w-full bg-background disabled:opacity-70 ${formErrors.email ? 'border-red-500' : ''}`} />
+                {formErrors.email && <p className="text-[11px] font-medium text-red-500">{formErrors.email}</p>}
+              </label>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="space-y-1"><span className="text-xs font-bold">{t('Role', 'Role')}</span><select value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value as Role })} className="field h-10 w-full bg-background">{roleOptions.map((role) => <option key={role} value={role}>{roleLabel(role)}</option>)}</select></label>
                 <label className="space-y-1"><span className="text-xs font-bold">{t('Status', 'Status')}</span><select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })} className="field h-10 w-full bg-background"><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option><option value="PENDING">PENDING</option></select></label>

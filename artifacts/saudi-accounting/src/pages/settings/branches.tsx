@@ -124,10 +124,50 @@ export function BranchesSettings() {
     enabled: Boolean(orgId),
   });
 
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
   useEffect(() => {
     if (!open) return;
     setForm(editing ? toForm(editing) : emptyForm);
+    setFormErrors({});
   }, [open, editing]);
+
+  const validateBranchForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!form.code.trim()) {
+      errors.code = isRtl ? 'رمز الفرع مطلوب (مثال: RUH-01)' : 'Branch Code is required (e.g. RUH-01)';
+    }
+    if (!form.nameEnglish.trim()) {
+      errors.nameEnglish = isRtl ? 'اسم الفرع باللغة الإنجليزية مطلوب' : 'Branch Name (English) is required';
+    }
+    if (form.vatNumber?.trim()) {
+      const vatRegex = /^3\d{13}3$/;
+      if (!vatRegex.test(form.vatNumber.trim())) {
+        errors.vatNumber = isRtl ? 'رقم الضريبة يجب أن يتكون من 15 رقم يبدأ وينتهي بـ 3' : 'ZATCA VAT Number must be 15 digits starting and ending with 3';
+      }
+    }
+    if (form.commercialRegistrationNumber?.trim()) {
+      const crRegex = /^\d{10}$/;
+      if (!crRegex.test(form.commercialRegistrationNumber.trim())) {
+        errors.commercialRegistrationNumber = isRtl ? 'رقم السجل التجاري يجب أن يتكون من 10 أرقام' : 'Commercial Registration (CR) Number must be 10 digits';
+      }
+    }
+    if (form.email?.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(form.email.trim())) {
+        errors.email = isRtl ? 'عنوان البريد الإلكتروني غير صحيح' : 'Invalid email address format';
+      }
+    }
+    if (form.postalCode?.trim()) {
+      const postalRegex = /^\d{5}$/;
+      if (!postalRegex.test(form.postalCode.trim())) {
+        errors.postalCode = isRtl ? 'الرمز البريدي يجب أن يتكون من 5 أرقام' : 'Postal Code must be 5 digits';
+      }
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const saveMutation = useMutation({
     mutationFn: () => customFetch<Branch>(editing ? `/api/organizations/${orgId}/branches/${editing.id}` : `/api/organizations/${orgId}/branches`, {
@@ -175,15 +215,19 @@ export function BranchesSettings() {
   const renderInput = ([key, label, required]: [keyof BranchForm, string, boolean]) => (
     <label key={key} className="space-y-1">
       <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-        {t(label, label)}{required ? ' *' : ''}
+        {t(label, label)}{required ? <span className="text-red-500"> *</span> : ''}
       </span>
       <input
         required={required}
         type={key === 'email' ? 'email' : 'text'}
         value={String(form[key] ?? '')}
-        onChange={(event) => updateField(key, event.target.value as never)}
-        className="field h-10 w-full bg-background"
+        onChange={(event) => {
+          updateField(key, event.target.value as never);
+          if (formErrors[key]) setFormErrors(prev => ({ ...prev, [key]: '' }));
+        }}
+        className={`field h-10 w-full bg-background ${formErrors[key] ? 'border-red-500 bg-red-500/5' : ''}`}
       />
+      {formErrors[key] && <p className="text-[11px] font-medium text-red-500">{formErrors[key]}</p>}
     </label>
   );
 
@@ -312,11 +356,23 @@ export function BranchesSettings() {
               {editing ? t('Edit Branch', 'Edit Branch') : t('New Branch', 'New Branch')}
             </SheetTitle>
             <SheetDescription>
-              {t('All fields persist in PostgreSQL.', 'All fields persist in PostgreSQL.')}
+              {editing 
+                ? t('Update branch details, national address, and ZATCA settings.', 'تحديث بيانات الفرع والعنوان الوطني ومحددات هيئة الزكاة.') 
+                : t('Configure company branch profile and national address.', 'إعداد بيانات الفرع والعنوان الوطني للشركة.')}
             </SheetDescription>
           </SheetHeader>
-          <form onSubmit={(event) => { event.preventDefault(); saveMutation.mutate(); }} className="flex-1 overflow-y-auto p-6 flex flex-col justify-between space-y-6">
+          <form onSubmit={(event) => { event.preventDefault(); if (validateBranchForm()) saveMutation.mutate(); }} className="flex-1 overflow-y-auto p-6 flex flex-col justify-between space-y-6">
             <div className="space-y-6">
+              {Object.keys(formErrors).length > 0 && (
+                <div className="p-3 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded-xl text-xs font-semibold space-y-1">
+                  <div className="font-bold">⚠️ {isRtl ? 'يرجى تصحيح الأخطاء التالية:' : 'Please fix highlighted errors:'}</div>
+                  <ul className="list-disc list-inside font-normal">
+                    {Object.values(formErrors).map((err, i) => (
+                      <li key={i}>{err}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <section className="space-y-3">
                 <h3 className="text-xs font-black uppercase text-muted-foreground">{t('Branch Identity', 'Branch Identity')}</h3>
                 <div className="grid gap-4 sm:grid-cols-2">{identityFields.map(renderInput)}</div>
