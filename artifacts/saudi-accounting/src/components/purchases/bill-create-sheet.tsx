@@ -13,6 +13,13 @@ import {
 } from '@workspace/api-client-react';
 import { X, Plus, Trash2, Building2, Calendar, FileText, DollarSign, Calculator } from 'lucide-react';
 import { BillLineItemsTable } from './bill-line-items-table';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 
 interface BillCreateSheetProps {
   open: boolean;
@@ -226,26 +233,17 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess, billId, initial
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex justify-end">
-      <div className="w-full max-w-3xl bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col border-l border-slate-200 dark:border-slate-800 animate-in slide-in-from-right duration-200">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-indigo-600" />
-              {billId ? (isRtl ? 'تعديل فاتورة الشراء' : 'Edit Purchase Bill') : (isRtl ? 'إضافة فاتورة شراء جديدة' : 'Create Purchase Bill')}
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              {isRtl ? 'تسجيل فاتورة من مورد وحساب ضريبة المدخلات' : 'Record vendor bill and calculate input VAT'}
-            </p>
-          </div>
-          <button 
-            onClick={() => onOpenChange(false)}
-            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side={isRtl ? 'left' : 'right'} className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl p-0 flex flex-col bg-background">
+        <SheetHeader className="p-6 border-b border-border bg-card/50">
+          <SheetTitle className="text-xl font-bold flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-indigo-600" />
+            {billId ? (isRtl ? 'تعديل فاتورة الشراء' : 'Edit Purchase Bill') : (isRtl ? 'إضافة فاتورة شراء جديدة' : 'Create Purchase Bill')}
+          </SheetTitle>
+          <SheetDescription>
+            {isRtl ? 'تسجيل فاتورة من مورد وحساب ضريبة المدخلات' : 'Record vendor bill and calculate input VAT'}
+          </SheetDescription>
+        </SheetHeader>
 
         {/* Content Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -499,7 +497,7 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess, billId, initial
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 }

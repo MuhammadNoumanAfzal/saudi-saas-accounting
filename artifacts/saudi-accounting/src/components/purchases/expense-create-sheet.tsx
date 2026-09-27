@@ -10,6 +10,13 @@ import {
   customFetch
 } from '@workspace/api-client-react';
 import { X, CreditCard } from 'lucide-react';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 
 interface ExpenseCreateSheetProps {
   open: boolean;
@@ -157,26 +164,17 @@ export function ExpenseCreateSheet({ open, onOpenChange, onSuccess, expenseId, i
   const isEdit = Boolean(expenseId || initialExpense?.id);
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex justify-end">
-      <div className="w-full max-w-lg bg-card text-card-foreground h-full shadow-2xl flex flex-col border-l border-border animate-in slide-in-from-right duration-200">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-muted/30">
-          <div>
-            <h2 className="text-lg font-extrabold text-foreground flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-primary" />
-              {isEdit ? (isRtl ? 'تعديل المصروف التشغيلي' : 'Edit Operational Expense') : (isRtl ? 'تسجيل مصروف جديد' : 'Record Operational Expense')}
-            </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {isRtl ? 'أدخل تفاصيل النفقة ومبلغ ضريبة القيمة المضافة' : 'Enter expense details and input VAT'}
-            </p>
-          </div>
-          <button 
-            onClick={() => onOpenChange(false)}
-            className="p-2 text-muted-foreground hover:text-foreground rounded-xl hover:bg-muted transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side={isRtl ? 'left' : 'right'} className="w-full sm:max-w-md md:max-w-lg p-0 flex flex-col bg-background">
+        <SheetHeader className="p-6 border-b border-border bg-card/50">
+          <SheetTitle className="text-xl font-bold flex items-center gap-2">
+            <CreditCard className="w-5 h-5 text-primary" />
+            {isEdit ? (isRtl ? 'تعديل المصروف التشغيلي' : 'Edit Operational Expense') : (isRtl ? 'تسجيل مصروف جديد' : 'Record Operational Expense')}
+          </SheetTitle>
+          <SheetDescription>
+            {isRtl ? 'أدخل تفاصيل النفقة ومبلغ ضريبة القيمة المضافة' : 'Enter expense details and input VAT'}
+          </SheetDescription>
+        </SheetHeader>
 
         {/* Content Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
@@ -373,7 +371,7 @@ export function ExpenseCreateSheet({ open, onOpenChange, onSuccess, expenseId, i
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -149,6 +149,8 @@ a { color: inherit; text-decoration: none; }
   color: hsl(var(--foreground)); 
   border-radius: 12px; 
   padding: 10px 14px; 
+  min-height: 44px;
+  line-height: 1.5;
   outline: none;
   transition: border .2s, box-shadow .2s, background .2s;
 }
