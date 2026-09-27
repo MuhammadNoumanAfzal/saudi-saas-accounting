@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { customFetch, useGetCurrentSession } from '@workspace/api-client-react';
 import { CheckCircle2, Download, RefreshCw, Search, UserPlus, Users, X } from 'lucide-react';
@@ -7,6 +7,13 @@ import { showAlert } from '@/lib/alerts';
 import { getErrorMessage } from '@/lib/form-errors';
 import { queryClient } from '@/lib/queryClient';
 import { useTranslation, Button } from '@/lib/utils';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 
 type Role = 'owner' | 'admin' | 'accountant' | 'sales' | 'purchasing' | 'viewer';
 type MemberType = 'member' | 'invitation';
@@ -237,17 +244,18 @@ export function UsersSettings() {
         )}
       </div>
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <form onSubmit={(event) => { event.preventDefault(); saveMutation.mutate(); }} className="w-full max-w-xl rounded-2xl border border-border bg-card shadow-2xl">
-            <div className="flex justify-between border-b p-5">
-              <div>
-                <h2 className="text-lg font-black">{editing ? t('Edit User Access', 'Edit User Access') : t('Invite User', 'Invite User')}</h2>
-                <p className="text-xs text-muted-foreground">{editing ? t('Update role, status, and branch scope.', 'Update role, status, and branch scope.') : t('New invitations require owner approval before workspace access.', 'New invitations require owner approval before workspace access.')}</p>
-              </div>
-              <button type="button" onClick={() => setOpen(false)}><X size={20} /></button>
-            </div>
-            <div className="grid gap-4 p-5">
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side={isRtl ? 'left' : 'right'} className="w-full sm:max-w-md md:max-w-lg p-0 flex flex-col bg-background">
+          <SheetHeader className="p-6 border-b border-border bg-card/50">
+            <SheetTitle className="text-xl font-bold">
+              {editing ? t('Edit User Access', 'Edit User Access') : t('Invite User', 'Invite User')}
+            </SheetTitle>
+            <SheetDescription>
+              {editing ? t('Update role, status, and branch scope.', 'Update role, status, and branch scope.') : t('New invitations require owner approval before workspace access.', 'New invitations require owner approval before workspace access.')}
+            </SheetDescription>
+          </SheetHeader>
+          <form onSubmit={(event) => { event.preventDefault(); saveMutation.mutate(); }} className="flex-1 overflow-y-auto p-6 flex flex-col justify-between space-y-6">
+            <div className="grid gap-4">
               <label className="space-y-1"><span className="text-xs font-bold">{t('Full name', 'Full name')}</span><input required value={form.displayName} onChange={(event) => setForm({ ...form, displayName: event.target.value })} className="field h-10 w-full bg-background" /></label>
               <label className="space-y-1"><span className="text-xs font-bold">{t('Email', 'Email')}</span><input required type="email" disabled={Boolean(editing)} value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} className="field h-10 w-full bg-background disabled:opacity-70" /></label>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -256,24 +264,30 @@ export function UsersSettings() {
               </div>
               <label className="space-y-1"><span className="text-xs font-bold">{t('Branch scope', 'Branch scope')}</span><select value={form.branchId} onChange={(event) => setForm({ ...form, branchId: event.target.value })} className="field h-10 w-full bg-background"><option value="">{t('All branches', 'All branches')}</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.code} - {isRtl ? branch.nameArabic || branch.nameEnglish : branch.nameEnglish}</option>)}</select></label>
             </div>
-            <div className="flex justify-end gap-2 border-t p-5"><Button type="button" variant="secondary" onClick={() => setOpen(false)}>{t('Cancel', 'Cancel')}</Button><Button disabled={saveMutation.isPending}>{saveMutation.isPending ? t('Saving...', 'Saving...') : t('Save', 'Save')}</Button></div>
+            <div className="flex justify-end gap-2 border-t pt-5">
+              <Button type="button" variant="secondary" onClick={() => setOpen(false)}>{t('Cancel', 'Cancel')}</Button>
+              <Button disabled={saveMutation.isPending}>{saveMutation.isPending ? t('Saving...', 'Saving...') : t('Save', 'Save')}</Button>
+            </div>
           </form>
-        </div>
-      )}
+        </SheetContent>
+      </Sheet>
 
-      {viewing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl">
-            <div className="mb-4 flex justify-between"><h2 className="text-xl font-black">{viewing.displayName}</h2><button onClick={() => setViewing(null)}><X size={20} /></button></div>
-            <div className="grid gap-3 text-sm">
+      <Sheet open={Boolean(viewing)} onOpenChange={(v) => { if (!v) setViewing(null); }}>
+        <SheetContent side={isRtl ? 'left' : 'right'} className="w-full sm:max-w-md md:max-w-lg p-0 flex flex-col bg-background">
+          <SheetHeader className="p-6 border-b border-border bg-card/50">
+            <SheetTitle className="text-xl font-bold">{viewing?.displayName}</SheetTitle>
+            <SheetDescription>{t('User membership details and permissions', 'تفاصيل عضوية المستخدم والصلاحيات')}</SheetDescription>
+          </SheetHeader>
+          {viewing && (
+            <div className="p-6 grid gap-4 text-sm flex-1 overflow-y-auto">
               <div className="flex justify-between border-b pb-2"><span className="text-muted-foreground">Email</span><span className="font-mono">{viewing.email}</span></div>
               <div className="flex justify-between border-b pb-2"><span className="text-muted-foreground">Role</span><span className="font-bold">{roleLabel(viewing.role)}</span></div>
               <div className="flex justify-between border-b pb-2"><span className="text-muted-foreground">Branch</span><span className="text-right font-bold">{branchLabel(viewing.branchId)}</span></div>
               <div className="flex justify-between border-b pb-2"><span className="text-muted-foreground">Status</span><span className="font-bold">{viewing.status}</span></div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

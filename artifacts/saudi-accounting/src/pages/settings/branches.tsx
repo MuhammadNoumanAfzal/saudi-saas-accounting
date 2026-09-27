@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { customFetch, useGetCurrentSession } from '@workspace/api-client-react';
 import { Download, Plus, RefreshCw, Search, Store, X } from 'lucide-react';
@@ -7,6 +7,13 @@ import { getErrorMessage } from '@/lib/form-errors';
 import { queryClient } from '@/lib/queryClient';
 import { useTranslation, Button } from '@/lib/utils';
 import { RowActions } from '@/components/ui/row-actions';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 
 type BranchStatus = 'ACTIVE' | 'INACTIVE';
 
@@ -297,18 +304,19 @@ export function BranchesSettings() {
         )}
       </div>
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <form onSubmit={(event) => { event.preventDefault(); saveMutation.mutate(); }} className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl">
-            <div className="flex items-start justify-between border-b p-5">
-              <div>
-                <h2 className="text-lg font-black">{editing ? t('Edit Branch', 'Edit Branch') : t('New Branch', 'New Branch')}</h2>
-                <p className="text-xs text-muted-foreground">{t('All fields persist in PostgreSQL.', 'All fields persist in PostgreSQL.')}</p>
-              </div>
-              <button type="button" onClick={() => setOpen(false)} className="rounded-full p-2 hover:bg-muted"><X size={20} /></button>
-            </div>
-
-            <div className="space-y-6 p-5">
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side={isRtl ? 'left' : 'right'} className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl p-0 flex flex-col bg-background">
+          <SheetHeader className="p-6 border-b border-border bg-card/50">
+            <SheetTitle className="text-xl font-bold flex items-center gap-2">
+              <Store className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              {editing ? t('Edit Branch', 'Edit Branch') : t('New Branch', 'New Branch')}
+            </SheetTitle>
+            <SheetDescription>
+              {t('All fields persist in PostgreSQL.', 'All fields persist in PostgreSQL.')}
+            </SheetDescription>
+          </SheetHeader>
+          <form onSubmit={(event) => { event.preventDefault(); saveMutation.mutate(); }} className="flex-1 overflow-y-auto p-6 flex flex-col justify-between space-y-6">
+            <div className="space-y-6">
               <section className="space-y-3">
                 <h3 className="text-xs font-black uppercase text-muted-foreground">{t('Branch Identity', 'Branch Identity')}</h3>
                 <div className="grid gap-4 sm:grid-cols-2">{identityFields.map(renderInput)}</div>
@@ -342,22 +350,27 @@ export function BranchesSettings() {
               </section>
             </div>
 
-            <div className="flex justify-end gap-2 border-t p-5">
+            <div className="flex justify-end gap-2 border-t pt-5">
               <Button type="button" variant="secondary" onClick={() => setOpen(false)}>{t('Cancel', 'Cancel')}</Button>
               <Button disabled={saveMutation.isPending}>{saveMutation.isPending ? t('Saving...', 'Saving...') : t('Save Branch', 'Save Branch')}</Button>
             </div>
           </form>
-        </div>
-      )}
+        </SheetContent>
+      </Sheet>
 
-      {viewing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-border bg-card p-6 shadow-2xl">
-            <div className="mb-4 flex justify-between">
-              <h2 className="text-xl font-black">{isRtl ? viewing.nameArabic || viewing.nameEnglish : viewing.nameEnglish}</h2>
-              <button onClick={() => setViewing(null)}><X size={20} /></button>
-            </div>
-            <div className="grid gap-3 text-sm sm:grid-cols-2">
+      <Sheet open={Boolean(viewing)} onOpenChange={(v) => { if (!v) setViewing(null); }}>
+        <SheetContent side={isRtl ? 'left' : 'right'} className="w-full sm:max-w-xl md:max-w-2xl p-0 flex flex-col bg-background">
+          <SheetHeader className="p-6 border-b border-border bg-card/50">
+            <SheetTitle className="text-xl font-bold flex items-center gap-2">
+              <Store className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              {viewing ? (isRtl ? viewing.nameArabic || viewing.nameEnglish : viewing.nameEnglish) : ''}
+            </SheetTitle>
+            <SheetDescription>
+              {t('Branch profile and location configuration', 'تفاصيل الفرع والموقع')}
+            </SheetDescription>
+          </SheetHeader>
+          {viewing && (
+            <div className="p-6 grid gap-3 text-sm sm:grid-cols-2 flex-1 overflow-y-auto">
               {Object.entries(viewing).filter(([key]) => !['id', 'createdAt', 'updatedAt'].includes(key)).map(([key, value]) => (
                 <div key={key} className="rounded-lg border border-border/60 p-3">
                   <div className="text-xs font-bold uppercase text-muted-foreground">{key}</div>
@@ -365,9 +378,9 @@ export function BranchesSettings() {
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      )}
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
