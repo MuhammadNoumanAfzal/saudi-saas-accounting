@@ -198,8 +198,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navSettings = [
     { href: '/settings/organization', label: t('Organization', 'المنشأة'), icon: Building2 },
     { href: '/settings/modules', label: t('Modules', 'الوحدات'), icon: Grid },
-    { href: '/settings/users', label: t('Users & roles', 'المستخدمون والأدوار'), icon: Users },
-    { href: '/settings/branches', label: t('Branches', 'الفروع'), icon: Store },
     { href: '/settings/language', label: t('Language & region', 'اللغة والمنطقة'), icon: Languages },
     { href: '/settings/security', label: t('Security', 'الأمان'), icon: ShieldCheck },
     { href: '/settings/appearance', label: t('Appearance', 'المظهر'), icon: SlidersHorizontal },
