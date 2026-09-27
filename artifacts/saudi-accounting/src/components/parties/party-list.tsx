@@ -8,6 +8,10 @@ import {
   useGetSuppliers,
   getGetCustomersQueryKey,
   getGetSuppliersQueryKey,
+  useListInvoices,
+  getListInvoicesQueryKey,
+  useListPurchaseBills,
+  getListPurchaseBillsQueryKey,
   customFetch
 } from '@workspace/api-client-react';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -70,6 +74,15 @@ export function PartyList({ role }: { role: 'customer' | 'supplier' }) {
     }
   });
 
+  // Fetch invoices or purchase bills to compute dynamic party balances
+  const listParams = { pageSize: 500 } as any;
+  const { data: invoicesData } = useListInvoices(orgId, listParams, {
+    query: { enabled: Boolean(orgId) && isCustomer, queryKey: getListInvoicesQueryKey(orgId, listParams) }
+  });
+  const { data: billsData } = useListPurchaseBills(orgId, listParams, {
+    query: { enabled: Boolean(orgId) && !isCustomer, queryKey: getListPurchaseBillsQueryKey(orgId, listParams) }
+  });
+
   const data = isCustomer ? customerData : supplierData;
   const isLoading = isCustomer ? custLoading : suppLoading;
 
@@ -87,6 +100,46 @@ export function PartyList({ role }: { role: 'customer' | 'supplier' }) {
     return true;
   });
 
+  const getPartyBalance = (item: any): number => {
+    if (isCustomer) {
+      const itemId = String(item.id || item.partyId || '').toLowerCase();
+      const itemName = (item.displayName || item.businessNameEnglish || '').toLowerCase().trim();
+      const partyInvoices = (invoicesData?.items || []).filter((inv: any) => {
+        const invCustId = String(inv.customerId || inv.customer?.id || '').toLowerCase();
+        const invCustName = (inv.customerName || inv.customer?.displayName || '').toLowerCase().trim();
+        return (invCustId && invCustId === itemId) || (invCustName && itemName && (invCustName.includes(itemName) || itemName.includes(invCustName)));
+      });
+
+      const unpaid = partyInvoices.reduce((sum: number, inv: any) => {
+        if (inv.status === 'PAID' || inv.status === 'CANCELLED') return sum;
+        const paid = parseFloat(inv.amountPaid || inv.paidAmount || '0') || 0;
+        const total = parseFloat(inv.totalAmount || '0') || 0;
+        return sum + Math.max(0, total - paid);
+      }, 0);
+
+      if (unpaid > 0) return unpaid;
+      return partyInvoices.reduce((sum: number, inv: any) => sum + (parseFloat(inv.totalAmount || '0') || 0), 0);
+    } else {
+      const itemId = String(item.id || item.partyId || '').toLowerCase();
+      const itemName = (item.displayName || item.businessNameEnglish || '').toLowerCase().trim();
+      const partyBills = (billsData?.items || []).filter((b: any) => {
+        const suppId = String(b.supplierId || b.supplier?.id || '').toLowerCase();
+        const suppName = (b.supplierName || b.supplier?.displayName || '').toLowerCase().trim();
+        return (suppId && suppId === itemId) || (suppName && itemName && (suppName.includes(itemName) || itemName.includes(suppName)));
+      });
+
+      const unpaid = partyBills.reduce((sum: number, b: any) => {
+        if (b.status === 'PAID' || b.status === 'CANCELLED') return sum;
+        const paid = parseFloat(b.amountPaid || b.paidAmount || '0') || 0;
+        const total = parseFloat(b.totalAmount || '0') || 0;
+        return sum + Math.max(0, total - paid);
+      }, 0);
+
+      if (unpaid > 0) return unpaid;
+      return partyBills.reduce((sum: number, b: any) => sum + (parseFloat(b.totalAmount || '0') || 0), 0);
+    }
+  };
+
   const headerTitle = isCustomer ? t('Customers', 'العملاء') : t('Suppliers', 'الموردون');
   const headerDesc = isCustomer 
     ? t('Manage customer profiles, ZATCA VAT IDs, and sales ledgers.', 'إدارة ملفات العملاء، الأرقام الضريبية وسجلات المبيعات.')
@@ -94,7 +147,7 @@ export function PartyList({ role }: { role: 'customer' | 'supplier' }) {
 
   const totalCount = data?.summary?.total || rawItems.length;
   const activeCount = data?.summary?.active || rawItems.filter((i: any) => i.status !== 'inactive').length;
-  const withBalanceCount = data?.summary?.withBalance || 0;
+  const withBalanceCount = rawItems.filter((i: any) => getPartyBalance(i) > 0).length;
 
   const handleDeleteParty = async (partyId: string, partyName: string) => {
     if (!orgId) return;
@@ -388,7 +441,14 @@ export function PartyList({ role }: { role: 'customer' | 'supplier' }) {
                           {item.city || (item as any).city || '-'}
                         </td>
                         <td className="px-5 py-4 text-right rtl:text-left font-mono font-extrabold text-foreground text-sm">
-                          SAR 0.00
+                          {(() => {
+                            const bal = getPartyBalance(item);
+                            return (
+                              <span className={bal > 0 ? 'text-amber-600 dark:text-amber-400 font-black' : 'text-muted-foreground'}>
+                                SAR {bal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="px-5 py-4 text-center" onClick={e => e.stopPropagation()}>
                           <RowActions
