@@ -9,6 +9,13 @@ import {
 } from '@workspace/api-client-react';
 import { X, Plus, Trash2, FileSpreadsheet, Calculator, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
 import { showAlert } from '@/lib/alerts';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 
 interface JournalEntryCreateSheetProps {
   open: boolean;
@@ -172,52 +179,20 @@ export function JournalEntryCreateSheet({ open, onOpenChange, onSuccess }: Journ
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex justify-end">
-      <div className="w-full max-w-3xl bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col border-l border-slate-200 dark:border-slate-800 animate-in slide-in-from-right duration-200">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <FileSpreadsheet className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-              {isRtl ? 'إعداد قيد محاسبي يدوي مزدوج (Journal Voucher)' : 'Create Manual Journal Voucher'}
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              {isRtl ? 'تطبيق قاعدة القيد المزدوج: مجموع المدين يساوي مجموع الدائن' : 'Double-Entry Rule: Total Debits = Total Credits'}
-            </p>
-          </div>
-          <button 
-            onClick={() => onOpenChange(false)}
-            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side={isRtl ? 'left' : 'right'} className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl p-0 flex flex-col bg-background">
+        <SheetHeader className="p-6 border-b border-border bg-card/50">
+          <SheetTitle className="text-xl font-bold flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            {isRtl ? 'إعداد قيد محاسبي يدوي مزدوج (Journal Voucher)' : 'Create Manual Journal Voucher'}
+          </SheetTitle>
+          <SheetDescription>
+            {isRtl ? 'تطبيق قاعدة القيد المزدوج: مجموع المدين يساوي مجموع الدائن' : 'Double-Entry Rule: Total Debits = Total Credits'}
+          </SheetDescription>
+        </SheetHeader>
 
         {/* Content Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Quick Preset Data Bar */}
-          <div className="bg-indigo-50/70 dark:bg-indigo-950/40 p-3 rounded-xl border border-indigo-200 dark:border-indigo-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-indigo-900 dark:text-indigo-300">
-              <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-              <span>{isRtl ? 'نماذج قيود جاهزة لتجربة سريعة:' : 'Quick sample data presets:'}</span>
-            </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <button
-                type="button"
-                onClick={fillCapitalSample}
-                className="px-2.5 py-1 text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-2xs transition-all"
-              >
-                {isRtl ? '+ قيد رأس المال (50,000 ر.س)' : '+ Capital Entry (50k SAR)'}
-              </button>
-              <button
-                type="button"
-                onClick={fillRentSample}
-                className="px-2.5 py-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg shadow-2xs transition-all"
-              >
-                {isRtl ? '+ قيد إيجار وضريبة (11,500 ر.س)' : '+ Rent + VAT Entry'}
-              </button>
-            </div>
-          </div>
 
           {Object.keys(errors).length > 0 && (
             <div className="p-3 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded-xl text-xs font-semibold space-y-1">
@@ -437,7 +412,7 @@ export function JournalEntryCreateSheet({ open, onOpenChange, onSuccess }: Journ
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 }
