@@ -95,6 +95,42 @@ router.get("/me", async (req, res): Promise<void> => {
     }
 
 
+
+    // Owner-approved invitations become active memberships only after the invited email signs in.
+    const approvedInvitations = await db
+      .select()
+      .from(organizationInvitationsTable)
+      .where(and(eq(organizationInvitationsTable.email, user.email.toLowerCase()), eq(organizationInvitationsTable.status, "APPROVED")));
+
+    for (const invite of approvedInvitations) {
+      const [member] = await db
+        .insert(organizationMembershipsTable)
+        .values({
+          organizationId: invite.organizationId,
+          userId: user.id,
+          role: invite.role,
+          branchId: invite.branchId,
+          status: "ACTIVE",
+        })
+        .onConflictDoUpdate({
+          target: [organizationMembershipsTable.organizationId, organizationMembershipsTable.userId],
+          set: { role: invite.role, branchId: invite.branchId, status: "ACTIVE" },
+        })
+        .returning();
+      await db
+        .update(organizationInvitationsTable)
+        .set({ status: "ACCEPTED", updatedAt: new Date() })
+        .where(eq(organizationInvitationsTable.id, invite.id));
+      await db.insert(auditLogsTable).values({
+        organizationId: invite.organizationId,
+        userId: user.id,
+        action: "invitation.accepted",
+        entityType: "organization_membership",
+        entityId: member?.id,
+        previousValues: invite,
+        newValues: member,
+      });
+    }
     const memberships = await db
       .select({
         organization: organizationsTable,
@@ -156,17 +192,27 @@ router.patch("/me/preferences", async (req, res): Promise<void> => {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  if (parsed.data.currentOrganizationId) {
-    const membership = await getMembership(
-      user.id,
-      parsed.data.currentOrganizationId,
-    );
-    if (!membership) {
-      res.status(403).json({ error: "Organization access denied" });
+  const existingPreferences = await getOrCreatePreferences(user.id);
+  const requestedOrganizationId = parsed.data.currentOrganizationId || existingPreferences.currentOrganizationId;
+  let membership = null;
+  if (requestedOrganizationId) {
+    membership = await getMembership(user.id, requestedOrganizationId);
+    if (!membership || membership.status !== "ACTIVE") {
+      res.status(403).json({ error: "You do not have active access to this organization." });
       return;
     }
   }
-  await getOrCreatePreferences(user.id);
+  const requestedBranchId = req.body?.currentBranchId;
+  if (
+    requestedBranchId !== undefined &&
+    requestedBranchId &&
+    membership?.branchId &&
+    !["owner", "admin"].includes(membership.role) &&
+    membership.branchId !== requestedBranchId
+  ) {
+    res.status(403).json({ error: "Your account is limited to one branch. Ask the owner to change your branch access." });
+    return;
+  }
   const [updated] = await db
     .update(userPreferencesTable)
     .set({

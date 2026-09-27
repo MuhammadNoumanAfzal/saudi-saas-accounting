@@ -20,7 +20,11 @@ function readMessage(value: unknown): string | null {
 
 export function getErrorMessage(error: unknown, fallback = 'Something went wrong'): string {
   const message = readMessage(error);
-  return message && message.trim() ? message : fallback;
+  if (!message?.trim()) return fallback;
+  return message
+    .replace(/^HTTP\s+\d+(?:\s+[A-Za-z ]+)?\s*:\s*/i, '')
+    .replace(/^Error\s*:\s*/i, '')
+    .trim() || fallback;
 }
 
 export function getFieldErrors(error: unknown, fallback = 'Something went wrong'): Record<string, string> {

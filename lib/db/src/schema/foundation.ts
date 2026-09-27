@@ -43,7 +43,7 @@ export const appearanceEnum = pgEnum("appearance", [
 ]);
 export const densityEnum = pgEnum("density", ["compact", "comfortable"]);
 export const branchStatusEnum = pgEnum("branch_status", ["ACTIVE", "INACTIVE"]);
-export const invitationStatusEnum = pgEnum("invitation_status", ["PENDING", "ACCEPTED", "REVOKED", "EXPIRED"]);
+export const invitationStatusEnum = pgEnum("invitation_status", ["PENDING", "APPROVED", "ACCEPTED", "REVOKED", "EXPIRED"]);
 
 export const usersTable = pgTable(
   "users",

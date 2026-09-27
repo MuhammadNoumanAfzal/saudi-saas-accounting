@@ -34,7 +34,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization?.id || '';
   const activeMembership = session?.organizations?.find(item => item.organization.id === orgId) ?? session?.organizations?.[0];
-  const canWriteFinance = activeMembership?.role !== 'viewer';
+  const role = activeMembership?.role || 'viewer';
+  const canWriteFinance = role !== 'viewer';
+  const canAccessPath = (href?: string) => {
+    if (!href) return false;
+    if (['owner', 'admin'].includes(role)) return true;
+    if (['/home', '/finance'].includes(href)) return true;
+    if (href.startsWith('/settings/security') || href.startsWith('/settings/appearance') || href.startsWith('/settings/language')) return true;
+    if (role === 'sales') return href.startsWith('/finance/customers') || href.startsWith('/finance/quotations') || href.startsWith('/finance/invoices') || href.startsWith('/finance/items');
+    if (role === 'purchasing') return href.startsWith('/finance/suppliers') || href.startsWith('/finance/bills') || href.startsWith('/finance/expenses') || href.startsWith('/finance/items');
+    if (role === 'accountant') return href.startsWith('/accounting') || href.startsWith('/reports/profit-and-loss') || href.startsWith('/reports/balance-sheet') || href.startsWith('/reports/zatca-vat-return') || href.startsWith('/reports/account-ledger');
+    if (role === 'viewer') return href.startsWith('/finance/customers') || href.startsWith('/finance/suppliers') || href.startsWith('/finance/quotations') || href.startsWith('/finance/invoices') || href.startsWith('/finance/items') || href.startsWith('/reports/customer-statement') || href.startsWith('/reports/supplier-statement');
+    return false;
+  };
 
   const activeBranchId = (session?.preferences as any)?.currentBranchId || '';
   const { data: branchRows = [] } = useQuery({
@@ -188,6 +200,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { href: '/settings/zatca', label: t('ZATCA', 'هيئة الزكاة والضريبة'), icon: Zap },
   ];
 
+  const visibleNavPrimary = navPrimary
+    .map((item: any) => item.children ? { ...item, children: item.children.filter((child: any) => canAccessPath(child.href)) } : item)
+    .filter((item: any) => item.children ? item.children.length > 0 : canAccessPath(item.href));
+
+  const visibleNavSettings = navSettings.filter((item: any) => canAccessPath(item.href));
   const { signOut } = useClerk();
   const { user } = useUser();
   const org = session?.organizations?.find(o => o.organization.id === session.preferences.currentOrganizationId)?.organization || session?.organizations?.[0]?.organization;
@@ -289,7 +306,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             )}
             <nav className="space-y-1">
-              {navPrimary.map((item, idx) => {
+              {visibleNavPrimary.map((item, idx) => {
                 const Icon = item.icon;
                 if ('children' in item && item.children) {
                   return (
@@ -362,7 +379,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div>
           {!collapsed && <div className="mb-2 px-2 text-[11px] font-extrabold uppercase tracking-wider" style={{ color: '#a7f3d0' }}>{t('Platform Settings', 'إعدادات المنصة')}</div>}
           <nav className="space-y-1">
-            {navSettings.map(item => {
+            {visibleNavSettings.map(item => {
               const active = location === item.href;
               const Icon = item.icon;
               return (
@@ -666,7 +683,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
                 <div className="mt-3 max-h-72 overflow-auto space-y-1">
                   {searchResults?.map(party => {
-                    const role = party.roles[0]?.role === 'customer' ? 'customers' : 'suppliers';
+                    const partyRoute = party.roles[0]?.role === 'customer' ? 'customers' : 'suppliers';
+                    if (!canAccessPath(/finance/)) return null;
                     return (
                       <button key={party.id} onClick={() => { setLocation(`/finance/${role}/${party.id}`); setOverlay(null); }} className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-medium hover:bg-muted text-left">
                         <div>
@@ -677,7 +695,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       </button>
                     );
                   })}
-                  {catalogResults?.items?.map(item => (
+                  {canAccessPath('/finance/items') && catalogResults?.items?.map(item => (
                     <button key={item.id} onClick={() => { setLocation(`/finance/items/${item.id}`); setOverlay(null); }} className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-medium hover:bg-muted text-left">
                       <div>
                         <div className="text-foreground font-bold">{item.name}</div>
@@ -710,7 +728,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   { label: t('Supplier', 'مورد جديد'), desc: t('Register product/service vendor', 'تسجيل مورد جديد'), route: '/finance/suppliers?new=1', icon: Store, color: 'text-cyan-600 bg-cyan-500/10' },
                   { label: t('Catalog Product', 'منتج / خدمة'), desc: t('Add inventory or service item', 'إضافة صنف للكتالوج'), route: '/finance/items?new=1', icon: Package, color: 'text-indigo-600 bg-indigo-500/10' },
                   { label: t('Journal Entry', 'قيد يومية'), desc: t('Manual double-entry GL journal', 'تسجيل قيد محاسبي يدوي'), route: '/accounting/journal-entries?new=1', icon: FileClock, color: 'text-teal-600 bg-teal-500/10' },
-                ].map(item => {
+                ].filter(item => canAccessPath(item.route.split('?')[0])).map(item => {
                   const Icon = item.icon;
                   return (
                     <button 
@@ -816,7 +834,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     </div>
                     <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">
                       <ShieldCheck size={12} />
-                      <span>{t('Workspace Administrator', 'مدير مساحة العمل')}</span>
+                      <span>{role.replace(/_/g, ' ')}</span>
                     </div>
                   </div>
                 </div>
@@ -827,7 +845,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     [t('Organization Profile', 'ملف المنشأة'), '/settings/organization', Building2],
                     [t('Appearance & Theme', 'المظهر والتفضيلات'), '/settings/appearance', SlidersHorizontal],
                     [t('Audit Log Inspector', 'سجل النشاط والتدقيق'), '/settings/audit-log', FileClock]
-                  ].map(([label, href, Icon]: any) => (
+                  ].filter(([, href]) => canAccessPath(href)).map(([label, href, Icon]: any) => (
                     <button
                       key={href}
                       onClick={() => {

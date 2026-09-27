@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq, ne, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import {
   auditLogsTable,
   db,
@@ -144,7 +144,7 @@ router.get("/organizations/:organizationId/members", async (req, res) => {
   if ("error" in actor) return res.status(actor.error[0]).json({ error: actor.error[1] });
   if (!permissionMatrix[actor.membership.role as Role]?.includes("users.read")) return res.status(403).json({ error: "Permission denied" });
   const members = await db.select({ id: organizationMembershipsTable.id, organizationId: organizationMembershipsTable.organizationId, userId: organizationMembershipsTable.userId, role: organizationMembershipsTable.role, branchId: organizationMembershipsTable.branchId, status: organizationMembershipsTable.status, createdAt: organizationMembershipsTable.createdAt, displayName: usersTable.displayName, email: usersTable.email }).from(organizationMembershipsTable).innerJoin(usersTable, eq(usersTable.id, organizationMembershipsTable.userId)).where(eq(organizationMembershipsTable.organizationId, req.params.organizationId)).orderBy(desc(organizationMembershipsTable.createdAt));
-  const invites = await db.select().from(organizationInvitationsTable).where(and(eq(organizationInvitationsTable.organizationId, req.params.organizationId), eq(organizationInvitationsTable.status, "PENDING"))).orderBy(desc(organizationInvitationsTable.createdAt));
+  const invites = await db.select().from(organizationInvitationsTable).where(and(eq(organizationInvitationsTable.organizationId, req.params.organizationId), inArray(organizationInvitationsTable.status, ["PENDING", "APPROVED"]))).orderBy(desc(organizationInvitationsTable.createdAt));
   res.json([...members.map(serializeMember), ...invites.map(serializeInvite)]);
 });
 
@@ -172,7 +172,7 @@ router.post("/organizations/:organizationId/members", async (req, res) => {
   }
   const [invite] = await db.insert(organizationInvitationsTable).values({ organizationId: req.params.organizationId, email, displayName: displayName || null, role, branchId, status: "PENDING", invitedByUserId: actor.user.id }).onConflictDoUpdate({ target: [organizationInvitationsTable.organizationId, organizationInvitationsTable.email], set: { displayName: displayName || null, role, branchId, status: "PENDING", invitedByUserId: actor.user.id, updatedAt: new Date() } }).returning();
   await audit(req.params.organizationId, actor.user.id, "invitation.created", "organization_invitation", invite.id, null, invite);
-  res.status(202).json({ ...serializeInvite(invite), message: "Invitation saved. The organization owner must approve it after the invited email signs up." });
+  res.status(202).json({ ...serializeInvite(invite), message: "Invitation saved. The organization owner can approve it when ready." });
 });
 
 router.patch("/organizations/:organizationId/members/:memberId", async (req, res) => {
@@ -184,9 +184,9 @@ router.patch("/organizations/:organizationId/members/:memberId", async (req, res
   const status = req.body.status === "INACTIVE" ? "INACTIVE" : req.body.status === "ACTIVE" ? "ACTIVE" : undefined;
   const [existing] = await db.select().from(organizationMembershipsTable).where(and(eq(organizationMembershipsTable.id, req.params.memberId), eq(organizationMembershipsTable.organizationId, req.params.organizationId))).limit(1);
   if (existing) {
-    if (existing.role === "owner" && role && role !== "owner") {
-      const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(organizationMembershipsTable).where(and(eq(organizationMembershipsTable.organizationId, req.params.organizationId), eq(organizationMembershipsTable.role, "owner")));
-      if (Number(count) <= 1) return res.status(409).json({ error: "Cannot change the last owner role" });
+    if (existing.role === "owner" && ((role && role !== "owner") || status === "INACTIVE")) {
+      const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(organizationMembershipsTable).where(and(eq(organizationMembershipsTable.organizationId, req.params.organizationId), eq(organizationMembershipsTable.role, "owner"), eq(organizationMembershipsTable.status, "ACTIVE")));
+      if (Number(count) <= 1) return res.status(409).json({ error: "At least one active owner is required. Add another owner before changing this user." });
     }
     const updates: any = {};
     if (role) updates.role = role;
@@ -200,12 +200,16 @@ router.patch("/organizations/:organizationId/members/:memberId", async (req, res
   }
   const [invite] = await db.select().from(organizationInvitationsTable).where(and(eq(organizationInvitationsTable.id, req.params.memberId), eq(organizationInvitationsTable.organizationId, req.params.organizationId))).limit(1);
   if (!invite) return res.status(404).json({ error: "Member or invitation not found" });
-  if (req.body.status === "ACTIVE") {
-    if (actor.membership.role !== "owner") return res.status(403).json({ error: "Only the organization owner can approve invitations" });
-    const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.email, invite.email)).limit(1);
-    if (!targetUser) return res.status(409).json({ error: "The invited user must sign up with this email before approval" });
+  if (req.body.status === "ACTIVE" || req.body.status === "APPROVED") {
+    if (actor.membership.role !== "owner") return res.status(403).json({ error: "Only the organization owner can approve invitations." });
     const approvalRole = role || invite.role;
     const approvalBranchId = branchId === undefined ? invite.branchId : branchId;
+    const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.email, invite.email)).limit(1);
+    if (!targetUser) {
+      const [approvedInvite] = await db.update(organizationInvitationsTable).set({ role: approvalRole, branchId: approvalBranchId, displayName: req.body.displayName ?? invite.displayName, status: "APPROVED", updatedAt: new Date() }).where(eq(organizationInvitationsTable.id, invite.id)).returning();
+      await audit(req.params.organizationId, actor.user.id, "invitation.approved_pending_signup", "organization_invitation", invite.id, invite, approvedInvite);
+      return res.json({ ...serializeInvite(approvedInvite), message: "Invitation approved. The user will get access after creating an account with this email." });
+    }
     const [member] = await db
       .insert(organizationMembershipsTable)
       .values({ organizationId: req.params.organizationId, userId: targetUser.id, role: approvalRole, branchId: approvalBranchId, status: "ACTIVE" })
@@ -226,9 +230,9 @@ router.delete("/organizations/:organizationId/members/:memberId", async (req, re
   if (!permissionMatrix[actor.membership.role as Role]?.includes("users.remove")) return res.status(403).json({ error: "Permission denied" });
   const [existing] = await db.select().from(organizationMembershipsTable).where(and(eq(organizationMembershipsTable.id, req.params.memberId), eq(organizationMembershipsTable.organizationId, req.params.organizationId))).limit(1);
   if (existing) {
-    if (existing.role === "owner") {
-      const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(organizationMembershipsTable).where(and(eq(organizationMembershipsTable.organizationId, req.params.organizationId), eq(organizationMembershipsTable.role, "owner")));
-      if (Number(count) <= 1) return res.status(409).json({ error: "Cannot remove the last owner" });
+    if (existing.role === "owner" && existing.status === "ACTIVE") {
+      const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(organizationMembershipsTable).where(and(eq(organizationMembershipsTable.organizationId, req.params.organizationId), eq(organizationMembershipsTable.role, "owner"), eq(organizationMembershipsTable.status, "ACTIVE")));
+      if (Number(count) <= 1) return res.status(409).json({ error: "At least one active owner is required. Add another owner before removing this user." });
     }
     await db.delete(organizationMembershipsTable).where(eq(organizationMembershipsTable.id, existing.id));
     await audit(req.params.organizationId, actor.user.id, "member.removed", "organization_membership", existing.id, existing, null);

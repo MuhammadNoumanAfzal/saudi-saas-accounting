@@ -17,6 +17,7 @@ import {
 
 type Role = 'owner' | 'admin' | 'accountant' | 'sales' | 'purchasing' | 'viewer';
 type MemberType = 'member' | 'invitation';
+type InviteStatus = 'PENDING' | 'APPROVED' | 'ACCEPTED' | 'REVOKED' | 'EXPIRED' | string;
 
 type Member = {
   id: string;
@@ -24,7 +25,7 @@ type Member = {
   userId: string | null;
   role: Role;
   branchId?: string | null;
-  status: string;
+  status: InviteStatus;
   createdAt: string;
   displayName: string;
   email: string;
@@ -45,6 +46,8 @@ export function UsersSettings() {
   const currentRole = (session?.organizations?.find((item) => item.organization.id === orgId)?.role || session?.organizations?.[0]?.role || 'viewer') as Role;
   const canManage = currentRole === 'owner' || currentRole === 'admin';
   const canApprove = currentRole === 'owner';
+  const isInvitation = (member: Member) => member.type === 'invitation';
+  const canApproveInvitation = (member: Member) => canApprove && isInvitation(member) && member.status === 'PENDING';
 
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
@@ -88,6 +91,9 @@ export function UsersSettings() {
     return members.filter((member) => !q || [member.displayName, member.email, member.role, member.status, branchLabel(member.branchId)].some((value) => value?.toLowerCase().includes(q)));
   }, [members, search, branches]);
 
+  const activeOwnerCount = members.filter((member) => member.type !== 'invitation' && member.role === 'owner' && member.status === 'ACTIVE').length;
+  const isEditingLastActiveOwner = Boolean(editing && editing.type !== 'invitation' && editing.role === 'owner' && editing.status === 'ACTIVE' && activeOwnerCount <= 1);
+
   const saveMutation = useMutation({
     mutationFn: () => customFetch<Member>(editing ? `/api/organizations/${orgId}/members/${editing.id}` : `/api/organizations/${orgId}/members`, {
       method: editing ? 'PATCH' : 'POST',
@@ -109,9 +115,12 @@ export function UsersSettings() {
       responseType: 'json',
       body: JSON.stringify({ role: member.role, branchId: member.branchId || null, status: 'ACTIVE' }),
     }),
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: membersKey });
-      showAlert.toast(t('Invitation approved', 'Invitation approved'), 'success');
+      const message = result.type === 'invitation' && result.status === 'APPROVED'
+        ? t('Approved. Waiting for user sign-in.', 'Approved. Waiting for user sign-in.')
+        : t('Invitation approved and user activated.', 'Invitation approved and user activated.');
+      showAlert.toast(message, 'success');
     },
     onError: (err) => showAlert.error(t('Approval failed', 'Approval failed'), getErrorMessage(err)),
   });
@@ -135,6 +144,9 @@ export function UsersSettings() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!form.email.trim() || !emailRegex.test(form.email.trim())) {
       errors.email = isRtl ? 'يرجى إدخال عنوان بريد إلكتروني صحيح' : 'Please enter a valid email address';
+    }
+    if (isEditingLastActiveOwner && (form.role !== 'owner' || form.status !== 'ACTIVE')) {
+      errors.owner = t('At least one active owner is required. Add another owner before changing this user.', 'At least one active owner is required. Add another owner before changing this user.');
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -203,7 +215,7 @@ export function UsersSettings() {
       <div className="grid gap-4 md:grid-cols-3">
         <div className="soft-card p-4"><div className="text-xs font-bold uppercase text-muted-foreground">{t('Total records', 'Total records')}</div><div className="text-3xl font-black">{members.length}</div></div>
         <div className="soft-card p-4"><div className="text-xs font-bold uppercase text-muted-foreground">{t('Active members', 'Active members')}</div><div className="text-3xl font-black text-emerald-600">{members.filter((member) => member.type !== 'invitation' && member.status === 'ACTIVE').length}</div></div>
-        <div className="soft-card p-4"><div className="text-xs font-bold uppercase text-muted-foreground">{t('Waiting owner approval', 'Waiting owner approval')}</div><div className="text-3xl font-black text-amber-600">{members.filter((member) => member.type === 'invitation' || member.status === 'PENDING').length}</div></div>
+        <div className="soft-card p-4"><div className="text-xs font-bold uppercase text-muted-foreground">{t('Waiting owner approval', 'Waiting owner approval')}</div><div className="text-3xl font-black text-amber-600">{members.filter((member) => member.type === 'invitation' && (member.status === 'PENDING' || member.status === 'APPROVED')).length}</div></div>
       </div>
 
       <div className="soft-card overflow-hidden">
@@ -238,14 +250,14 @@ export function UsersSettings() {
               <tbody className="divide-y divide-border">
                 {filtered.map((member) => (
                   <tr key={member.id} className="hover:bg-muted/30">
-                    <td className="p-4 font-bold">{member.displayName}<div className="text-xs text-muted-foreground">{member.type === 'invitation' ? t('Waiting owner approval', 'Waiting owner approval') : t('Member', 'Member')}</div></td>
+                    <td className="p-4 font-bold">{member.displayName}<div className="text-xs text-muted-foreground">{member.type === 'invitation' ? (member.status === 'APPROVED' ? t('Approved, waiting sign-in', 'Approved, waiting sign-in') : t('Waiting owner approval', 'Waiting owner approval')) : t('Member', 'Member')}</div></td>
                     <td className="p-4 font-mono text-xs text-muted-foreground">{member.email}</td>
                     <td className="p-4"><span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">{roleLabel(member.role)}</span></td>
                     <td className="p-4 text-muted-foreground">{branchLabel(member.branchId)}</td>
-                    <td className="p-4"><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${member.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-600' : member.status === 'PENDING' ? 'bg-amber-500/10 text-amber-600' : 'bg-muted text-muted-foreground'}`}>{member.status}</span></td>
+                    <td className="p-4"><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${member.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-600' : member.status === 'PENDING' ? 'bg-amber-500/10 text-amber-600' : member.status === 'APPROVED' ? 'bg-blue-500/10 text-blue-600' : 'bg-muted text-muted-foreground'}`}>{member.status}</span></td>
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
-                        {canApprove && member.type === 'invitation' && (
+                        {canApproveInvitation(member) && (
                           <button type="button" onClick={() => approveInvitation(member)} className="inline-flex h-9 items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-bold text-emerald-700 hover:bg-emerald-100">
                             <CheckCircle2 size={14} />{t('Approve', 'Approve')}
                           </button>
@@ -294,9 +306,10 @@ export function UsersSettings() {
                 {formErrors.email && <p className="text-[11px] font-medium text-red-500">{formErrors.email}</p>}
               </label>
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="space-y-1"><span className="text-xs font-bold">{t('Role', 'Role')}</span><select value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value as Role })} className="field h-10 w-full bg-background">{roleOptions.map((role) => <option key={role} value={role}>{roleLabel(role)}</option>)}</select></label>
-                <label className="space-y-1"><span className="text-xs font-bold">{t('Status', 'Status')}</span><select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })} className="field h-10 w-full bg-background"><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option><option value="PENDING">PENDING</option></select></label>
+                <label className="space-y-1"><span className="text-xs font-bold">{t('Role', 'Role')}</span><select disabled={isEditingLastActiveOwner} value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value as Role })} className="field h-10 w-full bg-background disabled:opacity-70">{roleOptions.map((role) => <option key={role} value={role}>{roleLabel(role)}</option>)}</select></label>
+                <label className="space-y-1"><span className="text-xs font-bold">{t('Status', 'Status')}</span><select disabled={isEditingLastActiveOwner} value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })} className="field h-10 w-full bg-background disabled:opacity-70"><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option></select></label>
               </div>
+              {isEditingLastActiveOwner && (<div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold leading-5 text-amber-800">{t('This is the last active owner. Add another owner before changing role or deactivating access.', 'This is the last active owner. Add another owner before changing role or deactivating access.')}</div>)}
               <label className="space-y-1"><span className="text-xs font-bold">{t('Branch scope', 'Branch scope')}</span><select value={form.branchId} onChange={(event) => setForm({ ...form, branchId: event.target.value })} className="field h-10 w-full bg-background"><option value="">{t('All branches', 'All branches')}</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.code} - {isRtl ? branch.nameArabic || branch.nameEnglish : branch.nameEnglish}</option>)}</select></label>
             </div>
             <div className="flex justify-end gap-2 border-t pt-5">

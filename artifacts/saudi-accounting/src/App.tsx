@@ -199,24 +199,41 @@ function SessionGuard({ children }: { children: React.ReactNode }) {
   }
 
   if (isError) {
-    const message = error instanceof Error ? error.message : 'Unable to load your session.';
+    const rawMessage = error instanceof Error ? error.message : 'Unable to load your session.';
+    const isUnauthorized = /401|unauthorized/i.test(rawMessage);
+    const title = isUnauthorized ? 'Authentication needs one setting change' : 'Session setup failed';
+    const message = isUnauthorized
+      ? 'Your account was created, but Clerk is still requiring its own organization setup before it issues an app token. KHANBAS uses its own organization and invitation system, so enable Personal Accounts or make Clerk Organizations optional in the Clerk Dashboard, then sign in again.'
+      : rawMessage;
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#f8fafc] px-6 text-center">
-        <div className="max-w-md">
-          <h1 className="text-2xl font-bold text-[#071f19]">Session setup failed</h1>
-          <p className="mt-3 text-sm text-[#566861]">{message}</p>
-          <button
-            type="button"
-            onClick={() => refetch()}
-            className="mt-6 rounded-lg bg-[#071f19] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#0d352b]"
-          >
-            Try again
-          </button>
+        <div className="max-w-lg rounded-2xl border border-border bg-white p-8 shadow-xl">
+          <h1 className="text-2xl font-bold text-[#071f19]">{title}</h1>
+          <p className="mt-3 text-sm leading-6 text-[#566861]">{message}</p>
+          {isUnauthorized && (
+            <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs font-semibold leading-5 text-amber-800">
+              Clerk Dashboard path: Organizations settings - enable Personal Accounts or switch membership to optional. Then close incognito, open /sign-in, and log in with the invited email.
+            </p>
+          )}
+          <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="rounded-lg bg-[#071f19] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#0d352b]"
+            >
+              Try again
+            </button>
+            <Link
+              href="/sign-in"
+              className="rounded-lg border border-border bg-white px-5 py-2.5 text-sm font-bold text-[#071f19] hover:bg-[#eef5f2]"
+            >
+              Back to sign in
+            </Link>
+          </div>
         </div>
       </main>
     );
   }
-
   const hasOrganizations = Boolean(session?.organizations && session.organizations.length > 0);
   const activeOrg = session?.organizations?.find(
     item => item.organization.id === session?.preferences?.currentOrganizationId,
@@ -242,15 +259,68 @@ function SessionGuard({ children }: { children: React.ReactNode }) {
   return <AppShell>{children}</AppShell>;
 }
 
+function canAccessAppRoute(role: string | undefined, path: string) {
+  const normalized = path.split('?')[0];
+  if (!role) return false;
+  if (['owner', 'admin'].includes(role)) return true;
+  if (['/home', '/finance'].includes(normalized)) return true;
+  if (normalized.startsWith('/settings/security') || normalized.startsWith('/settings/appearance') || normalized.startsWith('/settings/language')) return true;
+
+  if (role === 'sales') {
+    return normalized.startsWith('/finance/customers') ||
+      normalized.startsWith('/finance/quotations') ||
+      normalized.startsWith('/finance/invoices') ||
+      normalized.startsWith('/finance/items');
+  }
+
+  if (role === 'purchasing') {
+    return normalized.startsWith('/finance/suppliers') ||
+      normalized.startsWith('/finance/bills') ||
+      normalized.startsWith('/finance/expenses') ||
+      normalized.startsWith('/finance/items');
+  }
+
+  if (role === 'accountant') {
+    return normalized.startsWith('/finance') || normalized.startsWith('/accounting') || normalized.startsWith('/reports') || normalized.startsWith('/settings/branches') || normalized.startsWith('/settings/organization') || normalized.startsWith('/settings/zatca');
+  }
+
+  if (role === 'viewer') {
+    return normalized.startsWith('/finance/customers') ||
+      normalized.startsWith('/finance/suppliers') ||
+      normalized.startsWith('/finance/quotations') ||
+      normalized.startsWith('/finance/invoices') ||
+      normalized.startsWith('/finance/items') ||
+      normalized.startsWith('/reports/customer-statement') ||
+      normalized.startsWith('/reports/supplier-statement');
+  }
+
+  return false;
+}
+
+function defaultRouteForRole(role: string | undefined) {
+  if (role === 'sales') return '/finance/customers';
+  if (role === 'purchasing') return '/finance/suppliers';
+  if (role === 'viewer') return '/finance/customers';
+  return '/finance';
+}
+
 function ModuleGuard({
   children,
 }: {
   moduleKey: ModuleKey;
   children: React.ReactNode;
 }) {
+  const [location] = useLocation();
+  const { data: session } = useGetCurrentSession();
+  const orgId = session?.preferences?.currentOrganizationId || session?.organizations?.[0]?.organization.id || '';
+  const role = session?.organizations?.find((item) => item.organization.id === orgId)?.role || session?.organizations?.[0]?.role;
+
+  if (!canAccessAppRoute(role, location)) {
+    return <Redirect to={defaultRouteForRole(role)} />;
+  }
+
   return <>{children}</>;
 }
-
 import { ShieldCheck, Landmark, Zap } from 'lucide-react';
 import { useTranslation } from './lib/utils';
 
@@ -336,30 +406,52 @@ function SignInPage() {
   const { isSignedIn, isLoaded } = useAuth();
   const { user } = useUser();
   const { signOut } = useClerk();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+
+  if (location.includes('/tasks/choose-organization')) {
+    return (
+      <AuthLayout
+        title={t('KHANBAS uses one clean SaaS access model', 'KHANBAS uses one clean SaaS access model')}
+        subtitle={t('Authentication is handled by Clerk. Organizations, branches, roles, approvals, and permissions are handled by KHANBAS PostgreSQL.', 'Authentication is handled by Clerk. Organizations, branches, roles, approvals, and permissions are handled by KHANBAS PostgreSQL.')}
+      >
+        <div className="w-full max-w-md rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center shadow-xl">
+          <h2 className="text-lg font-black text-[#071f19]">Clerk organization task is enabled</h2>
+          <p className="mt-3 text-sm leading-6 text-amber-900">
+            Disable Clerk Organizations membership-required mode, or enable Personal Accounts / Membership optional. Then sign in again. KHANBAS will connect the user to the approved invitation from its own database.
+          </p>
+          <Link
+            href="/sign-in"
+            className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground shadow-md hover:bg-primary/90"
+          >
+            Back to sign in
+          </Link>
+        </div>
+      </AuthLayout>
+    );
+  }
 
   if (!isLoaded) {
     return (
-      <PlatformLoader fullScreen message="Loading Authentication..." messageAr="جاري تحميل نظام الدخول..." />
+      <PlatformLoader fullScreen message="Loading Authentication..." messageAr="Loading authentication..." />
     );
   }
 
   if (isSignedIn) {
     return (
       <AuthLayout
-        title={t('Empowering Saudi Enterprises with Smart Accounting', 'تمكين المنشآت السعودية بنظام إداري متكامل')}
-        subtitle={t('Access your consolidated financial ledger, ZATCA tax invoices, and real-time executive analytics.', 'الوصول إلى دفتر الاستاد المحاسبي والفواتير الضريبية والتحليلات المباشرة.')}
+        title={t('Empowering Saudi Enterprises with Smart Accounting', 'Empowering Saudi Enterprises with Smart Accounting')}
+        subtitle={t('Access your consolidated financial ledger, ZATCA tax invoices, and real-time executive analytics.', 'Access your consolidated financial ledger, ZATCA tax invoices, and real-time executive analytics.')}
       >
         <div className="w-full max-w-md bg-card p-6 rounded-2xl shadow-xl border border-border text-center space-y-4">
           <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto text-xl font-bold">
-            ✓
+            OK
           </div>
           <div>
             <h3 className="font-bold text-lg text-foreground">
-              {t('Already Signed In', 'أنت مسجل الدخول بالفعل')}
+              {t('Already Signed In', 'Already Signed In')}
             </h3>
             <p className="text-xs text-muted-foreground mt-1">
-              {t('Logged in as', 'مسجل باسم')}: <span className="font-semibold text-foreground">{user?.primaryEmailAddress?.emailAddress || user?.fullName || 'User'}</span>
+              {t('Logged in as', 'Logged in as')}: <span className="font-semibold text-foreground">{user?.primaryEmailAddress?.emailAddress || user?.fullName || 'User'}</span>
             </p>
           </div>
           <div className="pt-2 flex flex-col gap-2">
@@ -367,13 +459,13 @@ function SignInPage() {
               onClick={() => setLocation('/home')}
               className="w-full py-2.5 px-4 rounded-xl bg-primary text-primary-foreground font-bold text-xs shadow-md hover:bg-primary/90 transition-all"
             >
-              {t('Go to Workspace / Dashboard', 'الانتقال إلى مساحة العمل / لوحة التحكم')}
+              {t('Go to Workspace / Dashboard', 'Go to Workspace / Dashboard')}
             </button>
             <button
               onClick={() => signOut()}
               className="w-full py-2.5 px-4 rounded-xl border border-border bg-background hover:bg-muted text-foreground font-bold text-xs transition-all"
             >
-              {t('Sign Out to Test New Credentials', 'تسجيل الخروج لتجربة بيانات دخول جديدة')}
+              {t('Sign Out to Test New Credentials', 'Sign Out to Test New Credentials')}
             </button>
           </div>
         </div>
@@ -383,16 +475,32 @@ function SignInPage() {
 
   return (
     <AuthLayout
-      title={t('Empowering Saudi Enterprises with Smart Accounting', 'تمكين المنشآت السعودية بنظام إداري متكامل')}
-      subtitle={t('Access your consolidated financial ledger, ZATCA tax invoices, and real-time executive analytics.', 'الوصول إلى دفتر الاستاد المحاسبي والفواتير الضريبية والتحليلات المباشرة.')}
+      title={t('Empowering Saudi Enterprises with Smart Accounting', 'Empowering Saudi Enterprises with Smart Accounting')}
+      subtitle={t('Access your consolidated financial ledger, ZATCA tax invoices, and real-time executive analytics.', 'Access your consolidated financial ledger, ZATCA tax invoices, and real-time executive analytics.')}
     >
-      <SignIn
-        routing="path"
-        path={`${basePath}/sign-in`}
-        signUpUrl={`${basePath}/sign-up`}
-        fallbackRedirectUrl={`${basePath}/home`}
-        forceRedirectUrl={`${basePath}/home`}
-      />
+      <div className="w-full max-w-md space-y-3">
+        <SignIn
+          routing="path"
+          path={`${basePath}/sign-in`}
+          signUpUrl={`${basePath}/sign-up`}
+          fallbackRedirectUrl={`${basePath}/home`}
+          forceRedirectUrl={`${basePath}/home`}
+        />
+        <div className="rounded-2xl border border-border bg-card/95 p-4 text-center shadow-sm">
+          <p className="text-sm font-bold text-foreground">
+            {t('Invited to a company?', 'Invited to a company?')}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {t('If this is your first time, create an account with the approved invitation email. After that you can sign in normally.', 'If this is your first time, create an account with the approved invitation email. After that you can sign in normally.')}
+          </p>
+          <Link
+            href="/sign-up"
+            className="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground shadow-md hover:bg-primary/90"
+          >
+            {t('Create invited account', 'Create invited account')}
+          </Link>
+        </div>
+      </div>
     </AuthLayout>
   );
 }
@@ -456,7 +564,8 @@ function SignUpPage() {
         routing="path"
         path={`${basePath}/sign-up`}
         signInUrl={`${basePath}/sign-in`}
-        fallbackRedirectUrl={`${basePath}/onboarding`}
+        fallbackRedirectUrl={`${basePath}/home`}
+        forceRedirectUrl={`${basePath}/home`}
       />
     </AuthLayout>
   );
