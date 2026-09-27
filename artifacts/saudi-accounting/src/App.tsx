@@ -237,22 +237,19 @@ function SessionGuard({ children }: { children: React.ReactNode }) {
   const hasOrganizations = Boolean(session?.organizations && session.organizations.length > 0);
   const activeOrg = session?.organizations?.find(
     item => item.organization.id === session?.preferences?.currentOrganizationId,
-  )?.organization ?? session?.organizations?.[0]?.organization;
+  )?.organization ?? session?.organizations?.[0]?.organization;  // Onboarding is complete only after the owner finishes all setup steps.
+  const isOnboarded = hasOrganizations && Boolean(activeOrg?.onboardingCompleted);
+  const creatingNewOrganization = window.location.search.includes('new=1');
 
-  // User is considered onboarded if an active organization already exists in the system
-  const isOnboarded = hasOrganizations && Boolean(activeOrg);
-
-  // If user has not created an organization and is not on /onboarding page, redirect to onboarding
+  // Block workspace access until all onboarding steps are completed.
   if (!isOnboarded && location !== '/onboarding') {
     return <Redirect to="/onboarding" />;
   }
 
-  // If user IS onboarded and lands on /onboarding without ?new=1, redirect to finance dashboard
-  if (isOnboarded && location === '/onboarding' && !window.location.search.includes('new=1')) {
+  // Completed organizations should not reopen onboarding unless explicitly creating another org.
+  if (isOnboarded && location === '/onboarding' && !creatingNewOrganization) {
     return <Redirect to="/finance" />;
-  }
-
-  if (location === '/onboarding') {
+  }if (location === '/onboarding') {
     return <>{children}</>;
   }
 
