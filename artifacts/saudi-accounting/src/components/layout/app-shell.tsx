@@ -487,7 +487,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <span className="hidden md:inline-block text-muted-foreground/40">/</span>
                 <button
                   type="button"
-                  onClick={() => canSwitchBranches ? setOverlay('branch') : showAlert.toast(t('Your branch access is assigned by the owner.', 'Your branch access is assigned by the owner.'), 'info')}
+                  onClick={() => SHOW_TEAM_BRANCH_MODULES && (canSwitchBranches ? setOverlay('branch') : showAlert.toast(t('Your branch access is assigned by the owner.', 'Your branch access is assigned by the owner.'), 'info'))}
                   className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all text-start"
                   title={canSwitchBranches ? t('Switch active branch', 'Switch active branch') : t('Branch assigned by owner', 'Branch assigned by owner')}
                 >
@@ -602,7 +602,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             )}
 
-            {overlay === 'branch' && (
+            {SHOW_TEAM_BRANCH_MODULES && overlay === 'branch' && (
               <div className="p-4 space-y-3">
                 <div className="flex items-center justify-between border-b border-border pb-2">
                   <div className="flex items-center gap-2">
