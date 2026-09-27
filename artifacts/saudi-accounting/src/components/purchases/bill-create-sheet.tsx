@@ -34,9 +34,9 @@ interface ItemRow {
   itemCode?: string;
   description: string;
   descriptionAr?: string;
-  quantity: number;
-  unitPrice: number;
-  discountAmount: number;
+  quantity: number | string;
+  unitPrice: number | string;
+  discountAmount: number | string;
   taxCategory: 'STANDARD' | 'ZERO' | 'EXEMPT' | 'OUT_OF_SCOPE';
   taxRate: number;
 }
@@ -137,7 +137,10 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess, billId, initial
   let taxTotal = 0;
 
   items.forEach(it => {
-    const lineSub = Math.max(0, (it.quantity || 0) * (it.unitPrice || 0) - (it.discountAmount || 0));
+    const qty = parseFloat(String(it.quantity || 0)) || 0;
+    const price = parseFloat(String(it.unitPrice || 0)) || 0;
+    const disc = parseFloat(String(it.discountAmount || 0)) || 0;
+    const lineSub = Math.max(0, qty * price - disc);
     const rate = it.taxCategory === 'STANDARD' ? 15 : 0;
     const lineTax = (lineSub * rate) / 100;
     subtotal += lineSub;
@@ -166,15 +169,17 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess, billId, initial
     } else {
       let itemHasError = false;
       items.forEach((it, idx) => {
+        const qty = parseFloat(String(it.quantity || 0)) || 0;
+        const price = parseFloat(String(it.unitPrice || 0)) || 0;
         if (!it.description.trim()) {
           newErrors[`item_${idx}_desc`] = isRtl ? 'الوصف مطلوب' : 'Description is required';
           itemHasError = true;
         }
-        if (!it.quantity || it.quantity <= 0) {
+        if (!qty || qty <= 0) {
           newErrors[`item_${idx}_qty`] = isRtl ? 'الكمية يجب أن تكون أكبر من 0' : 'Quantity must be > 0';
           itemHasError = true;
         }
-        if (!it.unitPrice || it.unitPrice <= 0) {
+        if (!price || price <= 0) {
           newErrors[`item_${idx}_price`] = isRtl ? 'السعر يجب أن يكون أكبر من 0' : 'Price must be > 0';
           itemHasError = true;
         }
@@ -382,12 +387,12 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess, billId, initial
                       <input
                         type="number"
                         step="0.0001"
-                        min="0.0001"
                         placeholder={isRtl ? 'الكمية *' : 'Qty *'}
-                        value={item.quantity}
+                        value={item.quantity === 0 || item.quantity === '0' ? '' : item.quantity}
                         onChange={(e) => {
                           const copy = [...items];
-                          copy[idx].quantity = parseFloat(e.target.value) || 0;
+                          const val = e.target.value;
+                          copy[idx].quantity = val === '' ? '' : (isNaN(parseFloat(val)) ? val : parseFloat(val));
                           setItems(copy);
                         }}
                         className={`w-full py-1.5 px-2.5 text-xs bg-white dark:bg-slate-900 border ${errors[`item_${idx}_qty`] ? 'border-red-500 bg-red-500/5' : 'border-slate-200 dark:border-slate-700'} rounded-lg text-slate-900 dark:text-slate-100`}
@@ -399,12 +404,12 @@ export function BillCreateSheet({ open, onOpenChange, onSuccess, billId, initial
                       <input
                         type="number"
                         step="0.01"
-                        min="0"
                         placeholder={isRtl ? 'السعر *' : 'Unit Price *'}
-                        value={item.unitPrice}
+                        value={item.unitPrice === 0 || item.unitPrice === '0' ? '' : item.unitPrice}
                         onChange={(e) => {
                           const copy = [...items];
-                          copy[idx].unitPrice = parseFloat(e.target.value) || 0;
+                          const val = e.target.value;
+                          copy[idx].unitPrice = val === '' ? '' : (isNaN(parseFloat(val)) ? val : parseFloat(val));
                           setItems(copy);
                         }}
                         className={`w-full py-1.5 px-2.5 text-xs bg-white dark:bg-slate-900 border ${errors[`item_${idx}_price`] ? 'border-red-500 bg-red-500/5' : 'border-slate-200 dark:border-slate-700'} rounded-lg text-slate-900 dark:text-slate-100`}
