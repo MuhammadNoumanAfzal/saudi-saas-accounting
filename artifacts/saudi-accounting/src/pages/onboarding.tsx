@@ -236,14 +236,27 @@ export function Onboarding() {
               </span>
             </div>
 
-            <button
-              type="button"
-              onClick={toggleLanguage}
-              className="px-3.5 py-1.5 rounded-xl border border-border bg-background hover:bg-muted text-xs font-semibold text-foreground transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
-            >
-              <Globe2 size={14} className="text-primary" />
-              <span>{language === 'en' ? 'العربية' : 'English'}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {selectedOrganization && (
+                <button
+                  type="button"
+                  onClick={() => setLocation('/finance')}
+                  className="px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                >
+                  <ArrowUpRight size={14} />
+                  <span>{t('Go to Workspace', 'الانتقال لمساحة العمل')}</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={toggleLanguage}
+                className="px-3.5 py-1.5 rounded-xl border border-border bg-background hover:bg-muted text-xs font-semibold text-foreground transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
+              >
+                <Globe2 size={14} className="text-primary" />
+                <span>{language === 'en' ? 'العربية' : 'English'}</span>
+              </button>
+            </div>
           </div>
 
           {/* Form Header */}

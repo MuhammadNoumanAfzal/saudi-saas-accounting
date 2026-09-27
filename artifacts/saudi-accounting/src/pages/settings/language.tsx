@@ -6,7 +6,7 @@ import { Languages, Globe, CheckCircle2, Clock, DollarSign, Calendar, Sparkles, 
 
 export function LanguageSettings() {
   const { data: session, refetch } = useGetCurrentSession({
-    query: { staleTime: 10 * 60 * 1000 }
+    query: { queryKey: getGetCurrentSessionQueryKey(), staleTime: 10 * 60 * 1000 }
   });
   const { t, lang } = useTranslation();
   const update = useUpdateUserPreferences();

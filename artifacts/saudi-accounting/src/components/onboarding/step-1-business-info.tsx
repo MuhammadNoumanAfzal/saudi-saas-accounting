@@ -152,12 +152,12 @@ export function Step1BusinessInfo({ form, updateField, errors, setErrors, t }: S
             {t('Company Logo File', 'شعار المنشأة (ملف الصورة)')}
           </label>
           <div className="flex items-center gap-3">
-            {form.logoUrl ? (
+            {(form as any).logoUrl ? (
               <div className="relative group w-14 h-14 rounded-xl border border-border p-1 bg-muted/40 flex items-center justify-center overflow-hidden shrink-0">
-                <img src={form.logoUrl} alt="Logo Preview" className="max-w-full max-h-full object-contain" />
+                <img src={(form as any).logoUrl} alt="Logo Preview" className="max-w-full max-h-full object-contain" />
                 <button
                   type="button"
-                  onClick={() => updateField('logoUrl', '')}
+                  onClick={() => updateField('logoUrl' as any, '')}
                   className="absolute inset-0 bg-black/60 text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                 >
                   {t('Remove', 'حذف')}
@@ -179,7 +179,7 @@ export function Step1BusinessInfo({ form, updateField, errors, setErrors, t }: S
                     }
                     const reader = new FileReader();
                     reader.onload = (event) => {
-                      updateField('logoUrl', event.target?.result as string);
+                      updateField('logoUrl' as any, event.target?.result as string);
                       if (errors.logoUrl) setErrors(prev => ({ ...prev, logoUrl: '' }));
                     };
                     reader.readAsDataURL(file);
@@ -191,7 +191,7 @@ export function Step1BusinessInfo({ form, updateField, errors, setErrors, t }: S
                 className="field flex items-center justify-between cursor-pointer hover:bg-muted/30 transition-all"
               >
                 <span className="text-xs text-muted-foreground truncate">
-                  {form.logoUrl ? t('Change Logo File...', 'تغيير ملف الشعار...') : t('Select logo image from your computer...', 'اختر صورة الشعار من جهازك...')}
+                  {(form as any).logoUrl ? t('Change Logo File...', 'تغيير ملف الشعار...') : t('Select logo image from your computer...', 'اختر صورة الشعار من جهازك...')}
                 </span>
                 <span className="py-1 px-2.5 rounded-lg bg-primary/10 text-primary text-xs font-bold shrink-0">
                   {t('Browse File', 'اختر ملفاً')}

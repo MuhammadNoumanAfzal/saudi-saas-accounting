@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation, formatCurrency } from '@/lib/utils';
 import { BarChart3, TrendingUp, Sparkles, Activity, Layers, ArrowUpRight } from 'lucide-react';
-import type { DashboardAnalytics } from '@workspace/api-client-react';
+import type { ExecutiveDashboardAnalytics } from '@workspace/api-client-react';
 
 interface TrendChartProps {
-  analytics?: DashboardAnalytics;
+  analytics?: ExecutiveDashboardAnalytics;
   isRtl: boolean;
 }
 
@@ -17,7 +17,7 @@ export function TrendChart({ analytics, isRtl }: TrendChartProps) {
   const trends = analytics?.monthlyTrends || [];
 
   // Prepare normalized points for SVG rendering
-  const maxVal = Math.max(...trends.map(t => Math.max(Number(t.revenue || 0), Number(t.expenses || t.expense || 0))), 1000);
+  const maxVal = Math.max(...trends.map(t => Math.max(Number(t.revenue || 0), Number(t.expenses || (t as any).expense || 0))), 1000);
   
   const width = 600;
   const height = 200;
@@ -32,7 +32,7 @@ export function TrendChart({ analytics, isRtl }: TrendChartProps) {
 
   const pointsExp = trends.map((pt, i) => {
     const x = padding + (i / Math.max(1, trends.length - 1)) * (width - padding * 2);
-    const exp = Number(pt.expenses || pt.expense || 0);
+    const exp = Number(pt.expenses || (pt as any).expense || 0);
     const y = height - padding - (exp / maxVal) * (height - padding * 2);
     return { x, y, val: exp };
   });
@@ -47,9 +47,9 @@ export function TrendChart({ analytics, isRtl }: TrendChartProps) {
 
   const activePoint = hoveredIdx !== null ? trends[hoveredIdx] : trends[trends.length - 1];
   const activeRev = Number(activePoint?.revenue || 0);
-  const activeExp = Number(activePoint?.expenses || activePoint?.expense || 0);
+  const activeExp = Number(activePoint?.expenses || (activePoint as any)?.expense || 0);
   const activeNet = activeRev - activeExp;
-  const activeMonthLabel = activePoint ? ((isRtl ? activePoint.monthNameAr : activePoint.monthNameEn) || activePoint.month || 'Month') : '';
+  const activeMonthLabel = activePoint ? ((isRtl ? activePoint.monthNameAr : activePoint.monthNameEn) || (activePoint as any).month || 'Month') : '';
 
   return (
     <Card className="border-border bg-card rounded-2xl shadow-sm hover:shadow-md transition-shadow">
@@ -198,7 +198,7 @@ export function TrendChart({ analytics, isRtl }: TrendChartProps) {
               {pointsRev.map((p, i) => {
                 const expP = pointsExp[i];
                 const isHovered = hoveredIdx === i;
-                const monthName = (isRtl ? trends[i]?.monthNameAr : trends[i]?.monthNameEn) || trends[i]?.month || '';
+                const monthName = (isRtl ? trends[i]?.monthNameAr : trends[i]?.monthNameEn) || (trends[i] as any)?.month || '';
 
                 return (
                   <g key={i} className="cursor-pointer group" onMouseEnter={() => setHoveredIdx(i)}>
@@ -256,11 +256,11 @@ export function TrendChart({ analytics, isRtl }: TrendChartProps) {
           <div className="space-y-4">
             {trends.map((pt, idx) => {
               const revenue = Number(pt.revenue || 0);
-              const expenses = Number(pt.expenses || pt.expense || 0);
+              const expenses = Number(pt.expenses || (pt as any).expense || 0);
               const maxV = Math.max(revenue, expenses, 1000);
               const revPct = Math.min(100, Math.max(4, (revenue / maxV) * 100));
               const expPct = Math.min(100, Math.max(4, (expenses / maxV) * 100));
-              const label = (isRtl ? pt.monthNameAr : pt.monthNameEn) || pt.month || 'Month';
+              const label = (isRtl ? pt.monthNameAr : pt.monthNameEn) || (pt as any).month || 'Month';
               const isHovered = hoveredIdx === idx;
 
               return (
@@ -309,9 +309,9 @@ export function TrendChart({ analytics, isRtl }: TrendChartProps) {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {trends.map((pt, idx) => {
               const rev = Number(pt.revenue || 0);
-              const exp = Number(pt.expenses || pt.expense || 0);
+              const exp = Number(pt.expenses || (pt as any).expense || 0);
               const net = rev - exp;
-              const label = (isRtl ? pt.monthNameAr : pt.monthNameEn) || pt.month || 'Month';
+              const label = (isRtl ? pt.monthNameAr : pt.monthNameEn) || (pt as any).month || 'Month';
               const isHovered = hoveredIdx === idx;
 
               return (

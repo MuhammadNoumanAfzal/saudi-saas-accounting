@@ -7,7 +7,7 @@ import { AppearanceKpiCards } from '@/components/settings/appearance-kpi-cards';
 
 export function AppearanceSettings() {
   const { data: session, isLoading, refetch } = useGetCurrentSession({
-    query: { staleTime: 10 * 60 * 1000 }
+    query: { queryKey: getGetCurrentSessionQueryKey(), staleTime: 10 * 60 * 1000 }
   });
   const { t, isRtl } = useTranslation();
   const update = useUpdateUserPreferences();

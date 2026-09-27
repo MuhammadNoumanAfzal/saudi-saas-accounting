@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation, formatCurrency, Button } from '@/lib/utils';
-import { customFetch, useGetCurrentSession, useGetCustomers, useGetSuppliers } from '@workspace/api-client-react';
+import { customFetch, useGetCurrentSession, useGetCustomers, useGetSuppliers, getGetCustomersQueryKey, getGetSuppliersQueryKey } from '@workspace/api-client-react';
 import { Download, FileSpreadsheet, Printer, RefreshCw, Sparkles, ShieldCheck, UserCheck, FileText } from 'lucide-react';
 import { SkeletonTable } from '@/components/ui/platform-loader';
 import { showAlert } from '@/lib/alerts';
@@ -49,12 +49,14 @@ export function PartyStatementReport({ type }: { type: StatementType }) {
   const params = { pageSize: 100 } as any;
   const { data: customers } = useGetCustomers(orgId, params, { 
     query: { 
+      queryKey: getGetCustomersQueryKey(orgId, params),
       enabled: !!orgId && type === 'customer',
       staleTime: 10 * 60 * 1000 
     } 
   });
   const { data: suppliers } = useGetSuppliers(orgId, params, { 
     query: { 
+      queryKey: getGetSuppliersQueryKey(orgId, params),
       enabled: !!orgId && type === 'supplier',
       staleTime: 10 * 60 * 1000 
     } 

@@ -2,10 +2,10 @@ import { Link } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation, formatCurrency } from '@/lib/utils';
 import { Landmark, ArrowUpRight, ArrowDownRight, ChevronRight, Wallet } from 'lucide-react';
-import type { DashboardAnalytics } from '@workspace/api-client-react';
+import type { ExecutiveDashboardAnalytics } from '@workspace/api-client-react';
 
 interface CashFlowHighlightsProps {
-  analytics?: DashboardAnalytics;
+  analytics?: ExecutiveDashboardAnalytics;
   isRtl: boolean;
 }
 

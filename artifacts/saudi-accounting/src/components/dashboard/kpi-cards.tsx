@@ -2,10 +2,10 @@ import { Link } from 'wouter';
 import { Card } from '@/components/ui/card';
 import { useTranslation, formatCurrency } from '@/lib/utils';
 import { TrendingUp, TrendingDown, ShieldCheck, ArrowUpRight, ChevronRight } from 'lucide-react';
-import type { DashboardAnalytics } from '@workspace/api-client-react';
+import type { ExecutiveDashboardAnalytics } from '@workspace/api-client-react';
 
 interface KpiCardsProps {
-  analytics?: DashboardAnalytics;
+  analytics?: ExecutiveDashboardAnalytics;
   isRtl: boolean;
 }
 

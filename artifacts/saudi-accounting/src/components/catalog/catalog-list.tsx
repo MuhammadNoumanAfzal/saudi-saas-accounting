@@ -323,8 +323,7 @@ export function CatalogList() {
         open={Boolean(editItem)} 
         onOpenChange={(nextOpen) => { if (!nextOpen) setEditItem(null); }} 
         orgId={orgId}
-        itemId={editItem?.id}
-        initialData={editItem}
+        initialData={editItem || undefined}
         onSuccess={(itemId) => {
           setEditItem(null);
           queryClient.invalidateQueries({ queryKey: getListCatalogItemsQueryKey(orgId) });

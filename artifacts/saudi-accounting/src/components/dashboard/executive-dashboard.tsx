@@ -1,5 +1,5 @@
 import { Link } from 'wouter';
-import { useGetCurrentSession, useGetDashboardAnalytics } from '@workspace/api-client-react';
+import { useGetCurrentSession, useGetDashboardAnalytics, getGetDashboardAnalyticsQueryKey } from '@workspace/api-client-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/utils';
 import {
@@ -19,6 +19,7 @@ export function ExecutiveDashboard() {
   // Optimized React Query configuration (10 mins staleTime for 0ms navigation latency)
   const { data: analytics, isLoading, refetch } = useGetDashboardAnalytics(orgId, {
     query: {
+      queryKey: getGetDashboardAnalyticsQueryKey(orgId),
       enabled: !!orgId,
       staleTime: 10 * 60 * 1000,
       gcTime: 30 * 60 * 1000,

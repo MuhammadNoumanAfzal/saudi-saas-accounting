@@ -15,7 +15,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { PlatformLoader } from '@/components/ui/platform-loader';
 import { 
-  ArrowLeft, ArrowRight, Building2, Calendar, FileText, CheckCircle2, Clock, Trash2, Printer, ShieldCheck, ShoppingBag, MapPin, Hash, XCircle, Pencil
+  ArrowLeft, ArrowRight, Building2, Calendar, FileText, CheckCircle2, Clock, Trash2, Printer, ShieldCheck, ShoppingBag, MapPin, Hash, XCircle, Pencil, CreditCard
 } from 'lucide-react';
 import { BillCreateSheet } from './bill-create-sheet';
 

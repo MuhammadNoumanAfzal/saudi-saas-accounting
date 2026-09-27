@@ -21,16 +21,20 @@ export function TopProgressBar() {
 export function PlatformLoader({
   message,
   messageAr,
+  title,
+  subtitle,
   fullScreen = false,
 }: {
   message?: string;
   messageAr?: string;
+  title?: string;
+  subtitle?: string;
   fullScreen?: boolean;
 }) {
   const { t } = useTranslation();
 
-  const defaultEn = message || 'Loading KHANBAS NEXUS Workspace...';
-  const defaultAr = messageAr || 'جاري تحضير منصة نكسس المحاسبية...';
+  const defaultEn = message || title || 'Loading KHANBAS NEXUS Workspace...';
+  const defaultAr = messageAr || subtitle || 'جاري تحضير منصة نكسس المحاسبية...';
 
   const content = (
     <div className="flex flex-col items-center justify-center p-8 text-center space-y-5 max-w-md fade-up">

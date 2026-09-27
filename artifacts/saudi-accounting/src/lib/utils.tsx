@@ -49,15 +49,17 @@ export function useTranslation() {
   return { lang, isRtl, toggleLanguage, setLanguage, t };
 }
 
-export function Button({ children, className = '', variant = 'primary', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger' }) {
+export function Button({ children, className = '', variant = 'primary', size, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline' | 'default'; size?: string }) {
   const base = "inline-flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:pointer-events-none rounded-xl px-4 py-2.5 font-semibold text-sm";
   const variants = {
     primary: "btn-primary",
+    default: "btn-primary",
     secondary: "btn-secondary",
+    outline: "btn-secondary",
     ghost: "hover:bg-muted text-foreground",
     danger: "bg-destructive text-destructive-foreground hover:opacity-90"
   };
-  return <button className={`${base} ${variants[variant]} ${className}`} {...props}>{children}</button>;
+  return <button className={`${base} ${variants[variant] || variants.primary} ${className}`} {...props}>{children}</button>;
 }
 
 export function formatCurrency(amount: number, currency: string = 'SAR', locale: string = 'en-US') {

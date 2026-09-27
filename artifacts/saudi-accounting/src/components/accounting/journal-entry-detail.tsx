@@ -108,7 +108,7 @@ export function JournalEntryDetail({ entryId }: JournalEntryDetailProps) {
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              {isRtl ? 'تاريخ الترحيل:' : 'Posting Date:'} {new Date(entry.postingDate).toLocaleDateString(isRtl ? 'ar-SA' : 'en-US')}
+              {isRtl ? 'تاريخ الترحيل:' : 'Posting Date:'} {new Date((entry as any).postingDate || entry.entryDate).toLocaleDateString(isRtl ? 'ar-SA' : 'en-US')}
             </p>
           </div>
         </div>
@@ -132,8 +132,8 @@ export function JournalEntryDetail({ entryId }: JournalEntryDetailProps) {
           <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 mt-1 print:text-slate-800">
             {entry.description}
           </p>
-          {entry.descriptionAr && (
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 print:text-slate-600">{entry.descriptionAr}</p>
+          {(entry as any).descriptionAr && (
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 print:text-slate-600">{(entry as any).descriptionAr}</p>
           )}
         </div>
 
@@ -151,11 +151,11 @@ export function JournalEntryDetail({ entryId }: JournalEntryDetailProps) {
           </div>
           <div>
             <span className="text-slate-500 block mb-1 font-medium">{isRtl ? 'نوع المستند المصدر' : 'Source Document'}</span>
-            <span className="font-semibold text-slate-800 dark:text-slate-200 text-sm print:text-slate-900">{entry.sourceDocumentType || 'MANUAL_JOURNAL'}</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-200 text-sm print:text-slate-900">{(entry as any).sourceDocumentType || 'MANUAL_JOURNAL'}</span>
           </div>
           <div>
             <span className="text-slate-500 block mb-1 font-medium">{isRtl ? 'الرقم المرجعي' : 'Reference #'}</span>
-            <span className="font-mono font-semibold text-slate-800 dark:text-slate-200 text-sm print:text-slate-900">{entry.referenceNumber || '—'}</span>
+            <span className="font-mono font-semibold text-slate-800 dark:text-slate-200 text-sm print:text-slate-900">{(entry as any).referenceNumber || (entry as any).reference || '—'}</span>
           </div>
         </div>
 
@@ -183,7 +183,7 @@ export function JournalEntryDetail({ entryId }: JournalEntryDetailProps) {
                     {line.accountName || '—'}
                   </td>
                   <td className="px-4 py-3 print:py-2 text-slate-500 dark:text-slate-400 print:text-slate-700 text-xs">
-                    {line.description || entry.description}
+                    {(line as any).description || (line as any).memo || entry.description}
                   </td>
                   <td className="px-4 py-3 print:py-2 text-right rtl:text-left font-mono font-bold text-emerald-600 dark:text-emerald-400 print:text-slate-900">
                     {parseFloat(line.debit) > 0 ? parseFloat(line.debit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}

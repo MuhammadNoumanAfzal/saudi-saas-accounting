@@ -2,10 +2,10 @@ import { Link } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation, formatCurrency } from '@/lib/utils';
 import { Clock, ChevronRight, ArrowRight, Users, ShoppingBag } from 'lucide-react';
-import type { DashboardAnalytics } from '@workspace/api-client-react';
+import type { ExecutiveDashboardAnalytics } from '@workspace/api-client-react';
 
 interface AgingBreakdownProps {
-  analytics?: DashboardAnalytics;
+  analytics?: ExecutiveDashboardAnalytics;
   isRtl: boolean;
 }
 
@@ -44,7 +44,7 @@ export function AgingBreakdown({ analytics, isRtl }: AgingBreakdownProps) {
         <CardContent className="p-4">
           <div className="space-y-3">
             {analytics?.arAging?.map((bucket, idx) => {
-              const label = (isRtl ? bucket.labelAr : bucket.labelEn) || bucket.bucket || '0-30 Days';
+              const label = (isRtl ? bucket.labelAr : bucket.labelEn) || (bucket as any).bucket || '0-30 Days';
               const count = bucket.count ?? 0;
               const amount = Number(bucket.amount || 0);
               const pct = bucket.percentage ?? (receivables > 0 ? Math.round((amount / receivables) * 100) : 0);
@@ -114,7 +114,7 @@ export function AgingBreakdown({ analytics, isRtl }: AgingBreakdownProps) {
         <CardContent className="p-4">
           <div className="space-y-3">
             {analytics?.apAging?.map((bucket, idx) => {
-              const label = (isRtl ? bucket.labelAr : bucket.labelEn) || bucket.bucket || '0-30 Days';
+              const label = (isRtl ? bucket.labelAr : bucket.labelEn) || (bucket as any).bucket || '0-30 Days';
               const count = bucket.count ?? 0;
               const amount = Number(bucket.amount || 0);
               const pct = bucket.percentage ?? (payables > 0 ? Math.round((amount / payables) * 100) : 0);

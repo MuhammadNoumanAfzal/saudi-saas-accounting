@@ -150,6 +150,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       }, 7000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [isLoaded]);
 
   if (!isLoaded) {
@@ -221,9 +222,10 @@ function SessionGuard({ children }: { children: React.ReactNode }) {
     item => item.organization.id === session?.preferences?.currentOrganizationId,
   )?.organization ?? session?.organizations?.[0]?.organization;
 
-  const isOnboarded = hasOrganizations && Boolean(activeOrg && activeOrg.onboardingCompleted === true);
+  // User is considered onboarded if an active organization already exists in the system
+  const isOnboarded = hasOrganizations && Boolean(activeOrg);
 
-  // If user has not completed onboarding and is not on /onboarding page, redirect to onboarding
+  // If user has not created an organization and is not on /onboarding page, redirect to onboarding
   if (!isOnboarded && location !== '/onboarding') {
     return <Redirect to="/onboarding" />;
   }
@@ -362,7 +364,7 @@ function SignInPage() {
           </div>
           <div className="pt-2 flex flex-col gap-2">
             <button
-              onClick={() => setLocation('/dashboard')}
+              onClick={() => setLocation('/home')}
               className="w-full py-2.5 px-4 rounded-xl bg-primary text-primary-foreground font-bold text-xs shadow-md hover:bg-primary/90 transition-all"
             >
               {t('Go to Workspace / Dashboard', 'الانتقال إلى مساحة العمل / لوحة التحكم')}
@@ -388,7 +390,8 @@ function SignInPage() {
         routing="path"
         path={`${basePath}/sign-in`}
         signUpUrl={`${basePath}/sign-up`}
-        fallbackRedirectUrl={`${basePath}/dashboard`}
+        fallbackRedirectUrl={`${basePath}/home`}
+        forceRedirectUrl={`${basePath}/home`}
       />
     </AuthLayout>
   );
@@ -427,7 +430,7 @@ function SignUpPage() {
           </div>
           <div className="pt-2 flex flex-col gap-2">
             <button
-              onClick={() => setLocation('/dashboard')}
+              onClick={() => setLocation('/home')}
               className="w-full py-2.5 px-4 rounded-xl bg-primary text-primary-foreground font-bold text-xs shadow-md hover:bg-primary/90 transition-all"
             >
               {t('Go to Workspace / Dashboard', 'الانتقال إلى مساحة العمل / لوحة التحكم')}
@@ -495,7 +498,11 @@ const clerkAppearance = {
     formFieldInput: "field rounded-xl text-sm py-2.5 bg-background text-foreground border-border focus:border-emerald-600 font-medium",
     formButtonPrimary: "btn-primary bg-emerald-700 hover:bg-emerald-800 text-white font-bold shadow-lg shadow-emerald-700/25 rounded-xl py-3 text-sm transition-all mt-3 cursor-pointer w-full flex items-center justify-center gap-2",
 
-    /* OTP Verification Screen & Identity Preview Styling */
+    /* OTP Verification & Password Reset Checkbox / Field Styling */
+    formFieldRow: "flex items-center gap-2.5 my-3 w-full",
+    formFieldInputCheckbox: "w-5 h-5 min-w-[20px] min-h-[20px] accent-emerald-600 rounded cursor-pointer",
+    formFieldCheckboxInput: "w-5 h-5 min-w-[20px] min-h-[20px] accent-emerald-600 rounded cursor-pointer",
+    formFieldCheckboxLabel: "text-xs font-semibold text-foreground cursor-pointer leading-normal whitespace-nowrap",
     otpCodeField: "flex justify-center gap-2 my-4",
     otpCodeFieldInputs: "flex justify-center gap-2 my-3",
     otpCodeFieldInput: "w-11 h-14 border-2 border-emerald-500/60 focus:border-emerald-600 rounded-xl text-center text-xl font-bold font-mono bg-background text-foreground shadow-sm focus:ring-4 focus:ring-emerald-500/20 transition-all",

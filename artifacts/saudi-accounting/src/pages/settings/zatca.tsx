@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation, Button } from '@/lib/utils';
 import { showAlert } from '@/lib/alerts';
 import { getErrorMessage } from '@/lib/form-errors';
-import { customFetch, useGetCurrentSession } from '@workspace/api-client-react';
+import { customFetch, useGetCurrentSession, getGetCurrentSessionQueryKey } from '@workspace/api-client-react';
 import { 
   Zap, 
   ShieldCheck, 
@@ -22,8 +22,9 @@ import { ZatcaKpiCards } from '@/components/settings/zatca-kpi-cards';
 
 export function ZatcaSettings() {
   const { t, isRtl } = useTranslation();
-  const { data: session, refetch: refetchSession } = useGetCurrentSession(undefined, {
+  const { data: session, refetch: refetchSession } = useGetCurrentSession({
     query: {
+      queryKey: getGetCurrentSessionQueryKey(),
       staleTime: 10 * 60 * 1000,
     }
   });

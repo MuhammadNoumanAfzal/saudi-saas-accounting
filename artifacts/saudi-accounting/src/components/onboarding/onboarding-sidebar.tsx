@@ -33,8 +33,8 @@ export function OnboardingSidebar({ step, setStep, isRtl, t }: OnboardingSidebar
       <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-emerald-500/10 via-transparent to-black/30 pointer-events-none" />
 
       <div className="relative z-10">
-        {/* Logo & Platform Header - Links back to Home Page */}
-        <Link href="/" className="flex items-center gap-3.5 mb-10 group cursor-pointer hover:opacity-90 transition-opacity" title={t('Back to Home Page', 'العودة إلى الصفحة الرئيسية')}>
+        {/* Logo & Platform Header - Links back to Workspace Home */}
+        <Link href="/home" className="flex items-center gap-3.5 mb-10 group cursor-pointer hover:opacity-90 transition-opacity" title={t('Back to Workspace Home', 'العودة إلى مساحة العمل')}>
           <div className="w-11 h-11 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center p-2 shadow-lg group-hover:scale-105 transition-transform">
             <img src={`${basePath}/logo.svg`} alt="NEXUS" className="w-full h-full object-contain" />
           </div>
